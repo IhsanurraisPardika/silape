@@ -14,10 +14,13 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Routes
+// ===== ROUTES LAMA (JANGAN DIHAPUS) =====
 app.use('/', require('./routes/login'));
 
-// Error handling
+// ===== ROUTE BARU (DITAMBAHKAN) =====
+app.use('/penilaian', require('./routes/penilaian'));
+
+// ===== ERROR HANDLING (TETAP) =====
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).render('error', {

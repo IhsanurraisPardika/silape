@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Input Penilaian 5P</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex">
+
+  <!-- SIDEBAR -->
+  <aside class="hidden md:flex w-64 bg-red-700 text-white flex-col">
+    <div class="flex items-center gap-2 p-4 border-b border-red-600">
+      <div class="w-8 h-8 bg-white rounded-full"></div>
+      <span class="font-semibold">PT SEMEN PADANG</span>
+    </div>
+
+    <nav class="flex-1 p-4 space-y-2">
+      <a class="flex items-center gap-2 px-3 py-2 rounded hover:bg-red-600" href="#">
+        <span>🏠</span> Beranda
+      </a>
+
+      <a class="flex items-center gap-2 px-3 py-2 rounded bg-red-800 font-semibold" href="#">
+        <span>📝</span> Input Penilaian
+      </a>
+
+      <a class="flex items-center gap-2 px-3 py-2 rounded hover:bg-red-600" href="#">
+        <span>📋</span> Daftar Penilaian
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 flex flex-col">
+
+    <!-- TOPBAR -->
+    <header class="bg-white border-b px-6 h-16 flex items-center shadow-sm">
+
+      <!-- Menu kanan (disembunyikan di HP) -->
+      <div class="hidden md:flex items-center gap-6 ml-auto mr-6">
+        <span class="font-semibold cursor-pointer">Tentang</span>
+        <span class="font-semibold cursor-pointer">Kriteria Penilaian 5P</span>
+      </div>
+
+      <!-- User -->
+      <div class="flex items-center gap-2 text-sm ml-auto md:ml-0">
+        <span>👤</span>
+        <span class="font-medium">IHSANURRAIS PARDIKA</span>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <section class="p-6">
+      <h1 class="text-2xl font-bold mb-4">Input Penilaian 5P</h1>
+
+      <!-- CARD -->
+      <div class="bg-white rounded-lg shadow p-6 w-full max-w-7xl">
+
+        <h2 class="font-semibold mb-4">
+          Pilih Kantor yang akan Dinilai
+        </h2>
+
+        <div class="space-y-4">
+
+          <!-- ITEM -->
+          <div class="border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 cursor-pointer">
+            <div class="w-10 h-10 flex items-center justify-center bg-red-100 text-red-600 rounded">
+              🏢
+            </div>
+            <div>
+              <p class="font-medium">
+                KANTOR SALES AREA SUMBAR LT.2 KANTOR PUSAT
+              </p>
+              <p class="text-sm text-gray-500">TIM 1</p>
+            </div>
+          </div>
+
+          <div class="border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 cursor-pointer">
+            <div class="w-10 h-10 flex items-center justify-center bg-red-100 text-red-600 rounded">
+              🏢
+            </div>
+            <div>
+              <p class="font-medium">
+                KANTOR BPPS GEDUNG BAKARYA LT. 2
+              </p>
+              <p class="text-sm text-gray-500">TIM 1</p>
+            </div>
+          </div>
+
+          <div class="border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 cursor-pointer">
+            <div class="w-10 h-10 flex items-center justify-center bg-red-100 text-red-600 rounded">
+              🏢
+            </div>
+            <div>
+              <p class="font-medium">KANTOR USM</p>
+              <p class="text-sm text-gray-500">TIM 1</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>
