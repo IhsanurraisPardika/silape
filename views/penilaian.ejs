@@ -9,27 +9,10 @@
 
 <body class="bg-gray-100 min-h-screen flex">
 
-  <!-- SIDEBAR -->
-  <aside class="hidden md:flex w-64 bg-red-700 text-white flex-col">
-    <div class="flex items-center gap-2 p-4 border-b border-red-600">
-      <div class="w-8 h-8 bg-white rounded-full"></div>
-      <span class="font-semibold">PT SEMEN PADANG</span>
+  <div class="flex h-screen">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
     </div>
-
-    <nav class="flex-1 p-4 space-y-2">
-      <a class="flex items-center gap-2 px-3 py-2 rounded hover:bg-red-600" href="#">
-        <span>🏠</span> Beranda
-      </a>
-
-      <a class="flex items-center gap-2 px-3 py-2 rounded bg-red-800 font-semibold" href="#">
-        <span>📝</span> Input Penilaian
-      </a>
-
-      <a class="flex items-center gap-2 px-3 py-2 rounded hover:bg-red-600" href="#">
-        <span>📋</span> Daftar Penilaian
-      </a>
-    </nav>
-  </aside>
 
   <!-- MAIN -->
   <main class="flex-1 flex flex-col">
