@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - SILAPE</title>
+    <title><%= title %></title>
     <link rel="icon" href="/images/sp.png" type="image/sp.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -35,7 +35,7 @@
                 <div class="fixed inset-0 bg-black/40 pointer-events-none" style="top: 64px; left: 224px;"></div>
 
                 <!-- Content -->
-                <div class="relative z-10 p-8 flex flex-col">
+                <div class="relative z-10 p-8 flex flex-col pb-24">
                     <!-- Welcome Section -->
                     <div class="mb-8">
                         <h1 class="text-5xl font-bold text-white mb-2">Selamat Datang di Sistem Penilaian 5P</h1>
@@ -134,6 +134,13 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Footer - Fixed -->
+                <footer class="left-56 right-0 text-white p-4 text-center bg-black/20 backdrop-blur-sm">
+                    <div class="container mx-auto">
+                        <p class="text-sm md:text-base">© 2026 SILAPE - PT SEMEN PADANG</p>
+                    </div>
+                </footer>
             </div>
         </div>
     </div>

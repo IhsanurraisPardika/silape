@@ -16,7 +16,7 @@ exports.postlogin = (req, res) => {
     res.redirect('/home');
   } else {
     res.render('login', {
-      title: 'Login - SILAPE',
+      title: 'Login',
       error: 'Email dan password harus diisi'
     });
   }
@@ -24,7 +24,7 @@ exports.postlogin = (req, res) => {
 
 exports.gethome = (req, res) => {
   res.render('home', {
-    title: 'Home - SILAPE',
+    title: 'Home',
     user: {
       name: 'IHSANURRAIS PARDIKA',
       team: 'TIM 1'
