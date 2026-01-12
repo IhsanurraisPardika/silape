@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="icon" href="/images/sp.png" type="image/sp.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bg-factory {
+            background-image: url('/images/pabrik.jpg');
+            background-position: center;
+            background-size: cover;
+        }
+        .sidebar-nav-active {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="antialiased bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+    </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+            <!-- Top Header -->
+            <%- include('partials/header') %>
+
+            <!-- Main Content Area with Background -->
+            <div class="flex-1 overflow-auto bg-factory relative" style="background-attachment: fixed;">
+                <!-- Dark Overlay - Fixed -->
+                <div class="fixed inset-0 bg-black/40 pointer-events-none" style="top: 64px; left: 224px;"></div>
+
+                <!-- Content -->
+                <div class="relative z-10 p-8 flex flex-col pb-24">
+                    <!-- Welcome Section -->
+                    <div class="mb-8">
+                        <h1 class="text-5xl font-bold text-white mb-2">Selamat Datang di Sistem Penilaian 5P</h1>
+                        <p class="text-2xl text-gray-100">Ihsan, TIM 1</p>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-2 gap-6 mb-8 max-w-2xl">
+                        <!-- Card 1: Penilaian yang Dilakukan -->
+                        <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <p class="text-gray-500 text-sm mb-2">Penilaian yang Dilakukan</p>
+                                    <p class="text-5xl font-bold text-red-600">0</p>
+                                    <p class="text-gray-400 text-xs mt-2">Total penilaian yang dilakukan</p>
+                                </div>
+                                <div class="text-red-600">
+                                    <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h6.02l-4.27-5.92-1.98 2.38z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Rata-rata Nilai -->
+                        <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <p class="text-gray-500 text-sm mb-2">Rata-rata Nilai</p>
+                                    <p class="text-5xl font-bold text-green-600">0</p>
+                                    <p class="text-gray-400 text-xs mt-2">Rata-rata penilaian Tim Anda</p>
+                                </div>
+                                <div class="text-green-600">
+                                    <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h6.02l-4.27-5.92-1.98 2.38z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- About 5P System -->
+                    <div class="bg-white rounded-lg shadow-lg p-8 w-full">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-8">Tentang Sistem 5P</h2>
+                        
+                        <div class="grid grid-cols-2 gap-8">
+                            <!-- P1 -->
+                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    P1
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">Pemilihan</h3>
+                                </div>
+                            </div>
+
+                            <!-- P4 -->
+                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    P4
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">Pemantapan</h3>
+                                </div>
+                            </div>
+
+                            <!-- P2 -->
+                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    P2
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">Penataan</h3>
+                                </div>
+                            </div>
+
+                            <!-- P5 -->
+                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    P5
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">Pembiasaan</h3>
+                                </div>
+                            </div>
+
+                            <!-- P3 -->
+                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    P3
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">Pembersihan</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer - Fixed -->
+                <footer class="left-56 right-0 text-white p-4 text-center bg-black/20 backdrop-blur-sm">
+                    <div class="container mx-auto">
+                        <p class="text-sm md:text-base">© 2026 SILAPE - PT SEMEN PADANG</p>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
