@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
+const session = require('express-session');
+const path = require('path');
 
 // Set template engine
 app.set('view engine', 'ejs');
@@ -13,9 +15,27 @@ app.use(express.static(__dirname + '/public'));
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Session configuration
+app.use(session({
+  secret: 'silape-secret-key-2024', // Ganti dengan secret key yang kuat
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 jam
+  }
+}));
+
+// View engine setup
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 // ===== ROUTES LAMA =====
 app.use('/', require('./routes/login'));
+
+app.use('/admin', adminRoutes); // Tambah ini
 
 // ===== Penilaian =====
 app.use('/penilaian', require('./routes/penilaian'));
@@ -23,12 +43,25 @@ app.use('/penilaian', require('./routes/penilaian'));
 // ===== Kelola Kantor =====
 app.use('/kelolaKantor', require('./routes/kelolaKantor'));
 
-// ===== ERROR HANDLING (TETAP) =====
+// Middleware untuk set user data ke semua views
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  next();
+});
+
+// Error handling
+app.use((req, res, next) => {
+  res.status(404).render('error', {
+    title: '404 - Halaman Tidak Ditemukan',
+    message: 'Halaman yang Anda cari tidak ditemukan.'
+  });
+});
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).render('error', {
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err : {}
+    title: '500 - Error Server',
+    message: 'Terjadi kesalahan pada server.'
   });
 });
 
