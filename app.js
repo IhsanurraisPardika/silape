@@ -3,10 +3,9 @@ const express = require('express');
 const session = require("express-session");
 const app = express();
 const port = process.env.PORT || 3000;
-const session = require('express-session');
 const path = require('path');
-
 const authRoutes = require("./routes/auth.routes");
+const adminRoutes = require("./routes/admin");
 const { harusSuperadmin } = require("./middlewares/auth.middleware");
 
 // Set template engine
@@ -41,7 +40,9 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // ===== ROUTES LAMA =====
-app.use('/', require('./routes/login'));
+const loginRoutes = require('./routes/login');
+app.use('/', loginRoutes);
+app.use('/home', loginRoutes.homeRouter);
 
 app.use('/admin', adminRoutes); // Tambah ini
 

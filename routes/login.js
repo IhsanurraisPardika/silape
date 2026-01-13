@@ -7,7 +7,10 @@ router.get('/', loginController.getlogin);
 router.post('/login', loginController.postlogin);
 router.get('/logout', loginController.logout);
 
-// Hanya TIM_PENILAI yang bisa akses home
-router.get('/home', requireAuth, requireTimPenilai, loginController.gethome);
-
 module.exports = router;
+
+// Buat router untuk /home (di luar module login)
+const homeRouter = express.Router();
+homeRouter.get('/', requireAuth, requireTimPenilai, loginController.gethome);
+
+module.exports.homeRouter = homeRouter;
