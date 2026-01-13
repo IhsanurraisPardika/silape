@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
-const prisma = require("../prisma/client");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 
 exports.getLogin = (req, res) => {
   // kalau sudah login, arahkan ke dashboard
