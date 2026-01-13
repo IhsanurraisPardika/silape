@@ -1,7 +1,10 @@
 require('dotenv').config();
 const express = require('express');
+const session = require("express-session");
 const app = express();
 const port = process.env.PORT || 3000;
+const authRoutes = require("./routes/auth.routes");
+const { harusSuperadmin } = require("./middlewares/auth.middleware");
 
 // Set template engine
 app.set('view engine', 'ejs');
@@ -12,7 +15,7 @@ app.use(express.static(__dirname + '/public'));
 
 // Middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 
 // ===== ROUTES LAMA =====
 app.use('/', require('./routes/login'));
@@ -31,6 +34,28 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err : {}
   });
 });
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+    },
+  })
+);
+
+// routes
+app.use(authRoutes);
+
+// contoh route dashboard superadmin
+app.get("/admin/dashboard", harusSuperadmin, (req, res) => {
+  res.send(`Halo ${req.session.user.nama}, ini dashboard superadmin`);
+});
+
+module.exports = app;
 
 // Start server
 app.listen(port, () => {
