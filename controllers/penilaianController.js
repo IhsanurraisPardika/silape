@@ -4,3 +4,9 @@ exports.index = (req, res) => {
     user: 'IHSANURRAIS PARDIKA'
   })
 }
+
+exports.daftar = (req, res) => {
+  res.render('daftarPenilaian', {
+    user: 'IHSANURRAIS PARDIKA'
+  })
+}
