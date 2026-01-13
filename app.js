@@ -17,11 +17,14 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ===== ROUTES LAMA (JANGAN DIHAPUS) =====
+// ===== ROUTES LAMA =====
 app.use('/', require('./routes/login'));
 
-// ===== ROUTE BARU (DITAMBAHKAN) =====
+// ===== Penilaian =====
 app.use('/penilaian', require('./routes/penilaian'));
+
+// ===== Kelola Kantor =====
+app.use('/kelolaKantor', require('./routes/kelolaKantor'));
 
 // ===== ERROR HANDLING (TETAP) =====
 app.use((err, req, res, next) => {
