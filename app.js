@@ -66,6 +66,11 @@ app.use((req, res, next) => {
   });
 });
 
+// PENGATURAN BOBOT
+console.log('LOAD ROUTE: pengaturanBobot');
+app.use('/pengaturanBobot', require('./routes/pengaturanBobot'));
+
+// ===== ERROR HANDLING (TETAP) =====
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).render('error', {
