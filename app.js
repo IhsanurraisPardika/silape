@@ -1,9 +1,13 @@
 require('dotenv').config();
 const express = require('express');
+const session = require("express-session");
 const app = express();
 const port = process.env.PORT || 3000;
 const session = require('express-session');
 const path = require('path');
+
+const authRoutes = require("./routes/auth.routes");
+const { harusSuperadmin } = require("./middlewares/auth.middleware");
 
 // Set template engine
 app.set('view engine', 'ejs');
@@ -14,6 +18,7 @@ app.use(express.static(__dirname + '/public'));
 
 // Middleware
 app.use(express.json());
+
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -31,6 +36,9 @@ app.use(session({
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+app.use(express.urlencoded({ extended: true }));
+
 
 // ===== ROUTES LAMA =====
 app.use('/', require('./routes/login'));
@@ -64,6 +72,28 @@ app.use((err, req, res, next) => {
     message: 'Terjadi kesalahan pada server.'
   });
 });
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+    },
+  })
+);
+
+// routes
+app.use(authRoutes);
+
+// contoh route dashboard superadmin
+app.get("/admin/dashboard", harusSuperadmin, (req, res) => {
+  res.send(`Halo ${req.session.user.nama}, ini dashboard superadmin`);
+});
+
+module.exports = app;
 
 // Start server
 app.listen(port, () => {
