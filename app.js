@@ -43,8 +43,10 @@ app.use(express.urlencoded({ extended: true }));
 const loginRoutes = require('./routes/login');
 app.use('/', loginRoutes);
 app.use('/home', loginRoutes.homeRouter);
+app.use('/admin', adminRoutes);
 
-app.use('/admin', adminRoutes); // Tambah ini
+// ===== Form Penilaian =====
+app.use('/', require('./routes/formPenilaian'));
 
 // ===== Penilaian =====
 app.use('/penilaian', require('./routes/penilaian'));
@@ -57,17 +59,7 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   next();
 });
-
-// Error handling
-app.use((req, res, next) => {
-  res.status(404).render('error', {
-    title: '404 - Halaman Tidak Ditemukan',
-    message: 'Halaman yang Anda cari tidak ditemukan.'
-  });
-});
-
 // PENGATURAN BOBOT
-console.log('LOAD ROUTE: pengaturanBobot');
 app.use('/pengaturanBobot', require('./routes/pengaturanBobot'));
 
 // ===== ERROR HANDLING (TETAP) =====
@@ -104,5 +96,4 @@ module.exports = app;
 // Start server
 app.listen(port, () => {
   console.log(`Server berjalan di http://localhost:${port}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
 });
