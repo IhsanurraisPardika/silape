@@ -17,6 +17,11 @@ router.get('/rekapPenilaianAdmin', harusSuperadmin, (req, res) => {
   res.render('admin/rekapPenilaian');
 });
 
+// Halaman Rekap Kriteria Admin
+router.get('/rekapKriteriaAdmin', harusSuperadmin, (req, res) => {
+  res.render('admin/rekapKriteria');
+});
+
 // Halaman Kelola Tim
 router.get('/kelolaTim', harusSuperadmin, (req, res) => {
   res.render('KelolaTim');
