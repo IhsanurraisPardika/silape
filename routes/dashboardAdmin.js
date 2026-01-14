@@ -1,30 +1,30 @@
-const express = require('express')
-const router = express.Router()
+const express = require('express');
+const router = express.Router();
+const { harusSuperadmin } = require('../middlewares/auth.middleware');  // Import middleware
 
-router.get('/', (req, res) => {
-  res.render('admin/DashboardAdmin')
-})
+// Halaman Dashboard Admin
+router.get('/', harusSuperadmin, (req, res) => {
+  res.render('admin/DashboardAdmin', { title: "Dashboard Admin", user: req.session.user });
+});
 
-//REKAP
-router.get('/rekapKantorAdmin', (req, res) => {
+// Halaman Rekap Kantor Admin
+router.get('/rekapKantorAdmin', harusSuperadmin, (req, res) => {
   res.render('admin/rekapKantor');
 });
 
-router.get('/rekapPenilaianAdmin', (req, res) => {
+// Halaman Rekap Penilaian Admin
+router.get('/rekapPenilaianAdmin', harusSuperadmin, (req, res) => {
   res.render('admin/rekapPenilaian');
 });
 
-// router.get('/daftarPenilaian', (req, res) => {
-//   res.render('daftarPenilaian')
-// })
+// Halaman Kelola Tim
+router.get('/kelolaTim', harusSuperadmin, (req, res) => {
+  res.render('KelolaTim');
+});
 
-router.get('/kelolaTim', (req, res) => {
-  res.render('KelolaTim')
-})
+// Halaman Unduh Laporan Admin
+router.get('/unduhLaporan', harusSuperadmin, (req, res) => {
+  res.render('admin/unduhLaporanAdmin');
+});
 
-router.get('/unduhLaporan', (req, res) => {
-  res.render('admin/unduhLaporanAdmin')
-})
-
-
-module.exports = router
+module.exports = router;
