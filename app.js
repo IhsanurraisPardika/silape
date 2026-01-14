@@ -56,6 +56,17 @@ app.use('/penilaian', require('./routes/penilaian'));
 // ===== Kelola Kantor =====
 app.use('/kelolaKantor', require('./routes/kelolaKantor'));
 
+// ===== Daftar Penilaian =====
+app.use('/daftarPenilaian', require('./routes/daftarPenilaian'));
+
+// ===== Admin =====
+app.use('/dashboardAdmin', require('./routes/dashboardAdmin'));
+
+app.use((err, req, res, next) => {
+  console.error(err)
+  res.status(500).send(err.message)
+})
+
 // Middleware untuk set user data ke semua views
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
