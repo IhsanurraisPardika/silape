@@ -1,19 +1,20 @@
-require('dotenv').config();
-const express = require('express');
+require("dotenv").config();
+const express = require("express");
 const session = require("express-session");
 const app = express();
 const port = process.env.PORT || 3000;
+
 const path = require('path');
 const authRoutes = require("./routes/auth.routes");
 const adminRoutes = require("./routes/admin");
 const { harusSuperadmin } = require("./middlewares/auth.middleware");
 
 // Set template engine
-app.set('view engine', 'ejs');
-app.set('views', __dirname + '/views');
+app.set("view engine", "ejs");
+app.set("views", __dirname + "/views");
 
 // Static files
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + "/public"));
 
 // Middleware
 app.use(express.json());
@@ -38,6 +39,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.urlencoded({ extended: true }));
 
+// Session
 
 // ===== ROUTES LAMA =====
 const loginRoutes = require('./routes/login');
@@ -73,7 +75,7 @@ app.use((err, req, res, next) => {
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || "dev_secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -83,15 +85,27 @@ app.use(
   })
 );
 
-// routes
-app.use(authRoutes);
+// ===== ROUTES =====
+app.use("/", require("./routes/login"));
+app.use("/penilaian", require("./routes/penilaian"));
+app.use("/kelolaKantor", require("./routes/kelolaKantor"));
+
+// ✅ ini yang bikin /admin/pengguna/tambah ketemu
+app.use("/", require("./routes/kelolaTim"));
 
 // contoh route dashboard superadmin
 app.get("/admin/dashboard", harusSuperadmin, (req, res) => {
   res.send(`Halo ${req.session.user.nama}, ini dashboard superadmin`);
 });
 
-module.exports = app;
+// ===== ERROR HANDLING (PALING BAWAH) =====
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).render("error", {
+    message: "Something went wrong!",
+    error: process.env.NODE_ENV === "development" ? err : {},
+  });
+});
 
 // Start server
 app.listen(port, () => {
