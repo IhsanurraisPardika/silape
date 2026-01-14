@@ -44,13 +44,17 @@ const loginRoutes = require('./routes/login');
 app.use('/', loginRoutes);
 app.use('/home', loginRoutes.homeRouter);
 
-app.use('/admin', adminRoutes); // Tambah ini
+app.use('/admin', adminRoutes);
 
 // ===== Penilaian =====
 app.use('/penilaian', require('./routes/penilaian'));
 
 // ===== Kelola Kantor =====
 app.use('/kelolaKantor', require('./routes/kelolaKantor'));
+
+// PENGATURAN BOBOT
+console.log('LOAD ROUTE: pengaturanBobot');
+app.use('/pengaturanBobot', require('./routes/pengaturanBobot'));
 
 // Middleware untuk set user data ke semua views
 app.use((req, res, next) => {
@@ -65,10 +69,6 @@ app.use((req, res, next) => {
     message: 'Halaman yang Anda cari tidak ditemukan.'
   });
 });
-
-// PENGATURAN BOBOT
-console.log('LOAD ROUTE: pengaturanBobot');
-app.use('/pengaturanBobot', require('./routes/pengaturanBobot'));
 
 // ===== ERROR HANDLING (TETAP) =====
 app.use((err, req, res, next) => {
