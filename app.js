@@ -23,14 +23,17 @@ app.use('/penilaian', require('./routes/penilaian'));
 // ===== Kelola Kantor =====
 app.use('/kelolaKantor', require('./routes/kelolaKantor'));
 
-// ===== ERROR HANDLING (TETAP) =====
+// ===== Daftar Penilaian =====
+app.use('/daftarPenilaian', require('./routes/daftarPenilaian'));
+
+// ===== Admin =====
+app.use('/dashboardAdmin', require('./routes/dashboardAdmin'));
+
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).render('error', {
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err : {}
-  });
-});
+  console.error(err)
+  res.status(500).send(err.message)
+})
+
 
 // Start server
 app.listen(port, () => {

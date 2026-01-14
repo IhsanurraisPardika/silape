@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
-router.get('/daftar-penilaian', (req, res) => {
+router.get('/', (req, res) => {
+  console.log('Route /daftarPenilaian accessed');
   const data = [
     {
       tanggal: '6 Juli 2025',
@@ -17,7 +18,8 @@ router.get('/daftar-penilaian', (req, res) => {
     }
   ];
 
-  res.render('daftar-penilaian', { data });
+  console.log('Data to render:', data);
+  res.render('daftarPenilaian', { data });
 });
 
 module.exports = router;
