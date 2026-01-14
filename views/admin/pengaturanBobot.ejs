@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Rekap Penilaian</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+<div class="flex">
+
+  <!-- SIDEBAR -->
+  <%- include('../partials/sidebarAdmin') %>
+
+  <!-- MAIN -->
+  <div class="flex-1 flex flex-col min-h-screen">
+    <%- include('../partials/header') %>
+
+  <main class="flex-1 flex flex-col">
+
+    <!-- CONTENT -->
+    <section class="p-6">
+      <div class="bg-white rounded-lg shadow p-6 max-w-6xl">
+
+        <h1 class="text-lg font-semibold mb-1">Pengaturan Bobot Penilaian</h1>
+        <p class="text-sm text-gray-500 mb-4">
+          Atur bobot untuk setiap kriteria penilaian
+        </p>
+
+        <!-- NOTIFIKASI BERHASIL -->
+        <% if (success) { %>
+          <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm">
+            ✅ Pengaturan bobot berhasil disimpan
+          </div>
+        <% } %>
+
+        <form action="/pengaturanBobot/simpan" method="POST" class="space-y-6">
+
+          <!-- P1 -->
+          <div>
+            <h2 class="font-semibold text-sm mb-2 text-red-600">Kriteria P1 - Pemilahan</h2>
+            <div class="space-y-2">
+              <input type="number" name="p1_k1" placeholder="Kriteria 1" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p1_k2" placeholder="Kriteria 2" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p1_k3" placeholder="Kriteria 3" class="w-full border rounded px-3 py-2">
+            </div>
+          </div>
+
+          <!-- P2 -->
+          <div>
+            <h2 class="font-semibold text-sm mb-2 text-red-600">Kriteria P2 - Penataan</h2>
+            <div class="space-y-2">
+              <input type="number" name="p2_k1" placeholder="Kriteria 1" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p2_k2" placeholder="Kriteria 2" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p2_k3" placeholder="Kriteria 3" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p2_k4" placeholder="Kriteria 4" class="w-full border rounded px-3 py-2">
+            </div>
+          </div>
+
+          <!-- P3 -->
+          <div>
+            <h2 class="font-semibold text-sm mb-2 text-red-600">Kriteria P3 - Pembersihan</h2>
+            <div class="space-y-2">
+              <input type="number" name="p3_k1" placeholder="Kriteria 1" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p3_k2" placeholder="Kriteria 2" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p3_k3" placeholder="Kriteria 3" class="w-full border rounded px-3 py-2">
+            </div>
+          </div>
+
+          <!-- P4 -->
+          <div>
+            <h2 class="font-semibold text-sm mb-2 text-red-600">Kriteria P4 - Pemantapan</h2>
+            <div class="space-y-2">
+              <input type="number" name="p4_k1" placeholder="Kriteria 1" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p4_k2" placeholder="Kriteria 2" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p4_k3" placeholder="Kriteria 3" class="w-full border rounded px-3 py-2">
+            </div>
+          </div>
+
+          <!-- P5 -->
+          <div>
+            <h2 class="font-semibold text-sm mb-2 text-red-600">Kriteria P5 - Pembiasaan</h2>
+            <div class="space-y-2">
+              <input type="number" name="p5_k1" placeholder="Kriteria 1" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p5_k2" placeholder="Kriteria 2" class="w-full border rounded px-3 py-2">
+              <input type="number" name="p5_k3" placeholder="Kriteria 3" class="w-full border rounded px-3 py-2">
+            </div>
+          </div>
+
+          <!-- BUTTON -->
+          <div>
+            <button type="submit"
+              class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded text-sm font-semibold">
+              Simpan Pengaturan
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </section>
+  </main>
+    <!-- FOOTER -->
+    <div>
+    <%- include('../partials/footer') %>
+    </div>
+
+  <!-- KONFIRMASI SIMPAN -->
+  <script>
+    document.querySelector('form').addEventListener('submit', function (e) {
+      if (!confirm('Apakah Anda yakin ingin menyimpan pengaturan bobot ini?')) {
+        e.preventDefault();
+      }
+    });
+  </script>
+
+</body>
+</html>
