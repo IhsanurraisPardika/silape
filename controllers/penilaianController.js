@@ -1,12 +1,12 @@
 exports.index = (req, res) => {
   // Render the inputPenilaian view (UI list of offices)
-  res.render('inputPenilaian', {
+  res.render('Penilaian', {
     user: 'IHSANURRAIS PARDIKA'
   })
 }
 
 exports.daftar = (req, res) => {
-  res.render('daftarPenilaian', {
+  res.render('Penilaian', {
     user: 'IHSANURRAIS PARDIKA'
   })
 }
