@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kelola Tim Penilai - SILAPE</title>
+  <link rel="icon" href="/images/sp.png" type="image/sp.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/kelola-tim-penilai.js" defer></script>
+</head>
+
+<body class="bg-gray-100">
+  <div class="min-h-screen flex">
+    <!-- SIDEBAR -->
+    <aside class="w-56 bg-red-800 text-white fixed inset-y-0 left-0 flex flex-col">
+      <!-- Brand -->
+      <div class="h-20 px-5 flex items-center gap-3 border-b border-white/15">
+        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-red-800 font-bold">
+          SP
+        </div>
+        <div class="leading-tight">
+          <div class="font-semibold text-sm">PT SEMEN PADANG</div>
+          <div class="text-xs opacity-80">SILAPE</div>
+        </div>
+      </div>
+
+      <!-- Menu -->
+      <nav class="px-4 py-5 space-y-2 text-sm">
+        <a href="/admin/dashboard"
+           class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10">
+          <!-- icon dashboard -->
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <path d="M4 13h6v7H4v-7Zm10-9h6v16h-6V4ZM4 4h6v7H4V4Zm10 9h6v7h-6v-7Z" stroke="currentColor" stroke-width="1.6"/>
+          </svg>
+          Dashboard
+        </a>
+
+        <a href="/admin/rekap-penilaian"
+           class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10">
+          <!-- icon rekap -->
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <path d="M7 3h10v4H7V3Zm-2 6h14v12H5V9Zm3 3h8M8 15h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Rekap Penilaian
+        </a>
+
+        <a href="/admin/pengaturan-bobot"
+           class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10">
+          <!-- icon settings -->
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M19.4 15a7.9 7.9 0 0 0 .1-6l-2.1.2a6.8 6.8 0 0 0-1.3-1.3l.2-2.1a7.9 7.9 0 0 0-6-.1l.2 2.1a6.8 6.8 0 0 0-1.3 1.3L7 9a7.9 7.9 0 0 0-.1 6l2.1-.2c.4.5.8.9 1.3 1.3l-.2 2.1a7.9 7.9 0 0 0 6 .1l-.2-2.1c.5-.4.9-.8 1.3-1.3l2.2.2Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Pengaturan Bobot
+        </a>
+
+        <!-- ACTIVE: Kelola Tim -->
+        <a href="/admin/kelola-tim"
+           class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/15">
+          <!-- icon users -->
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <path d="M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M4 21a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Kelola Tim
+        </a>
+
+        <a href="/admin/unduh-laporan"
+           class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10">
+          <!-- icon download -->
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 17v4h16v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Unduh laporan
+        </a>
+      </nav>
+
+      <div class="mt-auto p-4 text-xs opacity-70">
+        © 2026 SILAPE
+      </div>
+    </aside>
+
+    <!-- CONTENT -->
+    <div class="flex-1 ml-56 flex flex-col">
+      <%- include('../partials/header') %>
+
+      <main class="p-8 pb-24">
+        <!-- Title + Button -->
+        <div class="flex items-center justify-between mb-6">
+          <h1 class="text-2xl font-bold text-gray-900">Kelola Tim</h1>
+
+          <button
+            type="button"
+            id="btnOpenTambah"
+            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-red-700 text-white shadow hover:bg-red-800 active:scale-[0.99]">
+            <!-- icon plus -->
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Tambah Pengguna
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex items-center gap-4 mb-6">
+          <a href="/admin/kelola-tim"
+             class="px-6 py-3 rounded-xl bg-red-700 text-white shadow">
+            Kelola Tim Penilai
+          </a>
+          <a href="/admin/kelola-kantor-tim"
+             class="px-6 py-3 rounded-xl bg-white text-gray-700 shadow border border-gray-200 hover:bg-gray-50">
+            Kelola Kantor Tim
+          </a>
+        </div>
+
+        <!-- Table Card -->
+        <div class="bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
+          <div class="bg-red-700 text-white px-6 py-4 font-semibold">
+            Daftar Tim Penilai
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-red-700/95 text-white">
+                <tr>
+                  <th class="text-left px-6 py-4 font-semibold">Nama</th>
+                  <th class="text-left px-6 py-4 font-semibold">Tim</th>
+                  <th class="text-left px-6 py-4 font-semibold">Status</th>
+                  <th class="text-left px-6 py-4 font-semibold">Aksi</th>
+                </tr>
+              </thead>
+
+              <tbody class="divide-y divide-gray-100">
+                <% if (!users || users.length === 0) { %>
+                  <tr>
+                    <td class="px-6 py-6 text-gray-500" colspan="4">
+                      Belum ada data pengguna.
+                    </td>
+                  </tr>
+                <% } else { %>
+                  <% users.forEach((u) => { %>
+                    <tr class="hover:bg-gray-50">
+                      <td class="px-6 py-5 font-medium text-gray-800"><%= u.nama %></td>
+                      <td class="px-6 py-5 text-gray-700"><%= u.timNama || "-" %></td>
+
+                      <td class="px-6 py-5">
+                        <% if (u.statusAktif) { %>
+                          <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-green-200 text-green-800 font-semibold">
+                            Aktif
+                          </span>
+                        <% } else { %>
+                          <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-gray-200 text-gray-700 font-semibold">
+                            Nonaktif
+                          </span>
+                        <% } %>
+                      </td>
+
+                      <td class="px-6 py-5">
+                        <div class="flex items-center gap-6">
+                          <button
+                            type="button"
+                            class="text-blue-600 font-semibold hover:underline btnOpenEdit"
+                            data-email="<%= u.email %>"
+                            data-nama="<%= u.nama %>"
+                            data-timid="<%= u.timId || '' %>"
+                            data-timnama="<%= u.timNama || '' %>">
+                            Edit
+                          </button>
+
+                          <form action="/pengguna/hapus" method="POST" onsubmit="return confirm('Yakin hapus pengguna ini?')">
+                            <input type="hidden" name="email" value="<%= u.email %>"/>
+                            <button type="submit" class="text-red-600 font-semibold hover:underline">
+                              Delete
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }) %>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+
+      <%- include('../partials/footer') %>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: TAMBAH ================= -->
+  <div id="modalTambah" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" data-close="modalTambah"></div>
+
+    <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col">
+      <div class="bg-red-700 text-white px-6 py-5 flex items-center justify-between">
+        <div>
+          <div class="text-lg font-bold">Tambah Tim Penilai</div>
+          <div class="text-sm opacity-90">Buat Akun Untuk Tim Penilai</div>
+        </div>
+
+        <button type="button" class="text-white/90 hover:text-white" data-close="modalTambah">
+          ✕
+        </button>
+      </div>
+
+      <form action="/pengguna/tambah" method="POST" class="p-6 space-y-5 overflow-y-auto">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Nama</label>
+          <input name="nama" required
+                 class="w-full rounded-xl border border-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 px-4 py-3 outline-none"
+                 placeholder="Masukkan nama..." />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+          <input name="email" type="email" required
+                 class="w-full rounded-xl border border-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 px-4 py-3 outline-none"
+                 placeholder="Masukkan email..." />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+          <input name="password" type="password" required
+                 class="w-full rounded-xl border border-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 px-4 py-3 outline-none"
+                 placeholder="Masukkan password..." />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Role</label>
+          <select name="peran" id="selectRoleTambah" required
+                  class="w-full rounded-xl border border-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 px-4 py-3 outline-none bg-white">
+            <option value="" selected disabled>Pilih Role...</option>
+            <option value="SUPERADMIN_TPM">SUPERADMIN_TPM</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="TIM_PENILAI">TIM_PENILAI</option>
+          </select>
+        </div>
+
+        <div id="wrapTimTambah" class="hidden">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Tim</label>
+          <select name="timId"
+                  class="w-full rounded-xl border border-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 px-4 py-3 outline-none bg-white">
+            <option value="" selected disabled>Pilih Tim...</option>
+            <% if (timList && timList.length) { %>
+              <% timList.forEach((t) => { %>
+                <option value="<%= t.id %>"><%= t.nama %></option>
+              <% }) %>
+            <% } %>
+          </select>
+        </div>
+
+        <div class="mt-8 flex items-center justify-end gap-3">
+          <button type="button" data-close="modalTambah"
+                  class="px-6 py-3 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">
+            Batal
+          </button>
+
+          <button type="submit"
+                  class="px-6 py-3 rounded-xl bg-red-700 text-white font-semibold hover:bg-red-800">
+            Tambah
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: EDIT ================= -->
+  <div id="modalEdit" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" data-close="modalEdit"></div>
+
+    <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col">
+      <div class="bg-red-700 text-white px-6 py-5 flex items-center justify-between">
+        <div>
+          <div class="text-lg font-bold">Edit Tim Penilai</div>
+          <div class="text-sm opacity-90">Edit Identitas Akun Untuk Tim Penilai</div>
+        </div>
+
+        <button type="button" class="text-white/90 hover:text-white" data-close="modalEdit">
+          ✕
+        </button>
+      </div>
+
+      <form action="/pengguna/edit" method="POST" class="p-6 space-y-5 overflow-y-auto">
+        <!-- Email sebagai PK: lebih aman dibuat readonly saat edit -->
+        <input type="hidden" name="email" id="editEmailHidden" />
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Nama</label>
+          <input name="nama" id="editNama" required
+                 class="w-full rounded-xl border border-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 px-4 py-3 outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+          <input id="editEmailShow" type="email" readonly
+                 class="w-full rounded-xl border border-red-600 bg-gray-50 px-4 py-3 outline-none"
+                 title="Email dijadikan Primary Key, jadi sebaiknya tidak diubah." />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+          <input name="password" id="editPassword" type="password"
+                 class="w-full rounded-xl border border-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 px-4 py-3 outline-none"
+                 placeholder="Isi jika ingin ganti password..." />
+          <p class="text-xs text-gray-500 mt-2">Kosongkan jika tidak ingin mengubah password.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Tim</label>
+          <select name="timId" id="editTimId"
+                  class="w-full rounded-xl border border-red-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 px-4 py-3 outline-none bg-white">
+            <option value="">-</option>
+            <% if (timList && timList.length) { %>
+              <% timList.forEach((t) => { %>
+                <option value="<%= t.id %>"><%= t.nama %></option>
+              <% }) %>
+            <% } %>
+          </select>
+        </div>
+
+        <div class="mt-8 flex items-center justify-end gap-3">
+          <button type="button" data-close="modalEdit"
+                  class="px-6 py-3 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">
+            Batal
+          </button>
+
+          <button type="submit"
+                  class="px-6 py-3 rounded-xl bg-red-700 text-white font-semibold hover:bg-red-800">
+            Simpan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Helpers ----------
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    // ---------- Close modal (overlay & button) ----------
+    document.addEventListener('click', (e) => {
+      const closeTarget = e.target.getAttribute('data-close');
+      if (closeTarget) closeModal(closeTarget);
+    });
+
+    // ---------- Open Tambah ----------
+    const btnOpenTambah = document.getElementById('btnOpenTambah');
+    btnOpenTambah?.addEventListener('click', () => openModal('modalTambah'));
+
+    // ---------- Role toggle Tim (Tambah) ----------
+    const selectRoleTambah = document.getElementById('selectRoleTambah');
+    const wrapTimTambah = document.getElementById('wrapTimTambah');
+
+    function toggleTimTambah() {
+      const val = selectRoleTambah.value;
+      if (val === 'TIM_PENILAI') wrapTimTambah.classList.remove('hidden');
+      else wrapTimTambah.classList.add('hidden');
+    }
+    selectRoleTambah?.addEventListener('change', toggleTimTambah);
+
+    // ---------- Open Edit + fill data ----------
+    document.querySelectorAll('.btnOpenEdit').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const email = btn.dataset.email || '';
+        const nama = btn.dataset.nama || '';
+        const timId = btn.dataset.timid || '';
+
+        document.getElementById('editEmailHidden').value = email;
+        document.getElementById('editEmailShow').value = email;
+        document.getElementById('editNama').value = nama;
+        document.getElementById('editPassword').value = '';
+
+        const select = document.getElementById('editTimId');
+        if (select) select.value = timId;
+
+        openModal('modalEdit');
+      });
+    });
+  </script>
+</body>
+</html>
