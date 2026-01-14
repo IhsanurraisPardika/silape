@@ -4,12 +4,38 @@
     <div class="flex items-center gap-4">
         <span class="text-sm text-gray-600">Tentang</span>
         <span class="text-sm text-gray-600">Kriteria Penilaian 5P</span>
-        <div class="flex items-center gap-2 cursor-pointer">
-            <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                👤
+        <div class="relative">
+            <div class="flex items-center gap-2 cursor-pointer user-menu-toggle" id="userMenuToggle">
+                <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                    👤
+                </div>
+                <span class="text-sm font-medium text-gray-700">IHSANURRAIS PARDIKA</span>
+                <span>▼</span>
             </div>
-            <span class="text-sm font-medium text-gray-700">IHSANURRAIS PARDIKA</span>
-            <span>▼</span>
+
+            <!-- Dropdown Menu -->
+            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden" id="userDropdownMenu">
+                <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg">👤 Profil</a>
+                <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg border-t border-gray-200">➜] Logout</a>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    // Toggle dropdown menu
+    const userMenuToggle = document.getElementById('userMenuToggle');
+    const userDropdownMenu = document.getElementById('userDropdownMenu');
+
+    userMenuToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userDropdownMenu.classList.toggle('hidden');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!userMenuToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+            userDropdownMenu.classList.add('hidden');
+        }
+    });
+</script>

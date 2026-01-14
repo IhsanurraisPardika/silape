@@ -5,6 +5,16 @@ const prisma = new PrismaClient();
 // GET - Tampilkan form penilaian
 exports.getFormPenilaian = async (req, res) => {
   try {
+    const kantorId = req.query.kantor;
+    
+    // Ambil data kantor spesifik jika ada
+    let kantorSelected = null;
+    if (kantorId) {
+      kantorSelected = await prisma.kantor.findUnique({
+        where: { id: parseInt(kantorId) }
+      });
+    }
+
     // Ambil daftar kantor untuk dropdown (opsional)
     const kantorList = await prisma.kantor.findMany({
       where: { statusAktif: true }
@@ -13,6 +23,8 @@ exports.getFormPenilaian = async (req, res) => {
     res.render('formPenilaian', {
       title: 'Form Penilaian 5P',
       kantorList: kantorList || [],
+      kantorSelected: kantorSelected,
+      kantorId: kantorId ? parseInt(kantorId) : null,
       user: req.session.user,
       error: null,
       message: null
