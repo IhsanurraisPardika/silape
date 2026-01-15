@@ -6,186 +6,183 @@
   <title>Kelola Tim Penilai</title>
   <link rel="icon" href="/images/sp.png" type="image/sp.png">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="/js/kelola-tim-penilai.js" defer></script>
 </head>
 
-<body class="bg-gray-100">
-  <div class="min-h-screen flex">
-    <!-- SIDEBAR -->
-    <aside class="w-56 bg-red-800 text-white fixed inset-y-0 left-0 flex flex-col">
-      <!-- Brand -->
-      <div class="h-20 px-5 flex items-center gap-3 border-b border-white/15">
-        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-red-800 font-bold">
-          SP
-        </div>
-        <div class="leading-tight">
-          <div class="font-semibold text-sm">PT SEMEN PADANG</div>
-          <div class="text-xs opacity-80">SILAPE</div>
-        </div>
+<body class="bg-gray-100 antialiased">
+  <!-- Wrapper UTAMA: sama pola adminDashboard -->
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- OVERLAY (mobile) -->
+    <div id="sidebarOverlay" class="fixed inset-0 z-30 bg-black/40 hidden md:hidden"></div>
+
+    <!-- SIDEBAR WRAPPER (mobile drawer, desktop static) -->
+    <div
+      id="sidebarWrapper"
+      class="
+        fixed inset-y-0 left-0 z-40
+        -translate-x-full
+        transition-transform duration-300 ease-in-out
+        md:static md:translate-x-0
+        h-screen md:h-full
+        overflow-y-auto md:overflow-visible
+      "
+    >
+      <div class="relative h-full">
+        <!-- Close button (mobile) -->
+        <button
+          id="btnSidebarClose"
+          type="button"
+          class="md:hidden absolute top-3 right-3 z-50 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/15 hover:bg-white/25 text-white"
+          aria-label="Tutup sidebar"
+        >
+          ✕
+        </button>
+
+        <!-- Sidebar partial -->
+        <%- include('../partials/sidebarAdmin') %>
       </div>
+    </div>
 
-      <!-- Menu -->
-      <nav class="px-4 py-5 space-y-2 text-sm">
-        <a href="/admin/dashboard"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10">
-          <!-- icon dashboard -->
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-            <path d="M4 13h6v7H4v-7Zm10-9h6v16h-6V4ZM4 4h6v7H4V4Zm10 9h6v7h-6v-7Z" stroke="currentColor" stroke-width="1.6"/>
-          </svg>
-          Dashboard
-        </a>
+    <!-- MAIN CONTENT AREA -->
+    <div class="flex-1 flex flex-col overflow-hidden">
 
-        <a href="/admin/rekap-penilaian"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10">
-          <!-- icon rekap -->
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-            <path d="M7 3h10v4H7V3Zm-2 6h14v12H5V9Zm3 3h8M8 15h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
-          Rekap Penilaian
-        </a>
-
-        <a href="/admin/pengaturan-bobot"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10">
-          <!-- icon settings -->
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-            <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.6"/>
-            <path d="M19.4 15a7.9 7.9 0 0 0 .1-6l-2.1.2a6.8 6.8 0 0 0-1.3-1.3l.2-2.1a7.9 7.9 0 0 0-6-.1l.2 2.1a6.8 6.8 0 0 0-1.3 1.3L7 9a7.9 7.9 0 0 0-.1 6l2.1-.2c.4.5.8.9 1.3 1.3l-.2 2.1a7.9 7.9 0 0 0 6 .1l-.2-2.1c.5-.4.9-.8 1.3-1.3l2.2.2Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Pengaturan Bobot
-        </a>
-
-        <!-- ACTIVE: Kelola Tim -->
-        <a href="/admin/kelola-tim"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/15">
-          <!-- icon users -->
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-            <path d="M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z" stroke="currentColor" stroke-width="1.6"/>
-            <path d="M4 21a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
-          Kelola Tim
-        </a>
-
-        <a href="/admin/unduh-laporan"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10">
-          <!-- icon download -->
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-            <path d="M12 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M4 17v4h16v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
-          Unduh laporan
-        </a>
-      </nav>
-
-      <div class="mt-auto p-4 text-xs opacity-70">
-        © 2026 SILAPE
-      </div>
-    </aside>
-
-    <!-- CONTENT -->
-    <div class="flex-1 ml-56 flex flex-col">
-      <%- include('../partials/header') %>
-
-      <main class="p-8 pb-24">
-        <!-- Title + Button -->
-        <div class="flex items-center justify-between mb-6">
-          <h1 class="text-2xl font-bold text-gray-900">Kelola Tim</h1>
-
+      <!-- MOBILE TOPBAR (md- only) -->
+      <div class="md:hidden sticky top-0 z-20 bg-white border-b border-gray-200">
+        <div class="h-14 px-4 flex items-center justify-between gap-3">
           <button
+            id="btnSidebarOpen"
             type="button"
-            id="btnOpenTambah"
-            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-red-700 text-white shadow hover:bg-red-800 active:scale-[0.99]">
-            <!-- icon plus -->
+            class="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white hover:bg-gray-50"
+            aria-label="Buka sidebar"
+          >
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            Tambah Pengguna
           </button>
+
+          <div class="font-semibold text-gray-900 truncate">Kelola Tim</div>
+          <div class="w-10 h-10"></div>
         </div>
+      </div>
 
-        <!-- Tabs -->
-        <div class="flex items-center gap-4 mb-6">
-          <a href="/admin/kelola-tim"
-             class="px-6 py-3 rounded-xl bg-red-700 text-white shadow">
-            Kelola Tim Penilai
-          </a>
-          <a href="/admin/kelola-kantor-tim"
-             class="px-6 py-3 rounded-xl bg-white text-gray-700 shadow border border-gray-200 hover:bg-gray-50">
-            Kelola Kantor Tim
-          </a>
-        </div>
+      <!-- Header (desktop only) -->
+      <div class="hidden md:block">
+        <%- include('../partials/header') %>
+      </div>
 
-        <!-- Table Card -->
-        <div class="bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
-          <div class="bg-red-700 text-white px-6 py-4 font-semibold">
-            Daftar Tim Penilai
-          </div>
+      <!-- MAIN: yang scroll hanya area ini -->
+      <main class="flex-1 overflow-auto bg-gray-50 flex flex-col">
 
-          <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-              <thead class="bg-red-700/95 text-white">
-                <tr>
-                  <th class="text-left px-6 py-4 font-semibold">Nama</th>
-                  <th class="text-left px-6 py-4 font-semibold">Tim</th>
-                  <th class="text-left px-6 py-4 font-semibold">Status</th>
-                  <th class="text-left px-6 py-4 font-semibold">Aksi</th>
-                </tr>
-              </thead>
+        <!-- PAGE CONTENT -->
+        <div class="p-4 sm:p-6 lg:p-8 pb-24">
+          <div class="max-w-6xl mx-auto space-y-6">
 
-              <tbody class="divide-y divide-gray-100">
-                <% if (!users || users.length === 0) { %>
-                  <tr>
-                    <td class="px-6 py-6 text-gray-500" colspan="4">
-                      Belum ada data pengguna.
-                    </td>
-                  </tr>
-                <% } else { %>
-                  <% users.forEach((u) => { %>
-                    <tr class="hover:bg-gray-50">
-                      <td class="px-6 py-5 font-medium text-gray-800"><%= u.nama %></td>
-                      <td class="px-6 py-5 text-gray-700"><%= u.timNama || "-" %></td>
+            <!-- Title + Button -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h1 class="text-2xl font-bold text-gray-900">Kelola Tim</h1>
 
-                      <td class="px-6 py-5">
-                        <% if (u.statusAktif) { %>
-                          <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-green-200 text-green-800 font-semibold">
-                            Aktif
-                          </span>
-                        <% } else { %>
-                          <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-gray-200 text-gray-700 font-semibold">
-                            Nonaktif
-                          </span>
-                        <% } %>
-                      </td>
+              <button
+                type="button"
+                id="btnOpenTambah"
+                class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-700 text-white shadow hover:bg-red-800 active:scale-[0.99] whitespace-nowrap"
+              >
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                Tambah Pengguna
+              </button>
+            </div>
 
-                      <td class="px-6 py-5">
-                        <div class="flex items-center gap-6">
-                          <button
-                            type="button"
-                            class="text-blue-600 font-semibold hover:underline btnOpenEdit"
-                            data-email="<%= u.email %>"
-                            data-nama="<%= u.nama %>"
-                            data-timid="<%= u.timId || '' %>"
-                            data-timnama="<%= u.timNama || '' %>">
-                            Edit
-                          </button>
+            <!-- Tabs -->
+            <div class="flex gap-3 overflow-x-auto whitespace-nowrap pb-1">
+              <a href="/admin/kelola-tim"
+                 class="px-5 py-3 rounded-xl bg-red-700 text-white shadow shrink-0">
+                Kelola Tim Penilai
+              </a>
+              <a href="/admin/kelola-kantor-tim"
+                 class="px-5 py-3 rounded-xl bg-white text-gray-700 shadow border border-gray-200 hover:bg-gray-50 shrink-0">
+                Kelola Kantor Tim
+              </a>
+            </div>
 
-                          <form action="/pengguna/hapus" method="POST" onsubmit="return confirm('Yakin hapus pengguna ini?')">
-                            <input type="hidden" name="email" value="<%= u.email %>"/>
-                            <button type="submit" class="text-red-600 font-semibold hover:underline">
-                              Delete
-                            </button>
-                          </form>
-                        </div>
-                      </td>
+            <!-- Table Card -->
+            <div class="bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
+              <div class="bg-red-700 text-white px-6 py-4 font-semibold">
+                Daftar Tim Penilai
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-red-700/95 text-white">
+                    <tr>
+                      <th class="text-left px-6 py-4 font-semibold">Nama</th>
+                      <th class="text-left px-6 py-4 font-semibold">Tim</th>
+                      <th class="text-left px-6 py-4 font-semibold">Status</th>
+                      <th class="text-left px-6 py-4 font-semibold">Aksi</th>
                     </tr>
-                  <% }) %>
-                <% } %>
-              </tbody>
-            </table>
+                  </thead>
+
+                  <tbody class="divide-y divide-gray-100">
+                    <% if (!users || users.length === 0) { %>
+                      <tr>
+                        <td class="px-6 py-6 text-gray-500" colspan="4">
+                          Belum ada data pengguna.
+                        </td>
+                      </tr>
+                    <% } else { %>
+                      <% users.forEach((u) => { %>
+                        <tr class="hover:bg-gray-50">
+                          <td class="px-6 py-5 font-medium text-gray-800"><%= u.nama %></td>
+                          <td class="px-6 py-5 text-gray-700"><%= u.timNama || "-" %></td>
+
+                          <td class="px-6 py-5">
+                            <% if (u.statusAktif) { %>
+                              <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-green-200 text-green-800 font-semibold">
+                                Aktif
+                              </span>
+                            <% } else { %>
+                              <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-gray-200 text-gray-700 font-semibold">
+                                Nonaktif
+                              </span>
+                            <% } %>
+                          </td>
+
+                          <td class="px-6 py-5">
+                            <div class="flex items-center gap-6">
+                              <button
+                                type="button"
+                                class="text-blue-600 font-semibold hover:underline btnOpenEdit"
+                                data-email="<%= u.email %>"
+                                data-nama="<%= u.nama %>"
+                                data-timid="<%= u.timId || '' %>"
+                              >
+                                Edit
+                              </button>
+
+                              <form action="/pengguna/hapus" method="POST" onsubmit="return confirm('Yakin hapus pengguna ini?')">
+                                <input type="hidden" name="email" value="<%= u.email %>"/>
+                                <button type="submit" class="text-red-600 font-semibold hover:underline">
+                                  Delete
+                                </button>
+                              </form>
+                            </div>
+                          </td>
+                        </tr>
+                      <% }) %>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
+        </div>
+
+        <!-- FOOTER: pakai mt-auto supaya “nempel bawah” kalau konten pendek -->
+        <div class="mt-auto">
+          <%- include('../partials/footer') %>
         </div>
       </main>
-
-      <%- include('../partials/footer') %>
     </div>
   </div>
 
@@ -200,9 +197,7 @@
           <div class="text-sm opacity-90">Buat Akun Untuk Tim Penilai</div>
         </div>
 
-        <button type="button" class="text-white/90 hover:text-white" data-close="modalTambah">
-          ✕
-        </button>
+        <button type="button" class="text-white/90 hover:text-white" data-close="modalTambah">✕</button>
       </div>
 
       <form action="/pengguna/tambah" method="POST" class="p-6 space-y-5 overflow-y-auto">
@@ -277,13 +272,10 @@
           <div class="text-sm opacity-90">Edit Identitas Akun Untuk Tim Penilai</div>
         </div>
 
-        <button type="button" class="text-white/90 hover:text-white" data-close="modalEdit">
-          ✕
-        </button>
+        <button type="button" class="text-white/90 hover:text-white" data-close="modalEdit">✕</button>
       </div>
 
       <form action="/pengguna/edit" method="POST" class="p-6 space-y-5 overflow-y-auto">
-        <!-- Email sebagai PK: lebih aman dibuat readonly saat edit -->
         <input type="hidden" name="email" id="editEmailHidden" />
 
         <div>
@@ -295,8 +287,7 @@
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
           <input id="editEmailShow" type="email" readonly
-                 class="w-full rounded-xl border border-red-600 bg-gray-50 px-4 py-3 outline-none"
-                 title="Email dijadikan Primary Key, jadi sebaiknya tidak diubah." />
+                 class="w-full rounded-xl border border-red-600 bg-gray-50 px-4 py-3 outline-none" />
         </div>
 
         <div>
@@ -336,38 +327,103 @@
   </div>
 
   <script>
-    // ---------- Helpers ----------
-    function openModal(id) {
-      document.getElementById(id).classList.remove('hidden');
-      document.body.classList.add('overflow-hidden');
-    }
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
-      document.body.classList.remove('overflow-hidden');
+    // ===================== BODY LOCK (sidebar + modal tidak tabrakan) =====================
+    let sidebarOpen = false;
+    let openModals = 0;
+
+    function syncBodyLock() {
+      if (sidebarOpen || openModals > 0) document.body.classList.add('overflow-hidden');
+      else document.body.classList.remove('overflow-hidden');
     }
 
-    // ---------- Close modal (overlay & button) ----------
+    // ===================== SIDEBAR DRAWER (MOBILE) =====================
+    const sidebarWrapper = document.getElementById('sidebarWrapper');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const btnSidebarOpen = document.getElementById('btnSidebarOpen');
+    const btnSidebarClose = document.getElementById('btnSidebarClose');
+
+    function openSidebar() {
+      sidebarWrapper.classList.remove('-translate-x-full');
+      sidebarOverlay.classList.remove('hidden');
+      sidebarOpen = true;
+      syncBodyLock();
+    }
+
+    function closeSidebar() {
+      sidebarWrapper.classList.add('-translate-x-full');
+      sidebarOverlay.classList.add('hidden');
+      sidebarOpen = false;
+      syncBodyLock();
+    }
+
+    btnSidebarOpen?.addEventListener('click', openSidebar);
+    btnSidebarClose?.addEventListener('click', closeSidebar);
+    sidebarOverlay?.addEventListener('click', closeSidebar);
+
+    function syncSidebarOnResize() {
+      if (window.innerWidth >= 768) {
+        // Desktop: overlay selalu off; drawer state tidak relevan
+        sidebarOverlay.classList.add('hidden');
+        sidebarOpen = false;
+        syncBodyLock();
+      } else {
+        // Mobile default: sidebar tertutup
+        sidebarWrapper.classList.add('-translate-x-full');
+        sidebarOverlay.classList.add('hidden');
+        sidebarOpen = false;
+        syncBodyLock();
+      }
+    }
+
+    window.addEventListener('resize', syncSidebarOnResize);
+    syncSidebarOnResize();
+
+    // ===================== MODAL HELPERS =====================
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('hidden');
+      openModals += 1;
+      syncBodyLock();
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (!el || el.classList.contains('hidden')) return;
+      el.classList.add('hidden');
+      openModals = Math.max(0, openModals - 1);
+      syncBodyLock();
+    }
+
+    // Close modal via overlay & button
     document.addEventListener('click', (e) => {
       const closeTarget = e.target.getAttribute('data-close');
       if (closeTarget) closeModal(closeTarget);
     });
 
-    // ---------- Open Tambah ----------
-    const btnOpenTambah = document.getElementById('btnOpenTambah');
-    btnOpenTambah?.addEventListener('click', () => openModal('modalTambah'));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeSidebar();
+        closeModal('modalTambah');
+        closeModal('modalEdit');
+      }
+    });
 
-    // ---------- Role toggle Tim (Tambah) ----------
+    // Open Tambah
+    document.getElementById('btnOpenTambah')?.addEventListener('click', () => openModal('modalTambah'));
+
+    // Role toggle Tim (Tambah)
     const selectRoleTambah = document.getElementById('selectRoleTambah');
     const wrapTimTambah = document.getElementById('wrapTimTambah');
 
     function toggleTimTambah() {
-      const val = selectRoleTambah.value;
-      if (val === 'TIM_PENILAI') wrapTimTambah.classList.remove('hidden');
-      else wrapTimTambah.classList.add('hidden');
+      const val = selectRoleTambah?.value;
+      if (val === 'TIM_PENILAI') wrapTimTambah?.classList.remove('hidden');
+      else wrapTimTambah?.classList.add('hidden');
     }
     selectRoleTambah?.addEventListener('change', toggleTimTambah);
 
-    // ---------- Open Edit + fill data ----------
+    // Open Edit + fill data
     document.querySelectorAll('.btnOpenEdit').forEach((btn) => {
       btn.addEventListener('click', () => {
         const email = btn.dataset.email || '';
