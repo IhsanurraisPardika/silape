@@ -1,44 +1,23 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Kelola Kantor Tim</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Rekap Penilaian</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex">
+<body class="bg-gray-100">
+<div class="flex">
 
   <!-- SIDEBAR -->
-  <aside class="hidden md:flex w-64 bg-red-700 text-white flex-col">
-    <div class="h-16 flex items-center gap-3 px-4 border-b border-red-600">
-      <img src="/images/sp.png" alt="Logo Semen Padang"
-      class="w-10 h-10 object-contain bg-white rounded-full p-1">
-      <span class="font-semibold text-sm">PT SEMEN PADANG</span>
-    </div>
-    
-    <nav class="flex-1 p-4 space-y-2 text-sm">
-      <a href="#" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-red-600">📊 Dashboard</a>
-      <a href="#" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-red-600">📝 Rekap Penilaian</a>
-      <a href="/pengaturanBobot" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-red-600">⚖️ Pengaturan Bobot</a>
-      <a href="/kelolaKantor" class="flex items-center gap-2 px-3 py-2 rounded bg-red-800">👥 Kelola Tim</a>
-      <a href="#" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-red-600">⬇️ Unduh Laporan</a>
-    </nav>
-  </aside>
+  <%- include('../partials/sidebarAdmin') %>
 
   <!-- MAIN -->
-  <main class="flex-1 flex flex-col">
+  <div class="flex-1 flex flex-col min-h-screen">
+    <%- include('../partials/header') %>
 
-    <!-- TOPBAR -->
-    <header class="bg-white h-16 px-6 flex items-center shadow-md">
-      <div class="ml-auto flex items-center gap-6 text-sm font-semibold">
-        <span class="cursor-pointer">Tentang</span>
-        <span class="cursor-pointer">Kriteria Penilaian 5P</span>
-        <div class="flex items-center gap-2">
-          👤 <span>ADMIN TPM</span>
-        </div>
-      </div>
-    </header>
+  <main class="flex-1 flex flex-col">
 
     <!-- CONTENT -->
     <section class="p-6 space-y-6">
@@ -229,6 +208,10 @@
       </div>
     </section>
   </main>
+    <!-- FOOTER -->
+    <div>
+    <%- include('../partials/footer') %>
+    </div>
 
   <!-- MODAL TAMBAH -->
   <div id="modalTambahKantor"
