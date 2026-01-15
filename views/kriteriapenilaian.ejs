@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kriteria Penilaian 5P</title>
+    <link rel="icon" href="/images/sp.png" type="image/sp.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .tab-active {
+            border-bottom: 4px solid #dc2626;
+            color: #dc2626;
+        }
+        .bg-red-sp { background-color: #dc2626; }
+    </style>
+</head>
+<body class="antialiased bg-gray-100 overflow-hidden">
+
+    <div class="flex h-screen w-full">
+        <%- include('partials/sidebar') %>
+
+        <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+            
+            <%- include('partials/header') %>
+
+            <div class="flex-1 overflow-y-auto p-8">
+                
+                <div class="max-w-6xl mx-auto">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Kriteria Penilaian 5P Kantor</h1>
+                        <p class="text-gray-600 mt-1">Standar operasional penilaian kebersihan dan tata kelola lingkungan kerja sesuai form penilaian.</p>
+                    </div>
+
+                    <div class="bg-white rounded-t-2xl shadow-sm border-b flex overflow-x-auto sticky top-0 z-20">
+                        <button onclick="switchTab('P1')" id="btn-P1" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent tab-active">P1: PEMILAHAN</button>
+                        <button onclick="switchTab('P2')" id="btn-P2" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P2: PENATAAN</button>
+                        <button onclick="switchTab('P3')" id="btn-P3" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P3: PEMBERSIHAN</button>
+                        <button onclick="switchTab('P4')" id="btn-P4" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P4: PEMANTAPAN</button>
+                        <button onclick="switchTab('P5')" id="btn-P5" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P5: PEMBIASAAN</button>
+                    </div>
+
+                    <div class="bg-white rounded-b-2xl shadow-xl p-6 mb-12 border-t-0">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 text-gray-700 uppercase text-xs tracking-widest font-bold">
+                                        <th class="px-6 py-4 border-b w-16">No</th>
+                                        <th class="px-6 py-4 border-b w-1/4">Objek Penilaian / Area</th>
+                                        <th class="px-6 py-4 border-b">Kriteria & Standar Penilaian</th>
+                                        <th class="px-6 py-4 border-b w-24 text-center">Skor Maks</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="kriteria-body" class="text-gray-600 divide-y divide-gray-100">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data disesuaikan dengan isi "Kriteria 5P Kantor" dari Excel
+        const kriteriaData = {
+            'P1': [
+                { area: 'Barang tidak digunakan', detail: 'Barang yang tidak digunakan/sampah/barang rusak tidak ada di area kerja/meja kerja.', skor: 100 },
+                { area: 'Meja Kerja', detail: 'Meja kerja hanya berisi peralatan kerja yang aktif digunakan (PC, telepon, alat tulis minimal).', skor: 100 },
+                { area: 'Area Bawah Meja', detail: 'Area bawah meja bersih dan kosong (tidak ada dus/sepatu/tas yang tidak teratur).', skor: 100 },
+                { area: 'Laci / Lemari', detail: 'Laci meja dan lemari penyimpanan terpilah (hanya barang yang diperlukan yang disimpan).', skor: 100 }
+            ],
+            'P2': [
+                { area: 'Penataan Dokumen', detail: 'Dokumen/file tertata rapi, dikelompokkan dan memiliki label/index pencarian.', skor: 100 },
+                { area: 'Alat Tulis & Kantor', detail: 'Peralatan kantor (stapler, selotip, dll) ditempatkan pada posisi yang mudah diambil dan dikembalikan.', skor: 100 },
+                { area: 'Labeling Area', detail: 'Setiap barang/tempat penyimpanan memiliki label identitas yang jelas.', skor: 100 },
+                { area: 'Kabel-kabel', detail: 'Kabel power, LAN, dan kabel telepon tertata rapi menggunakan cable ties atau ducting.', skor: 100 }
+            ],
+            'P3': [
+                { area: 'Kebersihan Umum', detail: 'Lantai, langit-langit, dan sudut ruangan bebas dari debu, sarang laba-laba, dan kotoran.', skor: 100 },
+                { area: 'Peralatan Kerja', detail: 'Monitor, CPU, Keyboard, dan Printer dalam kondisi bersih dan tidak berdebu.', skor: 100 },
+                { area: 'Tempat Sampah', detail: 'Tempat sampah tidak overload dan area sekitarnya bersih.', skor: 100 }
+            ],
+            'P4': [
+                { area: 'Visual Management', detail: 'Adanya tanda/rambu petunjuk (pintu keluar, area dilarang merokok) yang terawat.', skor: 100 },
+                { area: 'Standardisasi', detail: 'Layout meja dan penempatan barang seragam (standar) untuk satu departemen.', skor: 100 }
+            ],
+            'P5': [
+                { area: 'Disiplin & Budaya', detail: 'Karyawan melakukan pembersihan mandiri sebelum/sesudah bekerja (5 menit 5P).', skor: 100 },
+                { area: 'Monitoring', detail: 'Terdapat jadwal piket atau checklist kebersihan yang terisi rutin.', skor: 100 }
+            ]
+        };
+
+        function switchTab(pKey) {
+            const body = document.getElementById('kriteria-body');
+            const btns = document.querySelectorAll('.tab-btn');
+            
+            btns.forEach(btn => btn.classList.remove('tab-active'));
+            document.getElementById('btn-' + pKey).classList.add('tab-active');
+
+            body.innerHTML = '';
+            kriteriaData[pKey].forEach((item, index) => {
+                const row = `
+                    <tr class="hover:bg-red-50/50 transition-colors group">
+                        <td class="px-6 py-5 border-b text-sm font-bold text-gray-400 group-hover:text-red-600">${index + 1}</td>
+                        <td class="px-6 py-5 border-b font-bold text-gray-800 text-sm">${item.area}</td>
+                        <td class="px-6 py-5 border-b text-sm leading-relaxed">${item.detail}</td>
+                        <td class="px-6 py-5 border-b text-center font-bold text-red-600 text-sm">${item.skor}</td>
+                    </tr>
+                `;
+                body.innerHTML += row;
+            });
+        }
+
+        window.onload = () => switchTab('P1');
+    </script>
+</body>
+</html>
