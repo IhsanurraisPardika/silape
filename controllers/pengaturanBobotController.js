@@ -1,5 +1,5 @@
 exports.index = (req, res) => {
-  res.render('pengaturanBobot', {
+  res.render('admin/pengaturanBobot', {
     success: false
   });
 };
@@ -26,7 +26,7 @@ exports.simpan = (req, res) => {
     // await Model.create(data)
 
     // KEMBALI KE HALAMAN + NOTIFIKASI BERHASIL
-    res.render('pengaturanBobot', {
+    res.render('admin/pengaturanBobot', {
       success: true
     });
 

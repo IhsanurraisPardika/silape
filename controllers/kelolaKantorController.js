@@ -22,7 +22,7 @@ exports.index = async (req, res) => {
       }
     ];
 
-    res.render('kelolaKantor', {
+    res.render('admin/kelolaKantor', {
       title: 'Kelola Kantor Tim',
       user: 'ADMIN TPM',
       dataTim
