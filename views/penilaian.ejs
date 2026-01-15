@@ -11,7 +11,7 @@
 	<div class="flex min-h-screen">
 		<!-- Sidebar -->
 		<%- include('partials/sidebar') %>
-    </div>
+	</div>
 
 		<!-- Main -->
 		<div class="flex-1 flex flex-col">
@@ -25,65 +25,34 @@
 					<h2 class="text-xl font-semibold text-gray-800 mb-4">Pilih Kantor yang akan Dinilai</h2>
 
 					<div class="space-y-4">
-						<!-- Kantor 1 -->
-						<a href="/formPenilaian?kantor=1 " class="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition">
-							<div class="flex items-center gap-4">
-								<div class="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
-									<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M7 17h10" />
-									</svg>
-								</div>
-								<div>
-									<div class="text-sm font-semibold text-gray-800">KANTOR SALES AREA SUMBAR LT.2 KANTOR PUSAT</div>
-									<div class="text-xs text-gray-400 mt-1">TIM 1</div>
-								</div>
+						<% if (kantorList && kantorList.length) { %>
+							<% kantorList.forEach((k) => { %>
+								<a href="/formPenilaian?kantor=<%= k.id %>" class="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition">
+									<div class="flex items-center gap-4">
+										<div class="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
+											<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M7 17h10" />
+											</svg>
+										</div>
+										<div>
+											<div class="text-sm font-semibold text-gray-800"><%= (k.nama || '').toUpperCase() %></div>
+											<% if (k.timNama) { %>
+												<div class="text-xs text-gray-400 mt-1"><%= k.timNama %></div>
+											<% } %>
+										</div>
+									</div>
+									<div class="text-gray-300">
+										<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+										</svg>
+									</div>
+								</a>
+							<% }) %>
+						<% } else { %>
+							<div class="p-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-600">
+								Tidak ada kantor yang ditugaskan untuk tim Anda (atau data kantor belum tersedia).
 							</div>
-							<div class="text-gray-300">
-								<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-								</svg>
-							</div>
-						</a>
-
-						<!-- Kantor 2 -->
-						<a href="/formPenilaian?kantor=2" class="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition">
-							<div class="flex items-center gap-4">
-								<div class="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
-									<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M7 17h10" />
-									</svg>
-								</div>
-								<div>
-									<div class="text-sm font-semibold text-gray-800">KANTOR BPPS GEDUNG BAKARAYA LT. 2</div>
-									<div class="text-xs text-gray-400 mt-1">TIM 1</div>
-								</div>
-							</div>
-							<div class="text-gray-300">
-								<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-								</svg>
-							</div>
-						</a>
-
-						<!-- Kantor 3 -->
-						<a href="/formPenilaian?kantor=3" class="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition">
-							<div class="flex items-center gap-4">
-								<div class="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
-									<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M7 17h10" />
-									</svg>
-								</div>
-								<div>
-									<div class="text-sm font-semibold text-gray-800">KANTOR USM</div>
-									<div class="text-xs text-gray-400 mt-1">TIM 1</div>
-								</div>
-							</div>
-							<div class="text-gray-300">
-								<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-								</svg>
-							</div>
-						</a>
+						<% } %>
 
 					</div>
 				</div>
