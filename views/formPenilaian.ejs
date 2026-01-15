@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Input Penilaian 5P - SILAPE</title>
+    <title>Form Penilaian</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="/images/sp.png" type="image/sp.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -38,18 +38,34 @@
         <%- include('partials/header') %>
 
         <main class="p-8">
-            <div class="max-w-5xl mx-auto">
-                <h1 class="text-2xl font-bold text-gray-800 mb-6">Input Penilaian 5P</h1>
+            <div class="max-w-5xl mx-auto space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">Input Penilaian 5P</h1>
+                        <p class="text-gray-500 text-sm mt-1">Silakan isi penilaian standar 5P berdasarkan kondisi aktual di kantor yang dipilih.</p>
+                    </div>
+                </div>
 
-                <div class="bg-white rounded-lg shadow-sm p-5 mb-6 flex justify-between items-center border border-gray-100">
+                <div class="bg-white rounded-lg shadow-sm px-6 py-5 flex justify-between items-center border border-gray-100">
                     <div class="flex items-center gap-4">
-                        <div class="bg-blue-50 p-3 rounded-lg text-blue-600"><i class="fas fa-building text-xl"></i></div>
+                        <div class="bg-blue-50 p-3 rounded-lg text-blue-600">
+                            <i class="fas fa-building text-xl"></i>
+                        </div>
                         <div>
-                            <h2 class="font-bold text-gray-700 uppercase tracking-wide">KANTOR SALES AREA SUMBAR LT.2 KANTOR PUSAT</h2>
+                            <h2 id="office-title" class="font-bold text-gray-700 uppercase tracking-wide">
+                                KANTOR SALES AREA SUMBAR LT.2 KANTOR PUSAT
+                            </h2>
                             <p class="text-gray-400 text-xs">Formulir Penilaian Standar 5P Kantor</p>
                         </div>
                     </div>
-                    <button class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-red-700 transition">Ganti Kantor</button>
+                    <button 
+                        type="button"
+                        onclick="openOfficeModal()"
+                        class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-red-700 transition shadow-sm flex items-center gap-2"
+                    >
+                        <i class="fas fa-exchange-alt text-xs"></i>
+                        <span>Ganti Kantor</span>
+                    </button>
                 </div>
 
                 <div class="bg-white rounded-t-xl border-x border-t border-gray-200 p-2 flex justify-between shadow-sm">
@@ -60,7 +76,7 @@
                     <button onclick="jumpToStep(5)" id="nav-5" class="flex flex-col items-center flex-1 py-3 transition text-gray-400"><span class="text-[10px] font-bold uppercase">P5 - Pembiasaan</span></button>
                 </div>
 
-                <div class="bg-white rounded-b-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="bg-white rounded-b-xl shadow-lg border-x border-b border-t-0 border-gray-200 overflow-hidden -mt-px">
                     <div class="bg-[#C8102E] text-white px-8 py-4 font-bold uppercase tracking-widest text-sm flex justify-between items-center">
                         <span id="step-title-display">Kriteria P1 - Pemilahan</span>
                         <span class="bg-white/20 px-3 py-1 rounded text-[10px]" id="step-counter">STEP 1 OF 5</span>
@@ -79,6 +95,7 @@
         </main>
     </div>
 
+    <!-- MODAL PILIHAN KRITERIA -->
     <div id="criteria-modal" class="criteria-modal p-4">
         <div class="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden section-fade-in">
             <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-b">
@@ -92,7 +109,83 @@
         </div>
     </div>
 
+    <!-- MODAL PILIHAN KANTOR -->
+    <div id="office-modal" class="criteria-modal p-4">
+        <div class="bg-white rounded-xl max-w-xl w-full shadow-2xl overflow-hidden section-fade-in">
+            <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-b">
+                <h3 class="font-bold text-gray-700 uppercase text-xs tracking-widest">
+                    Pilih Kantor Penilaian
+                </h3>
+                <button onclick="closeOfficeModal()" class="text-gray-400 hover:text-red-600 text-2xl transition">&times;</button>
+            </div>
+            <div class="p-4 space-y-3 max-h-[60vh] overflow-y-auto text-sm">
+                <p class="text-gray-500 text-xs mb-2">Klik salah satu kantor berikut untuk mengganti tujuan penilaian.</p>
+                <div id="office-list" class="space-y-2"></div>
+            </div>
+            <div class="p-4 bg-gray-50 text-right border-t">
+                <button onclick="closeOfficeModal()" class="bg-gray-800 text-white px-6 py-2 rounded-md font-bold text-xs hover:bg-black transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // DATA KANTOR (bisa diganti dari server jika diperlukan)
+        const offices = [
+            { id: 'office_1', name: 'KANTOR SALES AREA SUMBAR LT.2 KANTOR PUSAT' },
+            { id: 'office_2', name: 'KANTOR CABANG PADANG' },
+            { id: 'office_3', name: 'KANTOR CABANG BUKITTINGGI' },
+            { id: 'office_4', name: 'KANTOR CABANG SOLOK' }
+        ];
+
+        let selectedOfficeId = 'office_1';
+
+        function renderOfficeList() {
+            const container = document.getElementById('office-list');
+            if (!container) return;
+
+            container.innerHTML = offices.map(office => `
+                <button
+                    type="button"
+                    onclick="selectOffice('${office.id}')"
+                    class="w-full flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-red-50 hover:border-red-300 transition text-left
+                        ${office.id === selectedOfficeId ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'}"
+                >
+                    <div class="flex items-center gap-3">
+                        <div class="bg-gray-100 text-red-600 rounded-full w-8 h-8 flex items-center justify-center">
+                            <i class="fas fa-building text-xs"></i>
+                        </div>
+                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                            ${office.name}
+                        </span>
+                    </div>
+                    ${office.id === selectedOfficeId ? '<span class="text-green-600 text-xs font-semibold">Dipilih</span>' : ''}
+                </button>
+            `).join('');
+        }
+
+        function openOfficeModal() {
+            renderOfficeList();
+            document.getElementById('office-modal').style.display = 'flex';
+        }
+
+        function closeOfficeModal() {
+            document.getElementById('office-modal').style.display = 'none';
+        }
+
+        function selectOffice(id) {
+            const office = offices.find(o => o.id === id);
+            if (!office) return;
+
+            selectedOfficeId = id;
+            const titleEl = document.getElementById('office-title');
+            if (titleEl) {
+                titleEl.textContent = office.name;
+            }
+            closeOfficeModal();
+        }
+
         // DATA KRITERIA LENGKAP
         const criteriaData = {
             "p1_1": { name: "Pembagian Area & Pemilahan", ranges: [{ min: 0, max: 20, desc: "Tidak ada pembagian fungsi & tanggungjawab serta belum ada pemilahan." }, { min: 21, max: 40, desc: "Ada pembagian fungsi & tanggungjawab serta pemilahan barang / alat / dokumen di sebagian kecil area kerja" }, { min: 41, max: 60, desc: "Ada pembagian fungsi & tanggungjawab serta pemilahan barang / alat / dokumen di sebagian besar area kerja" }, { min: 61, max: 80, desc: "Ada pembagian fungsi & tanggungjawab serta pemilahan barang / alat / dokumen di hampir seluruh area kerja" }, { min: 81, max: 100, desc: "Ada pembagian fungsi & tanggungjawab serta pemilahan barang / alat / dokumen di seluruh area kerja" }] },
