@@ -10,135 +10,134 @@
         .bg-factory {
             background-image: url('/images/gerbangSP.jpg');
             background-position: center;
-            background-size: contain;
+            background-size: cover; /* Ubah ke cover agar gambar memenuhi layar */
+            background-repeat: no-repeat;
         } 
         .sidebar-nav-active {
             background-color: rgba(255, 255, 255, 0.2);
             border-radius: 10px;
         }
+        #modal5P.hidden { display: none; }
+        #modal5P { display: flex; }
     </style>
 </head>
 <body class="antialiased bg-gray-100">
-    <div class="flex h-screen">
-        <!-- Sidebar -->
+    <div class="flex h-screen overflow-hidden">
         <%- include('partials/sidebar') %>
-    </div>
 
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
-            <!-- Top Header -->
+        <div class="flex-1 flex flex-col min-w-0">
             <%- include('partials/header') %>
 
-            <!-- Main Content Area with Background -->
-            <div class="flex-1 overflow-auto bg-factory relative" style="background-attachment: fixed;">
-                <!-- Dark Overlay - Fixed -->
-                <div class="fixed inset-0 bg-black/40 pointer-events-none" style="top: 64px; left: 224px;"></div>
+            <div class="flex-1 overflow-y-auto bg-factory relative">
+                <div class="absolute inset-0 bg-black/50 z-0"></div>
 
-                <!-- Content -->
                 <div class="relative z-10 p-8 flex flex-col pb-24">
-                    <!-- Welcome Section -->
-                    <div class="mb-8">
-                        <h1 class="text-5xl font-bold text-white mb-2">Selamat Datang di Sistem Penilaian 5P</h1>
-                        <p class="text-2xl text-gray-100">Ihsan, TIM 1</p>
+                    
+                    <div class="mb-8 text-white">
+                        <h1 class="text-5xl font-bold mb-2">Selamat Datang di Sistem Penilaian 5P</h1>
+                        <p class="text-2xl opacity-90">Ihsan, TIM 1</p>
                     </div>
 
-                    <!-- Stats Cards -->
-                    <div class="grid grid-cols-2 gap-6 mb-8 max-w-2xl">
-                        <!-- Card 1: Penilaian yang Dilakukan -->
-                        <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500">
-                            <div class="flex items-start justify-between mb-4">
-                                <div>
-                                    <p class="text-gray-500 text-sm mb-2">Penilaian yang Dilakukan</p>
-                                    <p class="text-5xl font-bold text-red-600">0</p>
-                                    <p class="text-gray-400 text-xs mt-2">Total penilaian yang dilakukan</p>
-                                </div>
-                                <div class="text-red-600">
-                                    <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h6.02l-4.27-5.92-1.98 2.38z"/>
-                                    </svg>
-                                </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-2xl">
+                        <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500 flex items-start justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm mb-2">Penilaian yang Dilakukan</p>
+                                <p class="text-5xl font-bold text-red-600">0</p>
+                                <p class="text-gray-400 text-xs mt-2">Total penilaian yang dilakukan</p>
+                            </div>
+                            <div class="text-red-600">
+                                <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h6.02l-4.27-5.92-1.98 2.38z"/></svg>
                             </div>
                         </div>
 
-                        <!-- Card 2: Rata-rata Nilai -->
-                        <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
-                            <div class="flex items-start justify-between mb-4">
-                                <div>
-                                    <p class="text-gray-500 text-sm mb-2">Rata-rata Nilai</p>
-                                    <p class="text-5xl font-bold text-green-600">0</p>
-                                    <p class="text-gray-400 text-xs mt-2">Rata-rata penilaian Tim Anda</p>
-                                </div>
-                                <div class="text-green-600">
-                                    <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h6.02l-4.27-5.92-1.98 2.38z"/>
-                                    </svg>
-                                </div>
+                        <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500 flex items-start justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm mb-2">Rata-rata Nilai</p>
+                                <p class="text-5xl font-bold text-green-600">0</p>
+                                <p class="text-gray-400 text-xs mt-2">Rata-rata penilaian Tim Anda</p>
+                            </div>
+                            <div class="text-green-600">
+                                <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h6.02l-4.27-5.92-1.98 2.38z"/></svg>
                             </div>
                         </div>
                     </div>
 
-                    <!-- About 5P System -->
                     <div class="bg-white rounded-lg shadow-lg p-8 w-full">
                         <h2 class="text-2xl font-bold text-gray-800 mb-8">Tentang Sistem 5P</h2>
                         
-                        <div class="grid grid-cols-2 gap-8">
-                            <!-- P1 -->
-                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
-                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                    P1
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">Pemilihan</h3>
-                                </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div onclick="openModal('P1')" class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer border border-transparent hover:border-red-200 group shadow-sm">
+                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform">P1</div>
+                                <h3 class="font-semibold text-gray-800">Pemilihan</h3>
                             </div>
-
-                            <!-- P4 -->
-                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
-                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                    P4
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">Pemantapan</h3>
-                                </div>
+                            <div onclick="openModal('P2')" class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer border border-transparent hover:border-red-200 group shadow-sm">
+                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform">P2</div>
+                                <h3 class="font-semibold text-gray-800">Penataan</h3>
                             </div>
-
-                            <!-- P2 -->
-                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
-                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                    P2
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">Penataan</h3>
-                                </div>
+                            <div onclick="openModal('P3')" class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer border border-transparent hover:border-red-200 group shadow-sm">
+                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform">P3</div>
+                                <h3 class="font-semibold text-gray-800">Pembersihan</h3>
                             </div>
-
-                            <!-- P5 -->
-                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
-                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                    P5
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">Pembiasaan</h3>
-                                </div>
+                            <div onclick="openModal('P4')" class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer border border-transparent hover:border-red-200 group shadow-sm">
+                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform">P4</div>
+                                <h3 class="font-semibold text-gray-800">Pemantapan</h3>
                             </div>
-
-                            <!-- P3 -->
-                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
-                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                    P3
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">Pembersihan</h3>
-                                </div>
+                            <div onclick="openModal('P5')" class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer border border-transparent hover:border-red-200 group shadow-sm">
+                                <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform">P5</div>
+                                <h3 class="font-semibold text-gray-800">Pembiasaan</h3>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Footer - Fixed -->
                 <%- include('partials/footer') %>
             </div>
         </div>
     </div>
+
+    <div id="modal5P" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="bg-white rounded-2xl shadow-2xl relative z-10 w-full max-w-lg overflow-hidden transform transition-all scale-95 opacity-0" id="modalContent">
+            <div class="p-8">
+                <div class="flex justify-between items-start mb-6">
+                    <div id="modalBadge" class="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-red-200">P1</div>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                </div>
+                <h3 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-4"></h3>
+                <p id="modalDescription" class="text-gray-600 leading-relaxed text-lg"></p>
+            </div>
+            <div class="bg-gray-50 px-8 py-4 flex justify-end">
+                <button onclick="closeModal()" class="bg-red-600 text-white px-6 py-2 rounded-lg font-medium">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ... (Script openModal & closeModal tetap sama seperti sebelumnya) ...
+        const pData = {
+            'P1': { title: 'Pemilahan (Seiri)', desc: 'Prinsip ini berfokus pada pemisahan barang-barang yang diperlukan dari yang tidak diperlukan di area kerja...' },
+            'P2': { title: 'Penataan (Seiton)', desc: 'Setelah barang yang diperlukan diidentifikasi, langkah selanjutnya adalah menata dan menempatkannya secara sistematis...' },
+            'P3': { title: 'Pembersihan (Seiso)', desc: 'Prinsip ini menekankan pentingnya menjaga kebersihan tempat kerja secara menyeluruh...' },
+            'P4': { title: 'Pemantapan (Seiketsu)', desc: 'Tahap ini melibatkan standardisasi praktik tiga P sebelumnya...' },
+            'P5': { title: 'Pembiasaan (Shitsuke)', desc: 'Ini adalah tahap paling krusial, yaitu pembentukan budaya disiplin...' }
+        };
+
+        function openModal(pKey) {
+            const data = pData[pKey];
+            document.getElementById('modalBadge').innerText = pKey;
+            document.getElementById('modalTitle').innerText = data.title;
+            document.getElementById('modalDescription').innerText = data.desc;
+            document.getElementById('modal5P').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('modalContent').classList.remove('scale-95', 'opacity-0');
+                document.getElementById('modalContent').classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            document.getElementById('modalContent').classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { document.getElementById('modal5P').classList.add('hidden'); }, 200);
+        }
+    </script>
 </body>
 </html>

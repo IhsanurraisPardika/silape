@@ -17,6 +17,9 @@ const daftarPenilaianRoutes = require("./routes/daftarPenilaian");
 const dashboardAdminRoutes = require("./routes/dashboardAdmin");
 const pengaturanBobotRoutes = require("./routes/pengaturanBobot");
 const kelolaTimRoutes = require("./routes/kelolaTim");
+const kriteriapenilaianRoutes = require("./routes/kriteriapenilaian");
+app.use("/", kriteriapenilaianRoutes);
+
 
 // middleware
 const { harusSuperadmin } = require("./middlewares/auth.middleware");
@@ -59,6 +62,7 @@ app.use("/", loginRoutes);
 
 // Form Penilaian
 app.use("/", formPenilaianRoutes);
+app.use("/", kriteriapenilaianRoutes);
 
 // Feature routes
 app.use("/penilaian", penilaianRoutes);
