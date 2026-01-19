@@ -52,9 +52,7 @@
                             <i class="fas fa-building text-xl"></i>
                         </div>
                         <div>
-                            <h2 id="office-title" class="font-bold text-gray-700 uppercase tracking-wide">
-                                KANTOR SALES AREA SUMBAR LT.2 KANTOR PUSAT
-                            </h2>
+                            <h2 id="office-title" class="font-bold text-gray-700 uppercase tracking-wide"><%= (kantor?.nama || '').toUpperCase() %></h2>
                             <p class="text-gray-400 text-xs">Formulir Penilaian Standar 5P Kantor</p>
                         </div>
                     </div>
@@ -76,7 +74,7 @@
                     <button onclick="jumpToStep(5)" id="nav-5" class="flex flex-col items-center flex-1 py-3 transition text-gray-400"><span class="text-[10px] font-bold uppercase">P5 - Pembiasaan</span></button>
                 </div>
 
-                <div class="bg-white rounded-b-xl shadow-lg border-x border-b border-t-0 border-gray-200 overflow-hidden -mt-px">
+                <div class="bg-white rounded-b-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div class="bg-[#C8102E] text-white px-8 py-4 font-bold uppercase tracking-widest text-sm flex justify-between items-center">
                         <span id="step-title-display">Kriteria P1 - Pemilahan</span>
                         <span class="bg-white/20 px-3 py-1 rounded text-[10px]" id="step-counter">STEP 1 OF 5</span>
@@ -130,208 +128,13 @@
         </div>
     </div>
 
-    <script>
-        // DATA KANTOR (bisa diganti dari server jika diperlukan)
-        const offices = [
-            { id: 'office_1', name: 'KANTOR SALES AREA SUMBAR LT.2 KANTOR PUSAT' },
-            { id: 'office_2', name: 'KANTOR CABANG PADANG' },
-            { id: 'office_3', name: 'KANTOR CABANG BUKITTINGGI' },
-            { id: 'office_4', name: 'KANTOR CABANG SOLOK' }
-        ];
-
-        let selectedOfficeId = 'office_1';
-
-        function renderOfficeList() {
-            const container = document.getElementById('office-list');
-            if (!container) return;
-
-            container.innerHTML = offices.map(office => `
-                <button
-                    type="button"
-                    onclick="selectOffice('${office.id}')"
-                    class="w-full flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-red-50 hover:border-red-300 transition text-left
-                        ${office.id === selectedOfficeId ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'}"
-                >
-                    <div class="flex items-center gap-3">
-                        <div class="bg-gray-100 text-red-600 rounded-full w-8 h-8 flex items-center justify-center">
-                            <i class="fas fa-building text-xs"></i>
-                        </div>
-                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">
-                            ${office.name}
-                        </span>
-                    </div>
-                    ${office.id === selectedOfficeId ? '<span class="text-green-600 text-xs font-semibold">Dipilih</span>' : ''}
-                </button>
-            `).join('');
-        }
-
-        function openOfficeModal() {
-            renderOfficeList();
-            document.getElementById('office-modal').style.display = 'flex';
-        }
-
-        function closeOfficeModal() {
-            document.getElementById('office-modal').style.display = 'none';
-        }
-
-        function selectOffice(id) {
-            const office = offices.find(o => o.id === id);
-            if (!office) return;
-
-            selectedOfficeId = id;
-            const titleEl = document.getElementById('office-title');
-            if (titleEl) {
-                titleEl.textContent = office.name;
-            }
-            closeOfficeModal();
-        }
-
-        // DATA KRITERIA LENGKAP
-        const criteriaData = {
-            "p1_1": { name: "Pembagian Area & Pemilahan", ranges: [{ min: 0, max: 20, desc: "Tidak ada pembagian fungsi & tanggungjawab serta belum ada pemilahan." }, { min: 21, max: 40, desc: "Ada pembagian fungsi & tanggungjawab serta pemilahan barang / alat / dokumen di sebagian kecil area kerja" }, { min: 41, max: 60, desc: "Ada pembagian fungsi & tanggungjawab serta pemilahan barang / alat / dokumen di sebagian besar area kerja" }, { min: 61, max: 80, desc: "Ada pembagian fungsi & tanggungjawab serta pemilahan barang / alat / dokumen di hampir seluruh area kerja" }, { min: 81, max: 100, desc: "Ada pembagian fungsi & tanggungjawab serta pemilahan barang / alat / dokumen di seluruh area kerja" }] },
-            "p1_2": { name: "Pemindahan ke TPS", ranges: [{ min: 0, max: 20, desc: "Tidak ditemukan proses ke TPS" }, { min: 21, max: 40, desc: "Ditemukan hanya ada sebagian kecil proses pemindahan ke TPS & tidak terdokumentasi" }, { min: 41, max: 60, desc: "Ditemukan ada sebagian besar proses pemindahan ke TPS & terdokumentasi" }, { min: 61, max: 80, desc: "Ditemukan ada proses pemindahan ke TPS secara hampir menyeluruh & terdokumentasi" }, { min: 81, max: 100, desc: "Ditemukan ada proses pemindahan ke TPS secara menyeluruh & terdokumentasi" }] },
-            "p1_3": { name: "Standar P1", ranges: [{ min: 0, max: 20, desc: "Tidak ada standar Pemilahan (P1)" }, { min: 21, max: 40, desc: "Sudah ada standar Pemilahan (P1) tapi belum dilaksanakan" }, { min: 41, max: 60, desc: "Sudah ada standar Pemilahan (P1) dan sudah dilaksanakan dengan cukup baik" }, { min: 61, max: 80, desc: "Sudah ada standar Pemilahan (P1) dan sudah dilaksanakan dengan baik & konsisten" }, { min: 81, max: 100, desc: "Sudah ada standar Pemilahan (P1) secara detail dan sudah dilaksanakan dengan baik & konsisten" }] },
-            "p2_1": { name: "Visualisasi Denah & Jalur Evakuasi", ranges: [{ min: 0, max: 20, desc: "Tidak ada visualisasi denah area dan jalur evakuasi" }, { min: 21, max: 40, desc: "Ditemukan di sebagian kecil area memiliki visualisasi denah area dan jalur evakuasi" }, { min: 41, max: 60, desc: "Ditemukan di sebagian besar area memiliki visualisasi denah area dan jalur evakuasi" }, { min: 61, max: 80, desc: "Ditemukan di hampir seluruh area memiliki visualisasi denah area dan jalur evakuasi" }, { min: 81, max: 100, desc: "Ditemukan di seluruh area memiliki visualisasi denah area dan jalur evakuasi" }] },
-            "p2_2": { name: "Labeling & Penanggung Jawab", ranges: [{ min: 0, max: 20, desc: "Tidak ditemukan labeling, marka, visual control & penanggungjawab area" }, { min: 21, max: 40, desc: "Ditemukan labeling, marka, visual control & penanggungjawab di sebagian kecil area" }, { min: 41, max: 60, desc: "Ditemukan labeling, marka, visual control & penanggungjawab di sebagian besar area" }, { min: 61, max: 80, desc: "Ditemukan labeling, marka, visual control & penanggungjawab di hampir seluruh area" }, { min: 81, max: 100, desc: "Ditemukan labeling, marka, visual control & penanggungjawab di seluruh area" }] },
-            "p2_3": { name: "Pengelolaan Barang / Bahan", ranges: [{ min: 0, max: 20, desc: "Ditemukan banyak barang / bahan tidak tertata rapi" }, { min: 21, max: 40, desc: "Ditemukan sebagian kecil barang / bahan tertata namun kurang rapi" }, { min: 41, max: 60, desc: "Ditemukan sebagian besar barang / bahan tertata rapi & teratur" }, { min: 61, max: 80, desc: "Ditemukan hampir seluruh barang / bahan tertata rapi teratur & dalam jumlah yang efisien" }, { min: 81, max: 100, desc: "Ditemukan seluruh barang / bahan tertata rapi, teratur & dalam jumlah yang efisien" }] },
-            "p2_4": { name: "Standar P2", ranges: [{ min: 0, max: 20, desc: "Tidak ada standar Penataan (P2)" }, { min: 21, max: 40, desc: "Ada standar Penataan (P2) tapi belum dilaksanakan" }, { min: 41, max: 60, desc: "Ada standar Penataan (P2) dan dilaksanakan dengan cukup baik" }, { min: 61, max: 80, desc: "Ada standar Penataan (P2) dan dilaksanakan dengan baik & konsisten" }, { min: 81, max: 100, desc: "Ada standar Penataan (P2) secara detail dan dilaksanakan dengan baik & konsisten" }] },
-            "p3_1": { name: "Alat Bantu Kebersihan", ranges: [{ min: 0, max: 20, desc: "Tidak ditemukan kegiatan pembersihan" }, { min: 21, max: 40, desc: "Ditemukan kegiatan pembersihan di sebagian kecil area" }, { min: 41, max: 60, desc: "Ditemukan kegiatan pembersihan di sebagian besar area" }, { min: 61, max: 80, desc: "Ditemukan kegiatan pembersihan di hampir seluruh area" }, { min: 81, max: 100, desc: "Ditemukan kegiatan pembersihan di seluruh area" }] },
-            "p3_2": { name: "Sumber Kotor & Gangguan", ranges: [{ min: 0, max: 20, desc: "Tidak ada upaya mengatasi sumber kotor" }, { min: 21, max: 40, desc: "Ada upaya di sebagian kecil area" }, { min: 41, max: 60, desc: "Ada upaya di sebagian besar area" }, { min: 61, max: 80, desc: "Ada upaya di hampir seluruh area" }, { min: 81, max: 100, desc: "Ada upaya di seluruh area" }] },
-            "p3_3": { name: "Standar P3", ranges: [{ min: 0, max: 20, desc: "Tidak ada standar" }, { min: 21, max: 40, desc: "Belum dilaksanakan" }, { min: 41, max: 60, desc: "Cukup baik" }, { min: 61, max: 80, desc: "Baik & konsisten" }, { min: 81, max: 100, desc: "Detail & Konsisten" }] },
-            "p4_1": { name: "Konsistensi P1-P3", ranges: [{ min: 0, max: 20, desc: "Tidak ada jadwal/rapat" }, { min: 21, max: 40, desc: "Ada jadwal tapi tidak ada realisasi" }, { min: 41, max: 60, desc: "Ada realisasi tapi tidak ada rapat" }, { min: 61, max: 80, desc: "Rapat rutin 1x sebulan" }, { min: 81, max: 100, desc: "Rapat rutin 2x sebulan" }] },
-            "p4_2": { name: "Pemeliharaan & Kaizen", ranges: [{ min: 0, max: 20, desc: "Tidak ada pemeliharaan" }, { min: 21, max: 40, desc: "Sebagian kecil area" }, { min: 41, max: 60, desc: "1 Tema Kaizen" }, { min: 61, max: 80, desc: "2 Tema Kaizen" }, { min: 81, max: 100, desc: "3 Tema Kaizen" }] },
-            "p4_3": { name: "Standar P4", ranges: [{ min: 0, max: 20, desc: "Tidak ada standar" }, { min: 21, max: 40, desc: "Belum dilaksanakan" }, { min: 41, max: 60, desc: "Cukup baik" }, { min: 61, max: 80, desc: "Baik & konsisten" }, { min: 81, max: 100, desc: "Audit detail & konsisten" }] },
-            "p5_1": { name: "Sikap Kerja Personil", ranges: [{ min: 0, max: 20, desc: "Sebagian besar belum disiplin" }, { min: 21, max: 40, desc: "Sebagian kecil belum disiplin" }, { min: 41, max: 60, desc: "Butuh Reward/Punishment" }, { min: 61, max: 80, desc: "Setiap personil disiplin" }, { min: 81, max: 100, desc: "Budaya Malu terbentuk" }] },
-            "p5_2": { name: "Papan Aktivitas (Activity Board)", ranges: [{ min: 0, max: 20, desc: "Tidak ada papan" }, { min: 21, max: 40, desc: "Tidak up to date" }, { min: 41, max: 60, desc: "Menyajikan info 5P" }, { min: 61, max: 80, desc: "Info Kaizen & Audit memadai" }, { min: 81, max: 100, desc: "Sangat up to date & Lengkap" }] },
-            "p5_3": { name: "Standar P5", ranges: [{ min: 0, max: 20, desc: "Tidak ada standar" }, { min: 21, max: 40, desc: "Belum dilaksanakan" }, { min: 41, max: 60, desc: "Cukup baik" }, { min: 61, max: 80, desc: "Budaya kerja terbentuk" }, { min: 81, max: 100, desc: "Budaya kerja sangat konsisten" }] }
-        };
-
-        const steps = [
-            { id: 1, title: 'KRITERIA P1 - PEMILAHAN', items: [{id: 'p1_1', name: 'Pembagian Area & Pemilahan'}, {id: 'p1_2', name: 'Pemindahan ke TPS'}, {id: 'p1_3', name: 'Standar P1'}] },
-            { id: 2, title: 'KRITERIA P2 - PENATAAN', items: [{id: 'p2_1', name: 'Visualisasi Denah'}, {id: 'p2_2', name: 'Labeling & Marka'}, {id: 'p2_3', name: 'Pengelolaan Barang'}, {id: 'p2_4', name: 'Standar P2'}] },
-            { id: 3, title: 'KRITERIA P3 - PEMBERSIHAN', items: [{id: 'p3_1', name: 'Alat Kebersihan'}, {id: 'p3_2', name: 'Sumber Kotor'}, {id: 'p3_3', name: 'Standar P3'}] },
-            { id: 4, title: 'KRITERIA P4 - PEMANTAPAN', items: [{id: 'p4_1', name: 'Konsistensi P1-P3'}, {id: 'p4_2', name: 'Pemeliharaan'}, {id: 'p4_3', name: 'Standar P4'}] },
-            { id: 5, title: 'KRITERIA P5 - PEMBIASAAN', items: [{id: 'p5_1', name: 'Sikap Kerja'}, {id: 'p5_2', name: 'Papan Aktivitas'}, {id: 'p5_3', name: 'Standar P5'}] }
-        ];
-
-        let currentStep = 1;
-
-        function renderStep() {
-            const stepData = steps.find(s => s.id === currentStep);
-            const container = document.getElementById('dynamic-form-content');
-            document.getElementById('step-title-display').innerText = stepData.title;
-            document.getElementById('step-counter').innerText = `STEP ${currentStep} OF 5`;
-            container.innerHTML = '';
-
-            stepData.items.forEach((item, idx) => {
-                container.innerHTML += `
-                    <div class="section-fade-in space-y-5 pb-8 border-b border-gray-100 last:border-0">
-                        <h3 class="font-bold text-gray-800 text-lg">${idx + 1}. ${item.name}</h3>
-                        
-                        <div class="grid grid-cols-4 gap-6 items-end">
-                            <div class="col-span-1">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Nilai (0-100)</label>
-                                <input type="number" name="nilai_${item.id}" placeholder="0" min="0" max="100" class="w-full border-b-2 border-gray-200 py-2 focus:border-red-600 outline-none transition text-2xl font-bold text-red-600 bg-transparent">
-                            </div>
-                            <div class="col-span-3 pb-2">
-                                <button type="button" onclick="showCriteria('${item.id}')" class="text-red-600 text-xs font-bold flex items-center hover:underline transition">
-                                    <i class="fas fa-chevron-down mr-2"></i> LIHAT SEMUA KRITERIA PENILAIAN
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Catatan</label>
-                            <textarea name="catatan_${item.id}" placeholder="Berikan catatan penilaian (opsional)..." class="w-full border border-gray-200 rounded-lg p-3 h-24 bg-gray-50 focus:bg-white transition text-sm outline-none shadow-inner"></textarea>
-                        </div>
-
-                        <div>
-                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Dokumentasi Foto Kondisi</label>
-                            <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:bg-red-50/30 transition cursor-pointer relative group" 
-                                 onclick="document.getElementById('file_${item.id}').click()">
-                                
-                                <input type="file" id="file_${item.id}" name="foto_${item.id}" class="hidden" accept="image/*" capture="environment" onchange="previewImage(this, '${item.id}')">
-                                
-                                <div id="ph_${item.id}" class="py-4">
-                                    <div class="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-red-100 transition">
-                                        <i class="fas fa-camera text-gray-400 group-hover:text-red-600"></i>
-                                    </div>
-                                    <p class="text-gray-600 text-sm font-bold tracking-tight">Ambil Foto / Pilih File</p>
-                                    <p class="text-gray-400 text-[10px] mt-1 tracking-wide uppercase font-medium">Klik untuk Membuka Kamera</p>
-                                </div>
-
-                                <div id="pv_${item.id}" class="hidden py-2">
-                                    <div class="relative inline-block">
-                                        <img id="img_${item.id}" class="h-40 mx-auto rounded-lg shadow-lg border-2 border-white object-cover">
-                                        <div class="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] shadow-lg border border-white">
-                                            <i class="fas fa-sync"></i>
-                                        </div>
-                                    </div>
-                                    <p class="text-[10px] text-red-600 font-bold mt-2 uppercase tracking-tighter">Klik area ini untuk ganti foto</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-            updateNavUI();
-        }
-
-        function previewImage(input, id) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    document.getElementById(`img_${id}`).src = e.target.result;
-                    document.getElementById(`ph_${id}`).classList.add('hidden');
-                    document.getElementById(`pv_${id}`).classList.remove('hidden');
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function showCriteria(key) {
-            const data = criteriaData[key];
-            const modal = document.getElementById('criteria-modal');
-            const body = document.getElementById('modal-body');
-            document.getElementById('modal-title').innerText = data.name;
-            
-            const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-400', 'bg-green-600'];
-            body.innerHTML = data.ranges.map((r, i) => `
-                <div class="flex items-start p-4 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-white transition shadow-sm mb-2">
-                    <span class="${colors[i]} score-indicator mt-1 ring-4 ring-gray-100"></span>
-                    <div>
-                        <p class="font-bold text-gray-800 text-sm leading-none mb-1">${r.min} - ${r.max} Poin</p>
-                        <p class="text-gray-500 text-xs font-medium">${r.desc}</p>
-                    </div>
-                </div>`).join('');
-            modal.style.display = 'flex';
-        }
-
-        function closeModal() { document.getElementById('criteria-modal').style.display = 'none'; }
-        
-        function updateNavUI() {
-            for(let i=1; i<=5; i++) {
-                const el = document.getElementById(`nav-${i}`);
-                el.className = i === currentStep ? "flex flex-col items-center flex-1 py-3 step-active" : "flex flex-col items-center flex-1 py-3 text-gray-400 hover:text-red-300 transition";
-            }
-            document.getElementById('prevBtn').style.visibility = currentStep === 1 ? 'hidden' : 'visible';
-            document.getElementById('nextBtn').innerText = currentStep === 5 ? "SUBMIT PENILAIAN" : "Selanjutnya";
-            document.getElementById('nextBtn').className = currentStep === 5 ? "px-12 py-2.5 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-md transition text-sm" : "px-12 py-2.5 bg-gray-400 text-white rounded-lg font-bold hover:bg-red-600 shadow-md transition text-sm";
-        }
-
-        function changeStep(n) { 
-            currentStep += n; 
-            if(currentStep > 5) {
-                if(confirm("Submit semua penilaian?")) alert("Penilaian Berhasil Dikirim!"); 
-                else currentStep = 5;
-            } else { 
-                renderStep(); 
-                window.scrollTo({ top: 0, behavior: 'smooth' }); 
-            } 
-        }
-
-        function jumpToStep(s) { currentStep = s; renderStep(); }
-        
-        renderStep();
-    </script>
+    <!-- data untuk JS (dipisah agar tidak bikin lint error di file EJS) -->
+    <script id="fp-data" type="application/json"><%- JSON.stringify({
+        kantorId: kantor ? kantor.id : null,
+        kantorNama: kantor ? kantor.nama : null,
+        kantorList: (kantorList || []).map(k => ({ id: k.id, nama: k.nama })),
+        kategori5P: kategori5P || []
+    }) %></script>
+    <script src="/js/formPenilaian.js"></script>
 </body>
 </html>
