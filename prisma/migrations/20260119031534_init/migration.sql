@@ -1,12 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the `user` table. If the table is not empty, all the data it contains will be lost.
-
-*/
--- DropTable
-DROP TABLE `user`;
-
 -- CreateTable
 CREATE TABLE `pengguna` (
     `email` VARCHAR(191) NOT NULL,
@@ -67,9 +58,9 @@ CREATE TABLE `penugasan_kantor_tim` (
     `dibuatPada` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `dihapusPada` DATETIME(3) NULL,
 
-    INDEX `penugasan_kantor_tim_kantorId_idx`(`kantorId`),
-    INDEX `penugasan_kantor_tim_dibuatOlehEmail_idx`(`dibuatOlehEmail`),
-    UNIQUE INDEX `penugasan_kantor_tim_timId_kantorId_key`(`timId`, `kantorId`),
+    INDEX `idx_penugasan_kantor`(`kantorId`),
+    INDEX `idx_penugasan_dibuat_oleh`(`dibuatOlehEmail`),
+    UNIQUE INDEX `uq_penugasan_tim_kantor`(`timId`, `kantorId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -92,38 +83,6 @@ CREATE TABLE `periode_penilaian` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `kategori_5p` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `kode` VARCHAR(10) NOT NULL,
-    `nama` VARCHAR(50) NOT NULL,
-    `urutan` INTEGER NOT NULL,
-    `statusAktif` BOOLEAN NOT NULL DEFAULT true,
-
-    UNIQUE INDEX `kategori_5p_kode_key`(`kode`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `kriteria_penilaian` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `kategoriId` INTEGER NOT NULL,
-    `kode` VARCHAR(20) NULL,
-    `nomor` INTEGER NOT NULL,
-    `nama` VARCHAR(191) NOT NULL,
-    `deskripsi` TEXT NULL,
-    `nilaiMin` INTEGER NOT NULL DEFAULT 0,
-    `nilaiMaks` INTEGER NOT NULL DEFAULT 100,
-    `bobotDefault` DECIMAL(10, 2) NOT NULL DEFAULT 0,
-    `statusAktif` BOOLEAN NOT NULL DEFAULT true,
-    `dibuatPada` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `diubahPada` DATETIME(3) NOT NULL,
-
-    INDEX `kriteria_penilaian_kategoriId_idx`(`kategoriId`),
-    UNIQUE INDEX `kriteria_penilaian_kategoriId_nomor_key`(`kategoriId`, `nomor`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `konfigurasi_bobot` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `nama` VARCHAR(191) NOT NULL,
@@ -141,28 +100,18 @@ CREATE TABLE `konfigurasi_bobot` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `detail_konfigurasi_bobot` (
+CREATE TABLE `bobot_kriteria` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `konfigurasiId` INTEGER NOT NULL,
-    `kriteriaId` INTEGER NOT NULL,
+    `pKode` ENUM('P1', 'P2', 'P3', 'P4', 'P5') NOT NULL,
+    `kriteriaKey` VARCHAR(100) NOT NULL,
+    `namaKriteria` VARCHAR(191) NULL,
     `bobotKriteria` DECIMAL(10, 2) NOT NULL,
     `dibuatPada` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `diubahPada` DATETIME(3) NOT NULL,
 
-    INDEX `detail_konfigurasi_bobot_kriteriaId_idx`(`kriteriaId`),
-    UNIQUE INDEX `detail_konfigurasi_bobot_konfigurasiId_kriteriaId_key`(`konfigurasiId`, `kriteriaId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `predikat` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `nama` VARCHAR(50) NOT NULL,
-    `nilaiMin` DECIMAL(5, 2) NOT NULL,
-    `nilaiMaks` DECIMAL(5, 2) NOT NULL,
-    `statusAktif` BOOLEAN NOT NULL DEFAULT true,
-
-    UNIQUE INDEX `predikat_nama_key`(`nama`),
+    INDEX `bobot_kriteria_pKode_idx`(`pKode`),
+    UNIQUE INDEX `bobot_kriteria_konfigurasiId_kriteriaKey_key`(`konfigurasiId`, `kriteriaKey`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -177,7 +126,6 @@ CREATE TABLE `penilaian_individu` (
     `tanggalMulaiInput` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `tanggalSubmit` DATETIME(3) NULL,
     `status` ENUM('DRAFT', 'SUBMIT') NOT NULL DEFAULT 'DRAFT',
-    `nilaiTotal` DECIMAL(5, 2) NULL,
     `catatanRekomendasi` TEXT NULL,
     `dataSudahBenar` BOOLEAN NOT NULL DEFAULT false,
     `dibuatPada` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -195,15 +143,18 @@ CREATE TABLE `penilaian_individu` (
 CREATE TABLE `detail_penilaian` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `penilaianId` INTEGER NOT NULL,
-    `kriteriaId` INTEGER NOT NULL,
+    `pKode` ENUM('P1', 'P2', 'P3', 'P4', 'P5') NOT NULL,
+    `kriteriaKey` VARCHAR(100) NOT NULL,
+    `namaKriteria` VARCHAR(191) NULL,
     `nilai` DECIMAL(5, 2) NOT NULL,
     `catatan` TEXT NULL,
     `bobotSaatDinilai` DECIMAL(10, 2) NOT NULL,
     `dibuatPada` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `diubahPada` DATETIME(3) NOT NULL,
 
-    INDEX `detail_penilaian_kriteriaId_idx`(`kriteriaId`),
-    UNIQUE INDEX `detail_penilaian_penilaianId_kriteriaId_key`(`penilaianId`, `kriteriaId`),
+    INDEX `detail_penilaian_pKode_idx`(`pKode`),
+    INDEX `detail_penilaian_penilaianId_pKode_idx`(`penilaianId`, `pKode`),
+    UNIQUE INDEX `detail_penilaian_penilaianId_kriteriaKey_key`(`penilaianId`, `kriteriaKey`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -225,57 +176,6 @@ CREATE TABLE `foto_detail_penilaian` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateTable
-CREATE TABLE `rekap_penilaian_tim_kantor` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `periodeId` INTEGER NOT NULL,
-    `timId` INTEGER NOT NULL,
-    `kantorId` INTEGER NOT NULL,
-    `status` ENUM('PROSES', 'SELESAI') NOT NULL DEFAULT 'PROSES',
-    `nilaiP1` DECIMAL(5, 2) NULL,
-    `nilaiP2` DECIMAL(5, 2) NULL,
-    `nilaiP3` DECIMAL(5, 2) NULL,
-    `nilaiP4` DECIMAL(5, 2) NULL,
-    `nilaiP5` DECIMAL(5, 2) NULL,
-    `nilaiAkhir` DECIMAL(5, 2) NULL,
-    `predikatId` INTEGER NULL,
-    `terakhirDihitungPada` DATETIME(3) NULL,
-
-    INDEX `rekap_penilaian_tim_kantor_periodeId_timId_idx`(`periodeId`, `timId`),
-    UNIQUE INDEX `rekap_penilaian_tim_kantor_periodeId_timId_kantorId_key`(`periodeId`, `timId`, `kantorId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `rekap_kriteria_tim_kantor` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `periodeId` INTEGER NOT NULL,
-    `timId` INTEGER NOT NULL,
-    `kantorId` INTEGER NOT NULL,
-    `kriteriaId` INTEGER NOT NULL,
-    `nilaiRataRata` DECIMAL(5, 2) NOT NULL,
-    `bobotKriteria` DECIMAL(10, 2) NOT NULL,
-    `terakhirDihitungPada` DATETIME(3) NULL,
-
-    INDEX `rekap_kriteria_tim_kantor_periodeId_timId_kantorId_idx`(`periodeId`, `timId`, `kantorId`),
-    UNIQUE INDEX `rekap_kriteria_tim_kantor_periodeId_timId_kantorId_kriteriaI_key`(`periodeId`, `timId`, `kantorId`, `kriteriaId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `log_unduh_laporan` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `penggunaEmail` VARCHAR(191) NOT NULL,
-    `periodeId` INTEGER NOT NULL,
-    `timId` INTEGER NULL,
-    `jenis` ENUM('REKAP_KANTOR', 'REKAP_PENILAIAN', 'REKAP_KRITERIA') NOT NULL,
-    `dibuatPada` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    INDEX `log_unduh_laporan_periodeId_timId_idx`(`periodeId`, `timId`),
-    INDEX `log_unduh_laporan_penggunaEmail_idx`(`penggunaEmail`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 -- AddForeignKey
 ALTER TABLE `pengguna` ADD CONSTRAINT `pengguna_timId_fkey` FOREIGN KEY (`timId`) REFERENCES `tim`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -286,16 +186,13 @@ ALTER TABLE `pengguna` ADD CONSTRAINT `pengguna_dibuatOlehEmail_fkey` FOREIGN KE
 ALTER TABLE `kantor` ADD CONSTRAINT `kantor_dibuatOlehEmail_fkey` FOREIGN KEY (`dibuatOlehEmail`) REFERENCES `pengguna`(`email`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `penugasan_kantor_tim` ADD CONSTRAINT `penugasan_kantor_tim_timId_fkey` FOREIGN KEY (`timId`) REFERENCES `tim`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `penugasan_kantor_tim` ADD CONSTRAINT `fk_penugasan_tim` FOREIGN KEY (`timId`) REFERENCES `tim`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `penugasan_kantor_tim` ADD CONSTRAINT `penugasan_kantor_tim_kantorId_fkey` FOREIGN KEY (`kantorId`) REFERENCES `kantor`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `penugasan_kantor_tim` ADD CONSTRAINT `fk_penugasan_kantor` FOREIGN KEY (`kantorId`) REFERENCES `kantor`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `penugasan_kantor_tim` ADD CONSTRAINT `penugasan_kantor_tim_dibuatOlehEmail_fkey` FOREIGN KEY (`dibuatOlehEmail`) REFERENCES `pengguna`(`email`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `kriteria_penilaian` ADD CONSTRAINT `kriteria_penilaian_kategoriId_fkey` FOREIGN KEY (`kategoriId`) REFERENCES `kategori_5p`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `penugasan_kantor_tim` ADD CONSTRAINT `fk_penugasan_dibuat_oleh` FOREIGN KEY (`dibuatOlehEmail`) REFERENCES `pengguna`(`email`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `konfigurasi_bobot` ADD CONSTRAINT `konfigurasi_bobot_periodeId_fkey` FOREIGN KEY (`periodeId`) REFERENCES `periode_penilaian`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -304,10 +201,7 @@ ALTER TABLE `konfigurasi_bobot` ADD CONSTRAINT `konfigurasi_bobot_periodeId_fkey
 ALTER TABLE `konfigurasi_bobot` ADD CONSTRAINT `konfigurasi_bobot_dibuatOlehEmail_fkey` FOREIGN KEY (`dibuatOlehEmail`) REFERENCES `pengguna`(`email`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `detail_konfigurasi_bobot` ADD CONSTRAINT `detail_konfigurasi_bobot_konfigurasiId_fkey` FOREIGN KEY (`konfigurasiId`) REFERENCES `konfigurasi_bobot`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `detail_konfigurasi_bobot` ADD CONSTRAINT `detail_konfigurasi_bobot_kriteriaId_fkey` FOREIGN KEY (`kriteriaId`) REFERENCES `kriteria_penilaian`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `bobot_kriteria` ADD CONSTRAINT `bobot_kriteria_konfigurasiId_fkey` FOREIGN KEY (`konfigurasiId`) REFERENCES `konfigurasi_bobot`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `penilaian_individu` ADD CONSTRAINT `penilaian_individu_periodeId_fkey` FOREIGN KEY (`periodeId`) REFERENCES `periode_penilaian`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -328,43 +222,7 @@ ALTER TABLE `penilaian_individu` ADD CONSTRAINT `penilaian_individu_konfigurasiB
 ALTER TABLE `detail_penilaian` ADD CONSTRAINT `detail_penilaian_penilaianId_fkey` FOREIGN KEY (`penilaianId`) REFERENCES `penilaian_individu`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `detail_penilaian` ADD CONSTRAINT `detail_penilaian_kriteriaId_fkey` FOREIGN KEY (`kriteriaId`) REFERENCES `kriteria_penilaian`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `foto_detail_penilaian` ADD CONSTRAINT `foto_detail_penilaian_detailId_fkey` FOREIGN KEY (`detailId`) REFERENCES `detail_penilaian`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `foto_detail_penilaian` ADD CONSTRAINT `foto_detail_penilaian_diunggahOlehEmail_fkey` FOREIGN KEY (`diunggahOlehEmail`) REFERENCES `pengguna`(`email`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rekap_penilaian_tim_kantor` ADD CONSTRAINT `rekap_penilaian_tim_kantor_periodeId_fkey` FOREIGN KEY (`periodeId`) REFERENCES `periode_penilaian`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rekap_penilaian_tim_kantor` ADD CONSTRAINT `rekap_penilaian_tim_kantor_timId_fkey` FOREIGN KEY (`timId`) REFERENCES `tim`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rekap_penilaian_tim_kantor` ADD CONSTRAINT `rekap_penilaian_tim_kantor_kantorId_fkey` FOREIGN KEY (`kantorId`) REFERENCES `kantor`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rekap_penilaian_tim_kantor` ADD CONSTRAINT `rekap_penilaian_tim_kantor_predikatId_fkey` FOREIGN KEY (`predikatId`) REFERENCES `predikat`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rekap_kriteria_tim_kantor` ADD CONSTRAINT `rekap_kriteria_tim_kantor_periodeId_fkey` FOREIGN KEY (`periodeId`) REFERENCES `periode_penilaian`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rekap_kriteria_tim_kantor` ADD CONSTRAINT `rekap_kriteria_tim_kantor_timId_fkey` FOREIGN KEY (`timId`) REFERENCES `tim`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rekap_kriteria_tim_kantor` ADD CONSTRAINT `rekap_kriteria_tim_kantor_kantorId_fkey` FOREIGN KEY (`kantorId`) REFERENCES `kantor`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rekap_kriteria_tim_kantor` ADD CONSTRAINT `rekap_kriteria_tim_kantor_kriteriaId_fkey` FOREIGN KEY (`kriteriaId`) REFERENCES `kriteria_penilaian`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `log_unduh_laporan` ADD CONSTRAINT `log_unduh_laporan_penggunaEmail_fkey` FOREIGN KEY (`penggunaEmail`) REFERENCES `pengguna`(`email`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `log_unduh_laporan` ADD CONSTRAINT `log_unduh_laporan_periodeId_fkey` FOREIGN KEY (`periodeId`) REFERENCES `periode_penilaian`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `log_unduh_laporan` ADD CONSTRAINT `log_unduh_laporan_timId_fkey` FOREIGN KEY (`timId`) REFERENCES `tim`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
