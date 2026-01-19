@@ -52,7 +52,7 @@
                             <i class="fas fa-building text-xl"></i>
                         </div>
                         <div>
-                            <h2 id="office-title" class="font-bold text-gray-700 uppercase tracking-wide"><%= (kantor?.nama || '').toUpperCase() %></h2>
+                            <h2 id="office-title" class="font-bold text-gray-700 uppercase tracking-wide"><%= (kantor?.nama || 'KANTOR PENILAIAN').toUpperCase() %></h2>
                             <p class="text-gray-400 text-xs">Formulir Penilaian Standar 5P Kantor</p>
                         </div>
                     </div>
@@ -95,12 +95,12 @@
 
     <!-- MODAL PILIHAN KRITERIA -->
     <div id="criteria-modal" class="criteria-modal p-4">
-        <div class="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden section-fade-in">
+        <div class="bg-white rounded-xl max-w-5xl w-full shadow-2xl overflow-hidden section-fade-in">
             <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-b">
                 <h3 id="modal-title" class="font-bold text-gray-700 uppercase text-xs tracking-widest">Penjelasan Kriteria</h3>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-red-600 text-2xl transition">&times;</button>
             </div>
-            <div id="modal-body" class="p-6 space-y-3 max-h-[60vh] overflow-y-auto font-medium text-gray-600 text-sm"></div>
+            <div id="modal-body" class="p-6 space-y-3 max-h-[70vh] overflow-y-auto font-medium text-gray-600 text-sm"></div>
             <div class="p-4 bg-gray-50 text-right border-t">
                 <button onclick="closeModal()" class="bg-gray-800 text-white px-6 py-2 rounded-md font-bold text-xs hover:bg-black transition">Tutup</button>
             </div>
@@ -128,12 +128,11 @@
         </div>
     </div>
 
-    <!-- data untuk JS (dipisah agar tidak bikin lint error di file EJS) -->
+    <!-- Data dari backend untuk JavaScript -->
     <script id="fp-data" type="application/json"><%- JSON.stringify({
         kantorId: kantor ? kantor.id : null,
         kantorNama: kantor ? kantor.nama : null,
-        kantorList: (kantorList || []).map(k => ({ id: k.id, nama: k.nama })),
-        kategori5P: kategori5P || []
+        kantorList: (kantorList || []).map(k => ({ id: k.id, nama: k.nama }))
     }) %></script>
     <script src="/js/formPenilaian.js"></script>
 </body>

@@ -1,13 +1,15 @@
 (() => {
+  // DATA KANTOR dari backend (database)
   const dataEl = document.getElementById("fp-data");
   const fpData = dataEl ? JSON.parse(dataEl.textContent || "{}") : {};
-
-  // DATA KANTOR dari server (untuk modal "Ganti Kantor")
+  
   const offices = (fpData.kantorList || []).map((k) => ({
-    id: k.id,
+    id: String(k.id),
     name: String(k.nama || "").toUpperCase(),
   }));
-  let selectedOfficeId = fpData.kantorId ?? null;
+  
+  let selectedOfficeId = fpData.kantorId ? String(fpData.kantorId) : (offices[0]?.id || null);
+  let selectedOfficeName = fpData.kantorNama ? String(fpData.kantorNama).toUpperCase() : (offices[0]?.name || "KANTOR PENILAIAN");
 
   function renderOfficeList() {
     const container = document.getElementById("office-list");
@@ -52,11 +54,7 @@
     const office = offices.find((o) => String(o.id) === String(id));
     if (!office) return;
 
-    selectedOfficeId = id;
-    const titleEl = document.getElementById("office-title");
-    if (titleEl) titleEl.textContent = office.name;
-
-    // ganti kantor = pindah halaman ke kantor baru agar data kriterianya ikut berubah
+    // Redirect ke halaman form dengan kantor baru (menggunakan backend)
     window.location.href = `/formPenilaian?kantor=${encodeURIComponent(id)}`;
   }
 
@@ -65,10 +63,222 @@
   window.closeOfficeModal = closeOfficeModal;
   window.selectOffice = selectOffice;
 
-  // DATA KRITERIA dari database (kategori5P + kriteria)
-  const kategori5P = fpData.kategori5P || [];
+  // DATA STATIS KRITERIA 5P sesuai gambar yang dikirimkan (Frontend Only)
+  const kategori5P = [
+    {
+      kode: "P1",
+      nama: "Pemilahan",
+      urutan: 1,
+      kriteria: [
+        { 
+          id: "1", 
+          nama: "Pembagian area & Pemilahan",
+          nilaiRentang: {
+            "0-20": "Tidak ada pembagian fungsi & tanggungjawab serta belum ada pemilahan.",
+            "21-40": "Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di <strong>sebagian kecil</strong> area kerja",
+            "41-60": "Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di <strong>sebagian besar</strong> area kerja",
+            "61-80": "Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di <strong>hampir seluruh</strong> area kerja",
+            "81-100": "Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di <strong>seluruh</strong> area kerja"
+          }
+        },
+        { 
+          id: "2", 
+          nama: "Pemindahan ke Tempat Penyimpanan/Pembuangan Sementara",
+          nilaiRentang: {
+            "0-20": "Tidak ditemukan proses ke TPS",
+            "21-40": "Ditemukan hanya ada <strong>sebagian kecil</strong> proses pemindahan ke TPS & <strong>tidak terdokumentasi</strong>",
+            "41-60": "Ditemukan ada <strong>sebagian besar</strong> proses pemindahan ke TPS & <strong>terdokumentasi</strong>",
+            "61-80": "Ditemukan ada proses pemindahan ke TPS secara <strong>hampir menyeluruh</strong> & <strong>terdokumentasi</strong>",
+            "81-100": "Ditemukan ada proses pemindahan ke TPS secara <strong>menyeluruh</strong> & <strong>terdokumentasi</strong>"
+          }
+        },
+        { 
+          id: "3", 
+          nama: "Standar P1",
+          nilaiRentang: {
+            "0-20": "Tidak ada standar Pemilahan (P1)",
+            "21-40": "Sudah ada standar Pemilahan (P1) tapi <strong>belum dilaksanakan</strong>",
+            "41-60": "Sudah ada standar Pemilahan (P1) dan sudah <strong>dilaksanakan dengan cukup baik</strong>",
+            "61-80": "Sudah ada standar Pemilahan (P1) dan sudah <strong>dilaksanakan dengan baik & konsisten</strong>",
+            "81-100": "Sudah ada standar Pemilahan (P1) secara <strong>detail</strong> dan sudah <strong>dilaksanakan dengan baik & konsisten</strong>"
+          }
+        }
+      ]
+    },
+    {
+      kode: "P2",
+      nama: "Penataan",
+      urutan: 2,
+      kriteria: [
+        { 
+          id: "4", 
+          nama: "Visualisasi Denah Ruang/Area dan jalur evakuasi",
+          nilaiRentang: {
+            "0-20": "<strong>Tidak ada</strong> visualisasi denah area dan jalur evakuasi.",
+            "21-40": "Ditemukan di <strong>sebagian kecil</strong> area memiliki visualisasi denah area dan jalur evakuasi.",
+            "41-60": "Ditemukan di <strong>sebagian besar</strong> area memiliki visualisasi denah area dan jalur evakuasi.",
+            "61-80": "Ditemukan di <strong>hampir seluruh</strong> area memiliki visualisasi denah area dan jalur evakuasi.",
+            "81-100": "Ditemukan di <strong>seluruh</strong> area memiliki visualisasi denah area dan jalur evakuasi."
+          }
+        },
+        { 
+          id: "5", 
+          nama: "Labeling, Marka, visual control dan Penanggung jawab",
+          nilaiRentang: {
+            "0-20": "<strong>Tidak</strong> ditemukan labeling, marka, visual control & penanggungjawab area.",
+            "21-40": "Ditemukan labeling, marka, visual control & penanggungjawab di <strong>sebagian kecil</strong> area.",
+            "41-60": "Ditemukan labeling, marka, visual control & penanggungjawab di <strong>sebagian besar</strong> area.",
+            "61-80": "Ditemukan labeling, marka, visual control & penanggungjawab di <strong>hampir seluruh</strong> area.",
+            "81-100": "Ditemukan labeling, marka, visual control & penanggungjawab di <strong>seluruh</strong> area."
+          }
+        },
+        { 
+          id: "6", 
+          nama: "Pengelolaan Barang/Bahan",
+          nilaiRentang: {
+            "0-20": "Ditemukan <strong>banyak</strong> barang/bahan <strong>tidak tertata rapi</strong>.",
+            "21-40": "Ditemukan <strong>sebagian kecil</strong> barang/bahan tertata namun <strong>kurang rapi</strong>.",
+            "41-60": "Ditemukan <strong>sebagian besar</strong> barang/bahan tertata rapi & <strong>teratur</strong>.",
+            "61-80": "Ditemukan <strong>hampir seluruh</strong> barang/bahan tertata rapi <strong>teratur</strong> & dalam jumlah yang <strong>efisien</strong>.",
+            "81-100": "Ditemukan <strong>seluruh</strong> barang/bahan tertata rapi, <strong>teratur</strong> & dalam jumlah yang <strong>efisien dan Sesuai Kebutuhan</strong>."
+          }
+        },
+        { 
+          id: "7", 
+          nama: "Standar P2",
+          nilaiRentang: {
+            "0-20": "<strong>Tidak ada</strong> standar Penataan (P2).",
+            "21-40": "Ada standar Penataan (P2) tapi <strong>belum dilaksanakan</strong>.",
+            "41-60": "Ada standar Penataan (P2) dan dilaksanakan dengan <strong>cukup baik</strong>.",
+            "61-80": "Ada standar Penataan (P2) dan dilaksanakan dengan <strong>baik & konsisten</strong>.",
+            "81-100": "Ada standar Penataan (P2) secara <strong>detail</strong> dan dilaksanakan dengan <strong>baik & konsisten</strong>."
+          }
+        }
+      ]
+    },
+    {
+      kode: "P3",
+      nama: "Pembersihan",
+      urutan: 3,
+      kriteria: [
+        { 
+          id: "8", 
+          nama: "Pembersihan dan Alat bantu kebersihan",
+          nilaiRentang: {
+            "0-20": "Tidak ditemukan kegiatan pembersihan",
+            "21-40": "Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di <strong>sebagian kecil</strong> area",
+            "41-60": "Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di <strong>sebagian besar</strong> area",
+            "61-80": "Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di <strong>hampir seluruh</strong> area",
+            "81-100": "Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di <strong>seluruh</strong> area"
+          }
+        },
+        { 
+          id: "9", 
+          nama: "Upaya mengatasi sumber kotor & gangguan aktifitas",
+          nilaiRentang: {
+            "0-20": "Tidak ada upaya mengatasi sumber kotor & gangguan",
+            "21-40": "Ada upaya untuk mengatasi sumber kotor & gangguan aktifitas di <strong>sebagian kecil</strong> area",
+            "41-60": "Ada upaya untuk mengatasi sumber kotor & gangguan aktifitas di <strong>sebagian besar</strong> area",
+            "61-80": "Ada upaya dilakukan untuk mengatasi sumber kotor & gangguan aktifitas di <strong>hampir seluruh</strong> area",
+            "81-100": "Ada upaya dilakukan untuk mengatasi sumber kotor & gangguan aktifitas di <strong>seluruh</strong> area"
+          }
+        },
+        { 
+          id: "10", 
+          nama: "Standar P3",
+          nilaiRentang: {
+            "0-20": "Tidak ada standar Pembersihan (P3)",
+            "21-40": "Ada standar Pembersihan (P3) tapi <strong>belum dilaksanakan</strong>",
+            "41-60": "Ada standar Pembersihan (P3) dan dilaksanakan dengan <strong>cukup baik</strong>",
+            "61-80": "Ada standar Pembersihan (P3) dan dilaksanakan dengan <strong>baik & konsisten</strong>",
+            "81-100": "Ada standar Pembersihan (P3) secara <strong>detail</strong> dan dilaksanakan dengan <strong>baik & konsisten</strong>"
+          }
+        }
+      ]
+    },
+    {
+      kode: "P4",
+      nama: "Pemantapan",
+      urutan: 4,
+      kriteria: [
+        { 
+          id: "11", 
+          nama: "Konsistensi Pelaksanaan P1-P3",
+          nilaiRentang: {
+            "0-20": "<strong>Tidak ada</strong> Jadwal Rencana & Realisasi Kegiatan serta Rapat Rutin Terkait Implementasi Kegiatan P1-P3 (Berupa Schedule/Notulen Rapat/Foto2 yang Relevan)",
+            "21-40": "<strong>Ada</strong> bukti jadwal Rencana Terkait Implementasi Kegiatan P1-P3, tetapi <strong>tidak ada</strong> realisasi kegiatan dan rapat Rutin",
+            "41-60": "<strong>Ada</strong> bukti jadwal Rencana & Realisasi Terkait Implementasi Kegiatan P1-P3, tetapi <strong>tidak ada</strong> jadwal rapat Rutin. (Bukti Berupa Schedule/Notulen Rapat/Foto2 yang Relevan)",
+            "61-80": "<strong>Ada</strong> bukti jadwal Rencana & Realisasi Terkait Implementasi Kegiatan P1-P3, serta dilakukan rapat Rutin (<strong>Minimal 1 Kali sebulan</strong>). (Bukti Berupa Schedule/Notulen Rapat/Absensi/Foto2 yang Relevan)",
+            "81-100": "<strong>Ada</strong> bukti jadwal Rencana & Realisasi Terkait Implementasi Kegiatan P1-P3, serta dilakukan rapat Rutin (<strong>Minimal 2 Kali sebulan</strong>). (Bukti Berupa Schedule/Notulen Rapat/Absensi/Foto2 yang Relevan)"
+          }
+        },
+        { 
+          id: "12", 
+          nama: "Pemeliharaan P1 - P3",
+          nilaiRentang: {
+            "0-20": "<strong>Tidak ditemukan</strong> pemeliharaan terhadap P1 - P3 serta aktifitas kegiatan perbaikan berkelanjutan",
+            "21-40": "Ditemukan di <strong>sebagian kecil</strong> area ada pemeliharaan terhadap kondisi P1 - P3 & <strong>belum ada</strong> aktifitas kegiatan perbaikan berkelanjutan",
+            "41-60": "Ditemukan di <strong>sebagian besar</strong> area ada pemeliharaan terhadap kondisi P1 - P3 & <strong>ada</strong> aktifitas kegiatan perbaikan berkelanjutan (<strong>1 tema</strong>)",
+            "61-80": "Ditemukan di <strong>hampir seluruh</strong> area ada pemeliharaan terhadap kondisi P1 - P3 & <strong>ada</strong> aktifitas kegiatan perbaikan berkelanjutan (<strong>lebih dari 2 tema</strong>)",
+            "81-100": "Ditemukan di <strong>seluruh</strong> area ada pemeliharaan terhadap kondisi P1 - P3 & <strong>ada</strong> aktifitas kegiatan perbaikan berkelanjutan (<strong>lebih dari 3 tema</strong>)"
+          }
+        },
+        { 
+          id: "13", 
+          nama: "Standar P4",
+          nilaiRentang: {
+            "0-20": "<strong>Tidak ada</strong> standar Pemantapan (P4)",
+            "21-40": "<strong>Ada</strong> standar Pemantapan (P4) tapi <strong>belum dilaksanakan</strong>",
+            "41-60": "<strong>Ada</strong> standar Pemantapan (P4) dan dilaksanakan dengan <strong>cukup baik</strong>",
+            "61-80": "<strong>Ada</strong> standar Pemantapan (P4) dan dilaksanakan dengan <strong>baik & konsisten</strong>",
+            "81-100": "<strong>Ada</strong> standar Pemantapan (P4) secara <strong>detail</strong> dan dilaksanakan dengan <strong>baik & konsisten</strong>"
+          }
+        }
+      ]
+    },
+    {
+      kode: "P5",
+      nama: "Pembiasaan",
+      urutan: 5,
+      kriteria: [
+        { 
+          id: "14", 
+          nama: "Sikap kerja semua personil sudah menunjukkan kebiasaan positif (atribut kerja, disiplin dan menaati rambu2 serta standart yang dibuat, dll)",
+          nilaiRentang: {
+            "0-20": "<strong>Sebagian besar</strong> personil organisasi/area kerja belum mempunyai sikap kerja/kebiasaan positif dan disiplin.",
+            "21-40": "<strong>Sebagian kecil</strong> personil organisasi/area kerja belum mempunyai sikap kerja/kebiasaan positif dan disiplin.",
+            "41-60": "Sikap kerja/kebiasaan positif dan disiplin telah terbentuk tapi <strong>masih harus diikuti dengan reward dan punishment</strong>.",
+            "61-80": "Setiap personil dalam organisasi/area kerja sudah <strong>menunjukkan sikap kerja, kebiasaan positif dan disiplin</strong>.",
+            "81-100": "Setiap personil dalam organisasi/area kerja sudah <strong>menunjukkan sikap kerja, kebiasaan positif dan disiplin serta mempunyai budaya malu</strong>."
+          }
+        },
+        { 
+          id: "15", 
+          nama: "Sudah ada papan aktivitas yang menyajikan informasi area masing-masing (hasil Kaizen/Focus Improvement, efisiensi, produktifitas, hasil audit, dll)",
+          nilaiRentang: {
+            "0-20": "<strong>Tidak ada</strong> papan aktivitas/informasi penerapan 5P di area kerja.",
+            "21-40": "<strong>Ada papan aktivitas</strong>, tapi informasi yang disajikan tidak up to date dan tidak memadai.",
+            "41-60": "Sudah ada papan aktivitas yang menyajikan informasi penerapan 5P.",
+            "61-80": "Activity board/papan informasi 5P tersedia di area kerja dan menyajikan informasi-informasi yang memadai (kegiatan 5P, hasil Kaizen, efisiensi, produktifitas, hasil audit, dll).",
+            "81-100": "Activity board/papan informasi 5P tersedia di area kerja dan menyajikan informasi-informasi yang memadai (kegiatan 5P, hasil Kaizen, efisiensi, produktifitas, hasil audit, dll) <strong>serta up to date</strong>."
+          }
+        },
+        { 
+          id: "16", 
+          nama: "Standar P5",
+          nilaiRentang: {
+            "0-20": "<strong>Tidak ada</strong> standar Pembiasaan (P5)",
+            "21-40": "<strong>Ada</strong> standar Pembiasaan (P5) tapi <strong>belum dilaksanakan</strong>",
+            "41-60": "Ada standar Pembiasaan (P5) dan dilaksanakan dengan <strong>cukup baik</strong>",
+            "61-80": "Ada standar Pembiasaan (P5) dan dilaksanakan dengan <strong>baik & konsisten</strong>",
+            "81-100": "Ada standar Pembiasaan (P5) secara <strong>detail dan dilaksanakan dengan baik & konsisten</strong>"
+          }
+        }
+      ]
+    }
+  ];
 
-  // criteriaData dipakai modal (versi ringkas dari schema)
+  // criteriaData dipakai modal (versi lengkap dengan nilai rentang)
   const criteriaData = {};
   const steps = (kategori5P || []).map((kat, idx) => {
     const kode = String(kat.kode || `P${idx + 1}`).toUpperCase();
@@ -77,9 +287,7 @@
     const items = (kat.kriteria || []).map((k) => {
       criteriaData[String(k.id)] = {
         name: k.nama,
-        desc: k.deskripsi || "",
-        min: k.nilaiMin ?? 0,
-        max: k.nilaiMaks ?? 100,
+        nilaiRentang: k.nilaiRentang || {},
       };
       return { id: String(k.id), name: k.nama };
     });
@@ -103,6 +311,19 @@
     stepData.items.forEach((item, idx) => {
       container.innerHTML += `
         <div class="section-fade-in space-y-5 pb-8 border-b border-gray-100 last:border-0">
+          <!-- Input Nama Penginput di bagian atas setiap kriteria -->
+          <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-4">
+            <label class="text-[10px] font-bold text-gray-600 uppercase tracking-widest block mb-2">
+              <i class="fas fa-user mr-2"></i>Nama Penginput Data
+            </label>
+            <input 
+              type="text" 
+              name="nama_penginput_${item.id}" 
+              placeholder="Masukkan nama yang menginputkan data penilaian ini..." 
+              class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm font-medium bg-white"
+            >
+          </div>
+
           <h3 class="font-bold text-gray-800 text-lg">${idx + 1}. ${item.name}</h3>
 
           <div class="grid grid-cols-4 gap-6 items-end">
@@ -171,25 +392,56 @@
 
   function showCriteria(key) {
     const data = criteriaData[key];
-    if (!data) return;
+    if (!data || !data.nilaiRentang) return;
+    
     const modal = document.getElementById("criteria-modal");
     const body = document.getElementById("modal-body");
     const title = document.getElementById("modal-title");
+    
     if (title) title.innerText = data.name;
 
     if (body) {
+      const rentangNilai = ["0-20", "21-40", "41-60", "61-80", "81-100"];
+      
       body.innerHTML = `
-        <div class="p-4 border border-gray-100 rounded-lg bg-gray-50/50 shadow-sm">
-          <p class="text-xs font-bold text-gray-700 uppercase tracking-widest mb-2">Rentang Nilai</p>
-          <p class="text-sm font-semibold text-gray-900">${data.min} - ${data.max}</p>
-          ${
-            data.desc
-              ? `<p class="text-xs text-gray-600 mt-3 leading-relaxed">${data.desc}</p>`
-              : `<p class="text-xs text-gray-400 mt-3">Tidak ada deskripsi kriteria.</p>`
-          }
+        <div class="space-y-4">
+          <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <p class="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3">Penjelasan Bobot / Nilai Kriteria</p>
+            
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs border-collapse">
+                <thead>
+                  <tr class="bg-red-600 text-white">
+                    <th class="border border-gray-300 px-3 py-2 text-left font-bold">Nilai</th>
+                    <th class="border border-gray-300 px-3 py-2 text-left font-bold">Penjelasan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rentangNilai.map((rentang, idx) => {
+                    const desc = data.nilaiRentang[rentang] || "Tidak ada penjelasan";
+                    const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
+                    return `
+                      <tr class="${bgColor}">
+                        <td class="border border-gray-300 px-3 py-2 font-bold text-red-600 text-center">${rentang}</td>
+                        <td class="border border-gray-300 px-3 py-2 text-gray-700 leading-relaxed">${desc}</td>
+                      </tr>
+                    `;
+                  }).join("")}
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+              <p class="text-xs text-gray-600">
+                <i class="fas fa-info-circle mr-1"></i>
+                <strong>Petunjuk:</strong> Pilih nilai berdasarkan penjelasan di atas yang paling sesuai dengan kondisi aktual di kantor.
+              </p>
+            </div>
+          </div>
         </div>
       `;
     }
+    
     if (modal) modal.style.display = "flex";
   }
 
@@ -226,12 +478,15 @@
       (step.items || []).forEach((item) => {
         const nilaiEl = document.querySelector(`[name="nilai_${item.id}"]`);
         const catatanEl = document.querySelector(`[name="catatan_${item.id}"]`);
+        const namaPenginputEl = document.querySelector(`[name="nama_penginput_${item.id}"]`);
         const nilai = nilaiEl ? nilaiEl.value : "";
         const catatan = catatanEl ? catatanEl.value : "";
+        const namaPenginput = namaPenginputEl ? namaPenginputEl.value : "";
         result.push({
           kriteriaId: item.id,
           nilai: nilai === "" ? 0 : Number(nilai),
           catatan: catatan || "",
+          namaPenginput: namaPenginput || "",
         });
       });
     });
@@ -240,8 +495,9 @@
 
   async function submitPenilaian() {
     if (!confirm("Submit semua penilaian?")) return;
+    
     if (!fpData.kantorId) {
-      alert("kantor_id tidak ditemukan.");
+      alert("Kantor tidak ditemukan. Silakan pilih kantor terlebih dahulu.");
       return;
     }
 
@@ -258,14 +514,19 @@
       }
     });
 
-    const res = await fetch("/formPenilaian", { method: "POST", body: fd });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.success) {
-      alert(data.message || "Gagal submit penilaian");
-      return;
+    try {
+      const res = await fetch("/formPenilaian", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        alert(data.message || "Gagal submit penilaian");
+        return;
+      }
+      alert(data.message || "Penilaian berhasil dikirim");
+      if (data.redirect) window.location.href = data.redirect;
+    } catch (error) {
+      console.error("Error submitting:", error);
+      alert("Terjadi kesalahan saat mengirim data. Silakan coba lagi.");
     }
-    alert(data.message || "Penilaian berhasil dikirim");
-    if (data.redirect) window.location.href = data.redirect;
   }
 
   function changeStep(n) {
@@ -291,6 +552,10 @@
   window.changeStep = changeStep;
   window.jumpToStep = jumpToStep;
 
+  // Inisialisasi
+  const titleEl = document.getElementById("office-title");
+  if (titleEl && !titleEl.textContent.trim()) {
+    titleEl.textContent = selectedOfficeName;
+  }
   renderStep();
 })();
-
