@@ -1,3 +1,9 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -18,13 +24,15 @@ enum StatusPenilaian {
   SUBMIT
 }
 
-// kategori 5P tidak pakai tabel, tapi enum biar rapi dan fixed
-enum PKode {
-  P1
-  P2
-  P3
-  P4
-  P5
+enum StatusRekap {
+  PROSES
+  SELESAI
+}
+
+enum JenisLaporan {
+  REKAP_KANTOR
+  REKAP_PENILAIAN
+  REKAP_KRITERIA
 }
 
 model Pengguna {
@@ -34,7 +42,7 @@ model Pengguna {
   kataSandiHash String @db.VarChar(191)
 
   peran PeranPengguna
-  timId Int?
+  timId Int? // wajib jika peran=TIM_PENILAI; null jika ADMIN/SUPERADMIN
 
   statusAktif     Boolean   @default(true)
   dibuatOlehEmail String?
@@ -50,7 +58,9 @@ model Pengguna {
 
   // relasi transaksi
   penilaianSebagaiPenilai PenilaianIndividu[] @relation("Penilai")
-  fotoDiunggah            FotoDetailPenilaian[]
+
+  fotoDiunggah FotoDetailPenilaian[]
+  logUnduh     LogUnduhLaporan[]
 
   // relasi “dibuat oleh”
   kantorDibuat      Kantor[]
@@ -64,8 +74,8 @@ model Pengguna {
 
 model Tim {
   id          Int     @id @default(autoincrement())
-  kode        String  @unique @db.VarChar(50)
-  nama        String  @db.VarChar(100)
+  kode        String  @unique @db.VarChar(50) // TIM_1
+  nama        String  @db.VarChar(100) // TIM 1
   statusAktif Boolean @default(true)
 
   dibuatPada  DateTime  @default(now())
@@ -75,6 +85,9 @@ model Tim {
   anggota         Pengguna[]
   penugasanKantor PenugasanKantorTim[]
   penilaian       PenilaianIndividu[]
+  rekap           RekapPenilaianTimKantor[]
+  rekapKriteria   RekapKriteriaTimKantor[]
+  logUnduh        LogUnduhLaporan[]
 
   @@map("tim")
 }
@@ -92,8 +105,10 @@ model Kantor {
 
   dibuatOleh Pengguna? @relation(fields: [dibuatOlehEmail], references: [email])
 
-  penugasanTim PenugasanKantorTim[]
-  penilaian    PenilaianIndividu[]
+  penugasanTim  PenugasanKantorTim[]
+  penilaian     PenilaianIndividu[]
+  rekap         RekapPenilaianTimKantor[]
+  rekapKriteria RekapKriteriaTimKantor[]
 
   @@index([nama])
   @@index([dibuatOlehEmail])
@@ -113,17 +128,15 @@ model PenugasanKantorTim {
   dibuatPada      DateTime  @default(now())
   dihapusPada     DateTime?
 
-  tim    Tim    @relation(fields: [timId], references: [id], onDelete: Cascade, map: "fk_penugasan_tim")
-  kantor Kantor @relation(fields: [kantorId], references: [id], onDelete: Cascade, map: "fk_penugasan_kantor")
-  dibuatOleh Pengguna? @relation(fields: [dibuatOlehEmail], references: [email], map: "fk_penugasan_dibuat_oleh")
+  tim        Tim       @relation(fields: [timId], references: [id], onDelete: Cascade)
+  kantor     Kantor    @relation(fields: [kantorId], references: [id], onDelete: Cascade)
+  dibuatOleh Pengguna? @relation(fields: [dibuatOlehEmail], references: [email])
 
-  @@unique([timId, kantorId], map: "uq_penugasan_tim_kantor")
-  @@index([kantorId], map: "idx_penugasan_kantor")
-  @@index([dibuatOlehEmail], map: "idx_penugasan_dibuat_oleh")
-
+  @@unique([timId, kantorId])
+  @@index([kantorId])
+  @@index([dibuatOlehEmail])
   @@map("penugasan_kantor_tim")
 }
-
 
 model PeriodePenilaian {
   id          Int    @id @default(autoincrement())
@@ -141,17 +154,60 @@ model PeriodePenilaian {
 
   konfigurasiBobot KonfigurasiBobot[]
   penilaian        PenilaianIndividu[]
+  rekap            RekapPenilaianTimKantor[]
+  rekapKriteria    RekapKriteriaTimKantor[]
+  logUnduh         LogUnduhLaporan[]
 
   @@index([tahun, semester])
   @@index([tahun, semester, bulan])
   @@map("periode_penilaian")
 }
 
+model Kategori5P {
+  id          Int     @id @default(autoincrement())
+  kode        String  @unique @db.VarChar(10) // P1..P5
+  nama        String  @db.VarChar(50)
+  urutan      Int
+  statusAktif Boolean @default(true)
+
+  kriteria KriteriaPenilaian[]
+
+  @@map("kategori_5p")
+}
+
+model KriteriaPenilaian {
+  id         Int @id @default(autoincrement())
+  kategoriId Int
+
+  kode      String? @db.VarChar(20) // K1.1 dst (opsional)
+  nomor     Int
+  nama      String  @db.VarChar(191)
+  deskripsi String? @db.Text
+
+  nilaiMin  Int @default(0)
+  nilaiMaks Int @default(100)
+
+  bobotDefault Decimal @default(0) @db.Decimal(10, 2)
+  statusAktif  Boolean @default(true)
+
+  dibuatPada DateTime @default(now())
+  diubahPada DateTime @updatedAt
+
+  kategori Kategori5P @relation(fields: [kategoriId], references: [id], onDelete: Cascade)
+
+  detailBobot   DetailKonfigurasiBobot[]
+  detailNilai   DetailPenilaian[]
+  rekapKriteria RekapKriteriaTimKantor[]
+
+  @@unique([kategoriId, nomor])
+  @@index([kategoriId])
+  @@map("kriteria_penilaian")
+}
+
 model KonfigurasiBobot {
   id   Int    @id @default(autoincrement())
   nama String @db.VarChar(191)
 
-  // kalau kamu mau bobot per periode, pakai periodeId
   periodeId     Int?
   berlakuMulai  DateTime?
   berlakuSampai DateTime?
@@ -164,8 +220,7 @@ model KonfigurasiBobot {
   periode    PeriodePenilaian? @relation(fields: [periodeId], references: [id])
   dibuatOleh Pengguna?         @relation(fields: [dibuatOlehEmail], references: [email])
 
-  // item bobot per kriteriaKey (tanpa tabel kriteria)
-  items    BobotKriteria[]
+  detail    DetailKonfigurasiBobot[]
   penilaian PenilaianIndividu[]
 
   @@index([periodeId])
@@ -173,24 +228,33 @@ model KonfigurasiBobot {
   @@map("konfigurasi_bobot")
 }
 
-model BobotKriteria {
-  id            Int   @id @default(autoincrement())
+model DetailKonfigurasiBobot {
+  id            Int     @id @default(autoincrement())
   konfigurasiId Int
-
-  pKode      PKode
-  kriteriaKey String @db.VarChar(100) // contoh: "P1-01"
-  namaKriteria String? @db.VarChar(191) // opsional snapshot nama dari FE
-
+  kriteriaId    Int
   bobotKriteria Decimal @db.Decimal(10, 2)
 
   dibuatPada DateTime @default(now())
   diubahPada DateTime @updatedAt
 
-  konfigurasi KonfigurasiBobot @relation(fields: [konfigurasiId], references: [id], onDelete: Cascade)
+  konfigurasi KonfigurasiBobot  @relation(fields: [konfigurasiId], references: [id], onDelete: Cascade)
+  kriteria    KriteriaPenilaian @relation(fields: [kriteriaId], references: [id], onDelete: Cascade)
 
-  @@unique([konfigurasiId, kriteriaKey])
-  @@index([pKode])
-  @@map("bobot_kriteria")
+  @@unique([konfigurasiId, kriteriaId])
+  @@index([kriteriaId])
+  @@map("detail_konfigurasi_bobot")
+}
+
+model Predikat {
+  id          Int     @id @default(autoincrement())
+  nama        String  @unique @db.VarChar(50)
+  nilaiMin    Decimal @db.Decimal(5, 2)
+  nilaiMaks   Decimal @db.Decimal(5, 2)
+  statusAktif Boolean @default(true)
+
+  rekap RekapPenilaianTimKantor[]
+
+  @@map("predikat")
 }
 
 model PenilaianIndividu {
@@ -207,7 +271,7 @@ model PenilaianIndividu {
   tanggalSubmit     DateTime?
   status            StatusPenilaian @default(DRAFT)
 
-  // rekomendasi global (opsional)
+  nilaiTotal         Decimal? @db.Decimal(5, 2)
   catatanRekomendasi String?  @db.Text
   dataSudahBenar     Boolean  @default(false)
 
@@ -235,11 +299,7 @@ model PenilaianIndividu {
 model DetailPenilaian {
   id          Int @id @default(autoincrement())
   penilaianId Int
-
-  // tanpa tabel kriteria, kita simpan identitas dari FE
-  pKode       PKode
-  kriteriaKey String  @db.VarChar(100)  // contoh: "P3-04"
-  namaKriteria String? @db.VarChar(191) // opsional snapshot label
+  kriteriaId  Int
 
   nilai   Decimal @db.Decimal(5, 2)
   catatan String? @db.Text
@@ -249,12 +309,12 @@ model DetailPenilaian {
   diubahPada       DateTime @updatedAt
 
   penilaian PenilaianIndividu @relation(fields: [penilaianId], references: [id], onDelete: Cascade)
+  kriteria  KriteriaPenilaian @relation(fields: [kriteriaId], references: [id])
 
   fotoKondisi FotoDetailPenilaian[]
 
-  @@unique([penilaianId, kriteriaKey])
-  @@index([pKode])
-  @@index([penilaianId, pKode])
+  @@unique([penilaianId, kriteriaId])
+  @@index([kriteriaId])
   @@map("detail_penilaian")
 }
 
