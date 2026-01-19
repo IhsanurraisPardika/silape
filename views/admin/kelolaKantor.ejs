@@ -9,30 +9,42 @@
 </head>
 
 <body class="bg-gray-100">
-<div class="flex">
+<div class="flex min-h-screen">
 
   <!-- SIDEBAR -->
   <%- include('../partials/sidebarAdmin') %>
 
   <!-- MAIN -->
-  <div class="flex-1 flex flex-col min-h-screen">
+  <div class="flex-1 flex flex-col">
     <%- include('../partials/header') %>
 
-  <main class="flex-1 flex flex-col">
+    <main class="flex-1">
 
-    <!-- CONTENT -->
-    <section class="p-6 space-y-6">
+      <!-- CONTENT -->
+      <section class="p-6 space-y-6">
 
-      <!-- BUTTONS -->
-      <div class="flex flex-wrap gap-3 items-center">
-        <button class="px-4 py-2 bg-white border rounded shadow-sm">Kelola Tim Penilai</button>
-        <button class="px-4 py-2 bg-red-600 text-white rounded shadow">Kelola Kantor Tim</button>
+        <!-- TOP BAR -->
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
 
-        <button id="btnTambahKantor"
-          class="ml-auto px-4 py-2 bg-red-600 text-white rounded-lg shadow flex items-center gap-2">
-          🏢 Tambah Kantor
-        </button>
-      </div>
+          <!-- TABS -->
+          <div class="flex gap-3">
+            <a href="/kelola-tim-penilai"
+               class="px-5 py-3 rounded-xl bg-red-700 text-white shadow">
+              Kelola Tim Penilai
+            </a>
+
+            <a href="/kelolaKantor"
+               class="px-5 py-3 rounded-xl bg-white text-gray-700 shadow border hover:bg-gray-50">
+              Kelola Kantor Tim
+            </a>
+          </div>
+
+          <!-- BUTTON TAMBAH -->
+          <button id="btnTambahKantor"
+            class="px-4 py-2 bg-red-600 text-white rounded-lg shadow flex items-center gap-2">
+            🏢 Tambah Kantor
+          </button>
+        </div>
 
       <!-- CARD -->
       <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
