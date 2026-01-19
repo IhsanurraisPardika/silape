@@ -7,7 +7,7 @@ exports.index = async (req, res) => {
     if (!user) return res.redirect("/login");
 
     // Ambil daftar kantor yang ditugaskan ke tim user (atau semua kantor jika timId kosong)
-    let kantorList = [];
+    let kantor = [];
 
     if (user.timId) {
       const penugasan = await prisma.penugasanKantorTim.findMany({
@@ -20,7 +20,7 @@ exports.index = async (req, res) => {
         orderBy: { kantorId: "asc" },
       });
 
-      kantorList = penugasan.map((p) => ({
+      kantor = penugasan.map((p) => ({
         id: p.kantor.id,
         nama: p.kantor.nama,
         timNama: p.tim?.nama || null,
@@ -30,13 +30,13 @@ exports.index = async (req, res) => {
         where: { statusAktif: true },
         orderBy: { nama: "asc" },
       });
-      kantorList = kantor.map((k) => ({ id: k.id, nama: k.nama, timNama: null }));
+      kantor = kantor.map((k) => ({ id: k.id, nama: k.nama, timNama: null }));
     }
 
     res.render("penilaian", {
       title: "Input Penilaian 5P",
       user,
-      kantorList,
+      kantor,
     });
   } catch (err) {
     console.error(err);
