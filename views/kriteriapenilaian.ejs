@@ -33,11 +33,11 @@
                     </div>
 
                     <div class="bg-white rounded-t-2xl shadow-sm border-b flex overflow-x-auto sticky top-0 z-20">
-                        <button onclick="switchTab('P1')" id="btn-P1" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent tab-active">P1: PEMILAHAN</button>
-                        <button onclick="switchTab('P2')" id="btn-P2" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P2: PENATAAN</button>
-                        <button onclick="switchTab('P3')" id="btn-P3" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P3: PEMBERSIHAN</button>
-                        <button onclick="switchTab('P4')" id="btn-P4" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P4: PEMANTAPAN</button>
-                        <button onclick="switchTab('P5')" id="btn-P5" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P5: PEMBIASAAN</button>
+                        <button onclick="switchTab('P1')" id="btn-P1" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent tab-active">P1: PEMILAHAN (RINGKAS)</button>
+                        <button onclick="switchTab('P2')" id="btn-P2" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P2: PENATAAN (RAPI)</button>
+                        <button onclick="switchTab('P3')" id="btn-P3" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P3: PEMBERSIHAN (RESIK)</button>
+                        <button onclick="switchTab('P4')" id="btn-P4" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P4: PEMANTAPAN (RAWAT)</button>
+                        <button onclick="switchTab('P5')" id="btn-P5" class="tab-btn px-8 py-5 font-bold text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P5: PEMBIASAAN (RAJIN)</button>
                     </div>
 
                     <div class="bg-white rounded-b-2xl shadow-xl p-6 mb-12 border-t-0">
@@ -62,32 +62,40 @@
     </div>
 
     <script>
-        // Data disesuaikan dengan isi "Kriteria 5P Kantor" dari Excel
+        // Data diupdate sesuai standar Audit 5P/5R Perkantoran Profesional
         const kriteriaData = {
             'P1': [
-                { area: 'Barang tidak digunakan', detail: 'Barang yang tidak digunakan/sampah/barang rusak tidak ada di area kerja/meja kerja.', skor: 100 },
-                { area: 'Meja Kerja', detail: 'Meja kerja hanya berisi peralatan kerja yang aktif digunakan (PC, telepon, alat tulis minimal).', skor: 100 },
-                { area: 'Area Bawah Meja', detail: 'Area bawah meja bersih dan kosong (tidak ada dus/sepatu/tas yang tidak teratur).', skor: 100 },
-                { area: 'Laci / Lemari', detail: 'Laci meja dan lemari penyimpanan terpilah (hanya barang yang diperlukan yang disimpan).', skor: 100 }
+                { area: 'Meja Kerja & Laci', detail: 'Tidak ada dokumen/barang yang tidak diperlukan (sampah, kertas bekas, ATK rusak) di atas maupun di dalam meja.', skor: 20 },
+                { area: 'Lemari Arsip / Rak', detail: 'Hanya menyimpan dokumen/barang yang masih relevan dengan pekerjaan. Dokumen kadaluarsa dipisahkan/dimusnahkan.', skor: 20 },
+                { area: 'Area Bawah Meja', detail: 'Bebas dari penumpukan barang yang tidak terpakai (kardus kosong, sepatu bekas, tas tidak terpakai).', skor: 20 },
+                { area: 'Lantai & Dinding', detail: 'Tidak ada barang/peralatan rusak yang diletakkan sembarangan di sudut ruangan atau bersandar di dinding.', skor: 20 },
+                { area: 'Peralatan Elektronik', detail: 'Memisahkan kabel atau perangkat elektronik yang rusak/tidak terpakai dari area kerja aktif.', skor: 20 }
             ],
             'P2': [
-                { area: 'Penataan Dokumen', detail: 'Dokumen/file tertata rapi, dikelompokkan dan memiliki label/index pencarian.', skor: 100 },
-                { area: 'Alat Tulis & Kantor', detail: 'Peralatan kantor (stapler, selotip, dll) ditempatkan pada posisi yang mudah diambil dan dikembalikan.', skor: 100 },
-                { area: 'Labeling Area', detail: 'Setiap barang/tempat penyimpanan memiliki label identitas yang jelas.', skor: 100 },
-                { area: 'Kabel-kabel', detail: 'Kabel power, LAN, dan kabel telepon tertata rapi menggunakan cable ties atau ducting.', skor: 100 }
+                { area: 'Tata Letak Dokumen', detail: 'Dokumen tersusun rapi dalam ordner/map, dikelompokkan sesuai jenis, dan mudah ditemukan (kurang dari 30 detik).', skor: 20 },
+                { area: 'Identitas & Labeling', detail: 'Semua ordner, laci, lemari, dan saklar lampu memiliki label identitas yang jelas, lurus, dan mudah dibaca.', skor: 20 },
+                { area: 'Stationary (ATK)', detail: 'ATK tersimpan di tempat khusus (organizer) dan tidak berserakan di atas meja setelah digunakan.', skor: 20 },
+                { area: 'Manajemen Kabel', detail: 'Kabel PC, telepon, dan listrik terikat rapi (cable ties/spiral), tidak semrawut, dan tidak membahayakan.', skor: 20 },
+                { area: 'Penyimpanan Tas/Helm', detail: 'Tas, helm, dan barang pribadi karyawan ditempatkan pada tempat khusus/loker yang disediakan.', skor: 20 }
             ],
             'P3': [
-                { area: 'Kebersihan Umum', detail: 'Lantai, langit-langit, dan sudut ruangan bebas dari debu, sarang laba-laba, dan kotoran.', skor: 100 },
-                { area: 'Peralatan Kerja', detail: 'Monitor, CPU, Keyboard, dan Printer dalam kondisi bersih dan tidak berdebu.', skor: 100 },
-                { area: 'Tempat Sampah', detail: 'Tempat sampah tidak overload dan area sekitarnya bersih.', skor: 100 }
+                { area: 'Lantai & Sudut Ruang', detail: 'Lantai bersih, kering, tidak berdebu, dan sudut ruangan bebas dari sarang laba-laba.', skor: 20 },
+                { area: 'Perangkat Kerja (PC/Telp)', detail: 'Layar monitor, keyboard, CPU, dan telepon bersih dari debu dan noda.', skor: 20 },
+                { area: 'Kaca & Jendela', detail: 'Kaca jendela, partisi ruangan, dan kusen bersih serta tembus pandang (tidak buram).', skor: 20 },
+                { area: 'Tempat Sampah', detail: 'Tempat sampah tersedia, tidak penuh (overload), dan kondisi fisik tempat sampah bersih.', skor: 20 },
+                { area: 'Plafon & Lampu', detail: 'Langit-langit bersih dari kotoran/bocor, dan rumah lampu bebas dari debu.', skor: 20 }
             ],
             'P4': [
-                { area: 'Visual Management', detail: 'Adanya tanda/rambu petunjuk (pintu keluar, area dilarang merokok) yang terawat.', skor: 100 },
-                { area: 'Standardisasi', detail: 'Layout meja dan penempatan barang seragam (standar) untuk satu departemen.', skor: 100 }
+                { area: 'Visual Management', detail: 'Terdapat rambu/tanda standar (jalur evakuasi, dilarang merokok, jagalah kebersihan) yang terawat baik.', skor: 25 },
+                { area: 'Standarisasi Layout', detail: 'Penataan meja, kursi, dan lemari seragam sesuai standar layout yang ditetapkan perusahaan.', skor: 25 },
+                { area: 'Kontrol Visual', detail: 'Terdapat garis pembatas (line marking) atau shadow board untuk penempatan barang inventaris kantor.', skor: 25 },
+                { area: 'Sirkulasi Udara', detail: 'Suhu ruangan terjaga (AC berfungsi baik) dan pencahayaan memadai sesuai standar kesehatan kerja.', skor: 25 }
             ],
             'P5': [
-                { area: 'Disiplin & Budaya', detail: 'Karyawan melakukan pembersihan mandiri sebelum/sesudah bekerja (5 menit 5P).', skor: 100 },
-                { area: 'Monitoring', detail: 'Terdapat jadwal piket atau checklist kebersihan yang terisi rutin.', skor: 100 }
+                { area: 'Disiplin 5 Menit', detail: 'Karyawan terbiasa melakukan "5 Menit Resik" sebelum mulai dan sesudah selesai bekerja.', skor: 25 },
+                { area: 'Kepatuhan Atribut', detail: 'Karyawan menggunakan ID Card dan seragam sesuai ketentuan perusahaan saat berada di area kerja.', skor: 25 },
+                { area: 'Jadwal Piket', detail: 'Terdapat jadwal piket kebersihan yang tertempel dan dilaksanakan secara konsisten.', skor: 25 },
+                { area: 'Budaya K3', detail: 'Karyawan peduli terhadap aspek keselamatan (tidak menghalangi APAR, tidak membiarkan kabel terkelupas).', skor: 25 }
             ]
         };
 
@@ -95,23 +103,32 @@
             const body = document.getElementById('kriteria-body');
             const btns = document.querySelectorAll('.tab-btn');
             
-            btns.forEach(btn => btn.classList.remove('tab-active'));
-            document.getElementById('btn-' + pKey).classList.add('tab-active');
+            // Handle active state button
+            btns.forEach(btn => {
+                btn.classList.remove('tab-active', 'text-red-600');
+                btn.classList.add('text-gray-400');
+            });
+            
+            const activeBtn = document.getElementById('btn-' + pKey);
+            activeBtn.classList.add('tab-active', 'text-red-600');
+            activeBtn.classList.remove('text-gray-400');
 
+            // Render content
             body.innerHTML = '';
             kriteriaData[pKey].forEach((item, index) => {
                 const row = `
                     <tr class="hover:bg-red-50/50 transition-colors group">
-                        <td class="px-6 py-5 border-b text-sm font-bold text-gray-400 group-hover:text-red-600">${index + 1}</td>
-                        <td class="px-6 py-5 border-b font-bold text-gray-800 text-sm">${item.area}</td>
-                        <td class="px-6 py-5 border-b text-sm leading-relaxed">${item.detail}</td>
-                        <td class="px-6 py-5 border-b text-center font-bold text-red-600 text-sm">${item.skor}</td>
+                        <td class="px-6 py-5 border-b text-sm font-bold text-gray-400 group-hover:text-red-600 align-top">${index + 1}</td>
+                        <td class="px-6 py-5 border-b font-bold text-gray-800 text-sm align-top">${item.area}</td>
+                        <td class="px-6 py-5 border-b text-sm leading-relaxed text-gray-600 align-top">${item.detail}</td>
+                        <td class="px-6 py-5 border-b text-center font-bold text-red-600 text-sm align-top">${item.skor}</td>
                     </tr>
                 `;
                 body.innerHTML += row;
             });
         }
 
+        // Initialize first tab
         window.onload = () => switchTab('P1');
     </script>
 </body>
