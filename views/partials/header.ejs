@@ -1,39 +1,85 @@
-<!-- Top Header -->
-<div class="bg-white shadow-sm border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-    <h2 class="text-xl font-semibold text-gray-800"></h2>
+<div class="bg-white shadow-sm border-b border-gray-200 px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+    
     <div class="flex items-center gap-4">
-        <span class="text-sm text-gray-600">Tentang</span>
-            <a href="/kriteriapenilaian" class="text-sm text-gray-600">Kriteria Penilaian 5P</a>
+        <button id="hamburgerBtn" class="md:hidden text-gray-600 hover:text-red-600 focus:outline-none transition-transform active:scale-95">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+
+        <h2 class="text-xl font-semibold text-gray-800"></h2>
+    </div>
+
+    <div class="flex items-center gap-2 md:gap-4">
+        <div class="hidden md:flex gap-4">
+            <a href="/tentang" class="text-sm text-gray-600 hover:text-red-600 transition-colors">Tentang</a>
+            <a href="/kriteriapenilaian" class="text-sm text-gray-600 hover:text-red-600 transition-colors">Kriteria Penilaian 5P</a>
+        </div>
+
         <div class="relative">
             <div class="flex items-center gap-2 cursor-pointer user-menu-toggle" id="userMenuToggle">
-                <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-sm">
                     👤
                 </div>
-                <span class="text-sm font-medium text-gray-700">IHSANURRAIS PARDIKA</span>
-                <span>▼</span>
+                <span class="hidden md:block text-sm font-medium text-gray-700 transition-colors hover:text-red-600">IHSANURRAIS PARDIKA</span>
+                <span class="text-xs">▼</span>
             </div>
 
-            <!-- Dropdown Menu -->
-            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden z-50" id="userDropdownMenu">
-                <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg">👤 Profil</a>
-                <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg border-t border-gray-200">➜] Logout</a>
+            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden z-50"
+                id="userDropdownMenu">
+                
+                <div class="md:hidden border-b border-gray-100">
+                    <a href="/tentang" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tentang</a>
+                    <a href="/kriteriapenilaian" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Kriteria Penilaian</a>
+                </div>
+
+                <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 md:rounded-t-lg transition-colors">
+                    👤 Profil
+                </a>
+                <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg border-t border-gray-200 transition-colors">
+                    ➜ Logout
+                </a>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Toggle dropdown menu
+    // 1. Toggle Dropdown User
     const userMenuToggle = document.getElementById('userMenuToggle');
     const userDropdownMenu = document.getElementById('userDropdownMenu');
 
-    userMenuToggle.addEventListener('click', function(e) {
+    userMenuToggle.addEventListener('click', function (e) {
         e.stopPropagation();
         userDropdownMenu.classList.toggle('hidden');
     });
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
+    // 2. Logic Hamburger Menu
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    
+    // Kita perlu mengambil elemen Sidebar berdasarkan ID yang akan kita pasang nanti
+    const sidebar = document.getElementById('main-sidebar'); 
+
+    if (hamburgerBtn && sidebar) {
+        hamburgerBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Toggle class hidden untuk menampilkan/menyembunyikan sidebar
+            sidebar.classList.toggle('hidden');
+        });
+
+        // Menutup sidebar jika klik di luar area sidebar (saat mode mobile)
+        document.addEventListener('click', function(e) {
+            // Jika sidebar sedang terbuka (tidak ada class hidden) DAN layar mobile
+            if (!sidebar.classList.contains('hidden') && window.innerWidth < 768) {
+                if (!sidebar.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+                    sidebar.classList.add('hidden');
+                }
+            }
+        });
+    }
+
+    // Close dropdown user when clicking outside
+    document.addEventListener('click', function (e) {
         if (!userMenuToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
             userDropdownMenu.classList.add('hidden');
         }

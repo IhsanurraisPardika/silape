@@ -1,53 +1,14 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-// Data Kriteria 5P Statis sesuai Enum PKode di Schema [cite: 1]
-const KATEGORI_5P_DATA = [
-    {
-        nama: "P1 - Pemilahan",
-        kode: "P1",
-        kriteria: [
-            { key: "P1-01", nama: "Memisahkan barang yang diperlukan dan tidak diperlukan", nomor: 1 },
-            { key: "P1-02", nama: "Menyingkirkan barang yang tidak diperlukan", nomor: 2 }
-        ]
-    },
-    {
-        nama: "P2 - Penataan",
-        kode: "P2",
-        kriteria: [
-            { key: "P2-01", nama: "Setiap barang memiliki tempat yang jelas", nomor: 1 },
-            { key: "P2-02", nama: "Penyimpanan barang mudah ditemukan dan diambil", nomor: 2 }
-        ]
-    },
-    {
-        nama: "P3 - Pembersihan",
-        kode: "P3",
-        kriteria: [
-            { key: "P3-01", nama: "Membersihkan tempat kerja dari debu dan kotoran", nomor: 1 }
-        ]
-    },
-    {
-        nama: "P4 - Pemantapan",
-        kode: "P4",
-        kriteria: [
-            { key: "P4-01", nama: "Mempertahankan kondisi 3P sebelumnya", nomor: 1 }
-        ]
-    },
-    {
-        nama: "P5 - Pembiasaan",
-        kode: "P5",
-        kriteria: [
-            { key: "P5-01", nama: "Disiplin terhadap standar yang ditetapkan", nomor: 1 }
-        ]
-    }
-];
-
+// Menampilkan Form Penilaian
 exports.getFormPenilaian = async (req, res) => {
     try {
         const kantorId = req.query.kantor;
         if (!kantorId) return res.redirect('/penilaian');
         const user = req.session.user;
 
+        // Ambil data kantor dan daftar kantor untuk dropdown ganti kantor
         const [kantor, kantorList] = await Promise.all([
             prisma.kantor.findUnique({ where: { id: parseInt(kantorId) } }),
             user?.timId
@@ -66,7 +27,6 @@ exports.getFormPenilaian = async (req, res) => {
         res.render('formPenilaian', {
             title: 'Form Penilaian 5P',
             kantor: kantor,
-            kategori5P: KATEGORI_5P_DATA, // Menggunakan data statis
             kantorList: Array.isArray(kantorList)
               ? (user?.timId
                   ? kantorList.map((p) => ({ id: p.kantor.id, nama: p.kantor.nama }))
@@ -75,26 +35,29 @@ exports.getFormPenilaian = async (req, res) => {
             user
         });
     } catch (error) {
-        console.error("Error getFormPenilaian:", error);
-        res.status(500).send("Error loading form");
+        console.error("Error loading form:", error);
+        res.status(500).send("Gagal memuat form penilaian.");
     }
 };
 
+// Menyimpan Inputan ke Database
 exports.postFormPenilaian = async (req, res) => {
     try {
         const { kantor_id, action } = req.body;
         const assessments = JSON.parse(req.body.assessments || "[]");
         const user = req.session.user;
 
+        // Cari periode aktif
         const periode = await prisma.periodePenilaian.findFirst({
             where: { statusAktif: true },
             orderBy: { dibuatPada: 'desc' }
         });
 
         if (!periode) return res.status(400).json({ success: false, message: "Periode aktif tidak ditemukan" });
+        if (!kantor_id) return res.status(400).json({ success: false, message: "Kantor ID wajib diisi" });
 
-        await prisma.$transaction(async (tx) => {
-            // Upsert Header [cite: 20, 21]
+        const hasil = await prisma.$transaction(async (tx) => {
+            // A. Create/Update Header PenilaianIndividu
             const penilaianHeader = await tx.penilaianIndividu.upsert({
                 where: {
                     periodeId_kantorId_timId_penilaiEmail: {
@@ -117,36 +80,38 @@ exports.postFormPenilaian = async (req, res) => {
                 }
             });
 
+            // B. Simpan Detail (DetailPenilaian)
             const files = Array.isArray(req.files) ? req.files : [];
             const fileByField = new Map(files.map((f) => [f.fieldname, f]));
 
             for (const item of assessments) {
-                // Upsert Detail sesuai Unique Constraint [penilaianId, kriteriaKey] 
                 const detail = await tx.detailPenilaian.upsert({
                     where: {
                         penilaianId_kriteriaKey: {
                             penilaianId: penilaianHeader.id,
-                            kriteriaKey: item.kriteriaKey
+                            kriteriaKey: item.kriteriaKey // Sesuai schema: "P1-01"
                         }
                     },
                     update: {
-                        pKode: item.pKode,
-                        nilai: parseFloat(item.nilai || 0),
+                        nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
-                        bobotSaatDinilai: 0
+                        pKode: item.pKode, // Enum P1, P2, dll
+                        namaKriteria: item.namaKriteria,
+                        bobotSaatDinilai: 0 
                     },
                     create: {
                         penilaianId: penilaianHeader.id,
-                        pKode: item.pKode,
                         kriteriaKey: item.kriteriaKey,
+                        pKode: item.pKode,
                         namaKriteria: item.namaKriteria,
-                        nilai: parseFloat(item.nilai || 0),
+                        nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
                         bobotSaatDinilai: 0
                     }
                 });
 
-                const file = fileByField.get(`foto_${item.kriteriaKey}`);
+                // C. Simpan Foto jika ada
+                const file = fileByField.get(`foto_${item.kriteriaId}`);
                 if (file) {
                     await tx.fotoDetailPenilaian.create({
                         data: {
@@ -160,11 +125,12 @@ exports.postFormPenilaian = async (req, res) => {
                     });
                 }
             }
+            return penilaianHeader;
         });
 
-        res.json({ success: true, message: "Data berhasil disimpan", redirect: '/penilaian' });
+        res.json({ success: true, message: "Penilaian berhasil disimpan!", redirect: '/penilaian' });
     } catch (error) {
-        console.error("Error postFormPenilaian:", error);
-        res.status(500).json({ success: false, message: "Gagal menyimpan data" });
+        console.error("Save Error:", error);
+        res.status(500).json({ success: false, message: "Gagal menyimpan data ke database." });
     }
 };
