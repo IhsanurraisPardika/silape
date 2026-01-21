@@ -6,31 +6,52 @@ exports.index = async (req, res) => {
     const user = req.session.user;
     if (!user) return res.redirect("/login");
 
-    // Ambil daftar kantor yang ditugaskan ke tim user (atau semua kantor jika timId kosong)
+    // Ambil daftar kantor yang ditugaskan ke tim user sesuai schema Prisma
     let kantor = [];
 
     if (user.timId) {
+      // Jika user memiliki timId, ambil kantor melalui PenugasanKantorTim
       const penugasan = await prisma.penugasanKantorTim.findMany({
         where: {
           timId: user.timId,
           statusAktif: true,
-          kantor: { statusAktif: true },
+          kantor: { 
+            statusAktif: true 
+          },
         },
-        include: { kantor: true, tim: true },
-        orderBy: { kantorId: "asc" },
+        include: { 
+          kantor: true, 
+          tim: true 
+        },
+        orderBy: { 
+          kantor: {
+            nama: "asc"
+          }
+        },
       });
 
       kantor = penugasan.map((p) => ({
         id: p.kantor.id,
         nama: p.kantor.nama,
+        kode: p.kantor.kode || null,
         timNama: p.tim?.nama || null,
       }));
     } else {
-      const kantor = await prisma.kantor.findMany({
-        where: { statusAktif: true },
-        orderBy: { nama: "asc" },
+      // Jika user tidak memiliki timId, ambil semua kantor aktif
+      const kantorList = await prisma.kantor.findMany({
+        where: { 
+          statusAktif: true 
+        },
+        orderBy: { 
+          nama: "asc" 
+        },
       });
-      kantor = kantor.map((k) => ({ id: k.id, nama: k.nama, timNama: null }));
+      kantor = kantorList.map((k) => ({ 
+        id: k.id, 
+        nama: k.nama, 
+        kode: k.kode || null,
+        timNama: null 
+      }));
     }
 
     res.render("penilaian", {
@@ -39,7 +60,7 @@ exports.index = async (req, res) => {
       kantor,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error loading penilaian page:", err);
     res.status(500).send("Error loading penilaian page");
   }
 };

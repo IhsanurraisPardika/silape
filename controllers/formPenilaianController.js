@@ -8,13 +8,9 @@ exports.getFormPenilaian = async (req, res) => {
         if (!kantorId) return res.redirect('/penilaian');
         const user = req.session.user;
 
-        // 1. Ambil data kantor dan kriteria 5P lengkap
-        const [kantor, kategori5P, kantorList] = await Promise.all([
+        // Ambil data kantor dan daftar kantor untuk dropdown ganti kantor
+        const [kantor, kantorList] = await Promise.all([
             prisma.kantor.findUnique({ where: { id: parseInt(kantorId) } }),
-            prisma.kategori5P.findMany({
-                include: { kriteria: { where: { statusAktif: true }, orderBy: { nomor: 'asc' } } },
-                orderBy: { urutan: 'asc' }
-            }),
             user?.timId
               ? prisma.penugasanKantorTim.findMany({
                   where: {
@@ -31,7 +27,6 @@ exports.getFormPenilaian = async (req, res) => {
         res.render('formPenilaian', {
             title: 'Form Penilaian 5P',
             kantor: kantor,
-            kategori5P: kategori5P,
             kantorList: Array.isArray(kantorList)
               ? (user?.timId
                   ? kantorList.map((p) => ({ id: p.kantor.id, nama: p.kantor.nama }))
@@ -40,12 +35,12 @@ exports.getFormPenilaian = async (req, res) => {
             user
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).send("Error loading form");
+        console.error("Error loading form:", error);
+        res.status(500).send("Gagal memuat form penilaian.");
     }
 };
 
-// Menyimpan Inputan (Nilai, Catatan, Foto) ke Database
+// Menyimpan Inputan ke Database
 exports.postFormPenilaian = async (req, res) => {
     try {
         const { kantor_id, action } = req.body;
@@ -59,10 +54,8 @@ exports.postFormPenilaian = async (req, res) => {
         });
 
         if (!periode) return res.status(400).json({ success: false, message: "Periode aktif tidak ditemukan" });
-        if (!kantor_id) return res.status(400).json({ success: false, message: "kantor_id wajib" });
-        if (!Array.isArray(assessments)) return res.status(400).json({ success: false, message: "assessments tidak valid" });
+        if (!kantor_id) return res.status(400).json({ success: false, message: "Kantor ID wajib diisi" });
 
-        // Gunakan Transaction untuk menyimpan Header dan Detail secara atomik
         const hasil = await prisma.$transaction(async (tx) => {
             // A. Create/Update Header PenilaianIndividu
             const penilaianHeader = await tx.penilaianIndividu.upsert({
@@ -87,40 +80,43 @@ exports.postFormPenilaian = async (req, res) => {
                 }
             });
 
-            // B. Simpan Detail Nilai, Catatan, dan Foto per Kriteria
+            // B. Simpan Detail (DetailPenilaian)
             const files = Array.isArray(req.files) ? req.files : [];
             const fileByField = new Map(files.map((f) => [f.fieldname, f]));
 
             for (const item of assessments) {
                 const detail = await tx.detailPenilaian.upsert({
                     where: {
-                        penilaianId_kriteriaId: {
+                        penilaianId_kriteriaKey: {
                             penilaianId: penilaianHeader.id,
-                            kriteriaId: parseInt(item.kriteriaId)
+                            kriteriaKey: item.kriteriaKey // Sesuai schema: "P1-01"
                         }
                     },
                     update: {
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
-                        bobotSaatDinilai: 0 // Logika bobot bisa ditambahkan di sini
+                        pKode: item.pKode, // Enum P1, P2, dll
+                        namaKriteria: item.namaKriteria,
+                        bobotSaatDinilai: 0 
                     },
                     create: {
                         penilaianId: penilaianHeader.id,
-                        kriteriaId: parseInt(item.kriteriaId),
+                        kriteriaKey: item.kriteriaKey,
+                        pKode: item.pKode,
+                        namaKriteria: item.namaKriteria,
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
                         bobotSaatDinilai: 0
                     }
                 });
 
-                // C. Simpan Foto jika ada file upload untuk kriteria ini
+                // C. Simpan Foto jika ada
                 const file = fileByField.get(`foto_${item.kriteriaId}`);
                 if (file) {
-                    const urlFile = `/uploads/penilaian/${file.filename}`;
                     await tx.fotoDetailPenilaian.create({
                         data: {
                             detailId: detail.id,
-                            urlFile,
+                            urlFile: `/uploads/penilaian/${file.filename}`,
                             namaFile: file.originalname,
                             tipeFile: file.mimetype,
                             ukuranFile: file.size,
@@ -132,9 +128,9 @@ exports.postFormPenilaian = async (req, res) => {
             return penilaianHeader;
         });
 
-        res.json({ success: true, message: "Data berhasil disimpan", redirect: '/penilaian' });
+        res.json({ success: true, message: "Penilaian berhasil disimpan!", redirect: '/penilaian' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: "Gagal menyimpan data" });
+        console.error("Save Error:", error);
+        res.status(500).json({ success: false, message: "Gagal menyimpan data ke database." });
     }
 };

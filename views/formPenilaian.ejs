@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Form Penilaian</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="icon" href="/images/sp.png" type="image/sp.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -93,7 +97,6 @@
         </main>
     </div>
 
-    <!-- MODAL PILIHAN KRITERIA -->
     <div id="criteria-modal" class="criteria-modal p-4">
         <div class="bg-white rounded-xl max-w-5xl w-full shadow-2xl overflow-hidden section-fade-in">
             <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-b">
@@ -107,7 +110,6 @@
         </div>
     </div>
 
-    <!-- MODAL PILIHAN KANTOR -->
     <div id="office-modal" class="criteria-modal p-4">
         <div class="bg-white rounded-xl max-w-xl w-full shadow-2xl overflow-hidden section-fade-in">
             <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-b">
@@ -128,7 +130,6 @@
         </div>
     </div>
 
-    <!-- Data dari backend untuk JavaScript -->
     <script id="fp-data" type="application/json"><%- JSON.stringify({
         kantorId: kantor ? kantor.id : null,
         kantorNama: kantor ? kantor.nama : null,
@@ -136,4 +137,4 @@
     }) %></script>
     <script src="/js/formPenilaian.js"></script>
 </body>
-</html>
+</html> 
