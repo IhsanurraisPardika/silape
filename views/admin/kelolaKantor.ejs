@@ -3,341 +3,342 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Rekap Penilaian</title>
+  <title>Kelola Kantor Tim</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/images/sp.png" type="image/sp.png">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-gray-100">
-  <div class="flex">
+<div class="flex">
 
     <!-- SIDEBAR -->
     <%- include('../partials/sidebarAdmin') %>
 
-      <!-- MAIN -->
-      <div class="flex-1 flex flex-col min-h-screen">
-        <%- include('../partials/header') %>
+  <!-- MAIN -->
+  <div class="flex-1 flex flex-col min-h-screen">
+    <%- include('../partials/header') %>
 
-          <main class="flex-1 flex flex-col">
+  <main class="flex-1 flex flex-col">
 
-            <!-- CONTENT -->
-            <section class="p-6 space-y-6">
+    <!-- CONTENT -->
+    <section class="p-6 space-y-6">
 
-              <!-- BUTTONS -->
-              <div class="flex flex-wrap gap-3 items-center">
-                <a href="/kelola-tim-penilai" class="px-4 py-2 bg-white border rounded shadow-sm text-gray-700">Kelola
-                  Tim Penilai</a>
-                <button class="px-4 py-2 bg-red-600 text-white rounded shadow">Kelola Kantor Tim</button>
+      <!-- BUTTONS -->
+      <div class="flex flex-wrap gap-3 items-center">
+        <button class="px-4 py-2 bg-white border rounded shadow-sm">Kelola Tim Penilai</button>
+        <button class="px-4 py-2 bg-red-600 text-white rounded shadow">Kelola Kantor Tim</button>
 
-                <button id="btnTambahKantor"
-                  class="ml-auto px-4 py-2 bg-red-600 text-white rounded-lg shadow flex items-center gap-2">
-                  🏢 Tambah Kantor
-                </button>
-              </div>
+        <button id="btnTambahKantor"
+          class="ml-auto px-4 py-2 bg-red-600 text-white rounded-lg shadow flex items-center gap-2">
+          🏢 Tambah Kantor
+        </button>
+      </div>
 
-              <!-- CARD -->
-              <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
+      <!-- CARD -->
+      <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
 
-                <!-- TIM 1 -->
-                <div>
-                  <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
-                    TIM 1 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div class="border rounded p-3 flex justify-between items-center">
-                      <div class="flex items-center gap-3">
-                        🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
-                      </div>
-                      <button class="text-red-600 btn-delete"
-                        data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- TIM 2 -->
-                <div>
-                  <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
-                    TIM 2 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div class="border rounded p-3 flex justify-between items-center">
-                      <div class="flex items-center gap-3">
-                        🏢 <span class="font-medium">KANTOR BPPS GEDUNG BARAYAKAYA</span>
-                      </div>
-                      <button class="text-red-600 btn-delete" data-nama="KANTOR BPPS GEDUNG BARAYAKAYA">Delete</button>
-                    </div>
-                  </div>
-                </div>
-                <!-- TIM 3 -->
-                <div>
-                  <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
-                    TIM 3 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div class="border rounded p-3 flex justify-between items-center">
-                      <div class="flex items-center gap-3">
-                        🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
-                      </div>
-                      <button class="text-red-600 btn-delete"
-                        data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- TIM 4 -->
-                <div>
-                  <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
-                    TIM 4 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div class="border rounded p-3 flex justify-between items-center">
-                      <div class="flex items-center gap-3">
-                        🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
-                      </div>
-                      <button class="text-red-600 btn-delete"
-                        data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- TIM 5 -->
-                <div>
-                  <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
-                    TIM 5 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div class="border rounded p-3 flex justify-between items-center">
-                      <div class="flex items-center gap-3">
-                        🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
-                      </div>
-                      <button class="text-red-600 btn-delete"
-                        data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- TIM 6 -->
-                <div>
-                  <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
-                    TIM 6 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div class="border rounded p-3 flex justify-between items-center">
-                      <div class="flex items-center gap-3">
-                        🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
-                      </div>
-                      <button class="text-red-600 btn-delete"
-                        data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- TIM 7 -->
-                <div>
-                  <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
-                    TIM 7 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div class="border rounded p-3 flex justify-between items-center">
-                      <div class="flex items-center gap-3">
-                        🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
-                      </div>
-                      <button class="text-red-600 btn-delete"
-                        data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- TIM 8 -->
-                <div>
-                  <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
-                    TIM 8 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div class="border rounded p-3 flex justify-between items-center">
-                      <div class="flex items-center gap-3">
-                        🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
-                      </div>
-                      <button class="text-red-600 btn-delete"
-                        data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- TIM 9 -->
-                <div>
-                  <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
-                    TIM 9 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div class="border rounded p-3 flex justify-between items-center">
-                      <div class="flex items-center gap-3">
-                        🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
-                      </div>
-                      <button class="text-red-600 btn-delete"
-                        data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- TIM 10 -->
-                <div>
-                  <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
-                    TIM 10 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
-                  </div>
-
-                  <div class="mt-3 space-y-3">
-                    <div class="border rounded p-3 flex justify-between items-center">
-                      <div class="flex items-center gap-3">
-                        🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
-                      </div>
-                      <button class="text-red-600 btn-delete"
-                        data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </section>
-          </main>
-          <!-- FOOTER -->
-          <div>
-            <%- include('../partials/footer') %>
+        <!-- TIM 1 -->
+        <div>
+          <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
+            TIM 1 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
           </div>
 
-          <!-- MODAL TAMBAH -->
-          <div id="modalTambahKantor"
-            class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
-
-            <div class="bg-white w-full max-w-md rounded-lg shadow-lg">
-              <div class="bg-red-600 text-white px-4 py-3 rounded-t-lg flex justify-between items-center">
-                <h3 class="font-semibold">Tambah Kantor Baru</h3>
-                <button id="closeModal" class="text-xl">&times;</button>
+          <div class="mt-3 space-y-3">
+            <div class="border rounded p-3 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
               </div>
-
-              <form class="p-4 space-y-4">
-                <div>
-                  <label class="text-sm font-medium">Pilih Tim</label>
-                  <select class="w-full border rounded px-3 py-2">
-                    <option>TIM 1</option>
-                    <option>TIM 2</option>
-                    <option>TIM 3</option>
-                    <option>TIM 4</option>
-                    <option>TIM 5</option>
-                    <option>TIM 6</option>
-                    <option>TIM 7</option>
-                    <option>TIM 8</option>
-                    <option>TIM 9</option>
-                    <option>TIM 10</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="text-sm font-medium">Nama Kantor</label>
-                  <input type="text"
-                    class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-red-500 outline-none">
-                </div>
-
-                <div class="flex justify-end gap-2">
-                  <button type="button" id="btnBatal" class="px-4 py-2 border rounded">Batal</button>
-                  <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded">Tambah</button>
-                </div>
-              </form>
+              <button class="text-red-600 btn-delete"
+                data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
             </div>
           </div>
+        </div>
 
-          <!-- MODAL DELETE -->
-          <div id="modalDelete" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
-
-            <div class="bg-white w-full max-w-sm rounded-lg shadow-lg">
-              <div class="bg-red-600 text-white px-4 py-3 rounded-t-lg font-semibold">
-                Konfirmasi Hapus
-              </div>
-
-              <div class="p-4 space-y-4 text-sm">
-                <p>
-                  Yakin ingin menghapus kantor:
-                  <span id="namaKantorDelete" class="font-semibold"></span>?
-                </p>
-
-                <div class="flex justify-end gap-2">
-                  <button id="batalDelete" class="px-4 py-2 border rounded">Batal</button>
-                  <button id="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded">Hapus</button>
-                </div>
-              </div>
-            </div>
+        <!-- TIM 2 -->
+        <div>
+          <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
+            TIM 2 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
           </div>
 
-          <!-- SCRIPT -->
-          <script>
-            const modalTambah = document.getElementById('modalTambahKantor');
-            const modalDelete = document.getElementById('modalDelete');
-            const namaDelete = document.getElementById('namaKantorDelete');
+          <div class="mt-3 space-y-3">
+            <div class="border rounded p-3 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                🏢 <span class="font-medium">KANTOR BPPS GEDUNG BARAYAKAYA</span>
+              </div>
+              <button class="text-red-600 btn-delete"
+                data-nama="KANTOR BPPS GEDUNG BARAYAKAYA">Delete</button>
+            </div>
+          </div>
+        </div>
+        <!-- TIM 3 -->
+        <div>
+          <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
+            TIM 3 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
+          </div>
 
-            const formTambah = modalTambah.querySelector('form');
-            const selectTim = formTambah.querySelector('select');
-            const inputNama = formTambah.querySelector('input[type="text"]');
+          <div class="mt-3 space-y-3">
+            <div class="border rounded p-3 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
+              </div>
+              <button class="text-red-600 btn-delete"
+                data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIM 4 -->
+        <div>
+          <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
+            TIM 4 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
+          </div>
+
+          <div class="mt-3 space-y-3">
+            <div class="border rounded p-3 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
+              </div>
+              <button class="text-red-600 btn-delete"
+                data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIM 5 -->
+        <div>
+          <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
+            TIM 5 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
+          </div>
+
+          <div class="mt-3 space-y-3">
+            <div class="border rounded p-3 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
+              </div>
+              <button class="text-red-600 btn-delete"
+                data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIM 6 -->
+        <div>
+          <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
+            TIM 6 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
+          </div>
+
+          <div class="mt-3 space-y-3">
+            <div class="border rounded p-3 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
+              </div>
+              <button class="text-red-600 btn-delete"
+                data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIM 7 -->
+        <div>
+          <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
+            TIM 7 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
+          </div>
+
+          <div class="mt-3 space-y-3">
+            <div class="border rounded p-3 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
+              </div>
+              <button class="text-red-600 btn-delete"
+                data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIM 8 -->
+        <div>
+          <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
+            TIM 8 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
+          </div>
+
+          <div class="mt-3 space-y-3">
+            <div class="border rounded p-3 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
+              </div>
+              <button class="text-red-600 btn-delete"
+                data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIM 9 -->
+        <div>
+          <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
+            TIM 9 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
+          </div>
+
+          <div class="mt-3 space-y-3">
+            <div class="border rounded p-3 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
+              </div>
+              <button class="text-red-600 btn-delete"
+                data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIM 10 -->
+        <div>
+          <div class="bg-red-600 text-white px-4 py-2 rounded font-semibold">
+            TIM 10 <span class="text-sm font-normal">| 2 Kantor Penugasan</span>
+          </div>
+
+          <div class="mt-3 space-y-3">
+            <div class="border rounded p-3 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                🏢 <span class="font-medium">KANTOR SALES AREA SUMBAR LT.2 KP</span>
+              </div>
+              <button class="text-red-600 btn-delete"
+                data-nama="KANTOR SALES AREA SUMBAR LT.2 KP">Delete</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+    <!-- FOOTER -->
+    <div>
+    <%- include('../partials/footer') %>
+    </div>
+
+  <!-- MODAL TAMBAH -->
+  <div id="modalTambahKantor"
+    class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+
+    <div class="bg-white w-full max-w-md rounded-lg shadow-lg">
+      <div class="bg-red-600 text-white px-4 py-3 rounded-t-lg flex justify-between items-center">
+        <h3 class="font-semibold">Tambah Kantor Baru</h3>
+        <button id="closeModal" class="text-xl">&times;</button>
+      </div>
+
+      <form class="p-4 space-y-4">
+        <div>
+          <label class="text-sm font-medium">Pilih Tim</label>
+          <select class="w-full border rounded px-3 py-2">
+            <option>TIM 1</option>
+            <option>TIM 2</option>
+            <option>TIM 3</option>
+            <option>TIM 4</option>
+            <option>TIM 5</option>
+            <option>TIM 6</option>
+            <option>TIM 7</option>
+            <option>TIM 8</option>
+            <option>TIM 9</option>
+            <option>TIM 10</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-sm font-medium">Nama Kantor</label>
+          <input type="text"
+            class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-red-500 outline-none">
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button type="button" id="btnBatal" class="px-4 py-2 border rounded">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded">Tambah</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DELETE -->
+  <div id="modalDelete"
+    class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+
+    <div class="bg-white w-full max-w-sm rounded-lg shadow-lg">
+      <div class="bg-red-600 text-white px-4 py-3 rounded-t-lg font-semibold">
+        Konfirmasi Hapus
+      </div>
+
+      <div class="p-4 space-y-4 text-sm">
+        <p>
+          Yakin ingin menghapus kantor:
+          <span id="namaKantorDelete" class="font-semibold"></span>?
+        </p>
+
+        <div class="flex justify-end gap-2">
+          <button id="batalDelete" class="px-4 py-2 border rounded">Batal</button>
+          <button id="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded">Hapus</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT -->
+ <script>
+  const modalTambah = document.getElementById('modalTambahKantor');
+  const modalDelete = document.getElementById('modalDelete');
+  const namaDelete = document.getElementById('namaKantorDelete');
+
+  const formTambah = modalTambah.querySelector('form');
+  const selectTim = formTambah.querySelector('select');
+  const inputNama = formTambah.querySelector('input[type="text"]');
 
             let targetElement = null;
 
-            // ==============================
-            // UPDATE JUMLAH KANTOR PER TIM
-            // ==============================
-            function updateJumlahKantor() {
-              document.querySelectorAll('.bg-red-600.text-white.px-4.py-2').forEach(header => {
-                const timWrapper = header.parentElement;
-                const listKantor = timWrapper.querySelector('.mt-3');
+  // ==============================
+  // UPDATE JUMLAH KANTOR PER TIM
+  // ==============================
+  function updateJumlahKantor() {
+    document.querySelectorAll('.bg-red-600.text-white.px-4.py-2').forEach(header => {
+      const timWrapper = header.parentElement;
+      const listKantor = timWrapper.querySelector('.mt-3');
 
-                if (!listKantor) return;
+      if (!listKantor) return;
 
-                const jumlah = listKantor.children.length;
+      const jumlah = listKantor.children.length;
 
-                const spanJumlah = header.querySelector('span');
-                spanJumlah.textContent = `| ${jumlah} Kantor Penugasan`;
-              });
-            }
+      const spanJumlah = header.querySelector('span');
+      spanJumlah.textContent = `| ${jumlah} Kantor Penugasan`;
+    });
+  }
 
-            // ==============================
-            // BUKA & TUTUP MODAL TAMBAH
-            // ==============================
-            document.getElementById('btnTambahKantor').onclick = () => {
-              modalTambah.classList.remove('hidden');
-              modalTambah.classList.add('flex');
-            };
+  // ==============================
+  // BUKA & TUTUP MODAL TAMBAH
+  // ==============================
+  document.getElementById('btnTambahKantor').onclick = () => {
+    modalTambah.classList.remove('hidden');
+    modalTambah.classList.add('flex');
+  };
 
             document.getElementById('closeModal').onclick =
               document.getElementById('btnBatal').onclick = () => {
                 modalTambah.classList.add('hidden');
               };
 
-            // ==============================
-            // TAMBAH KANTOR
-            // ==============================
-            formTambah.onsubmit = (e) => {
-              e.preventDefault();
+  // ==============================
+  // TAMBAH KANTOR
+  // ==============================
+  formTambah.onsubmit = (e) => {
+    e.preventDefault();
 
-              const timDipilih = selectTim.value;
-              const namaKantor = inputNama.value.trim();
-              if (!namaKantor) return;
+    const timDipilih = selectTim.value;
+    const namaKantor = inputNama.value.trim();
+    if (!namaKantor) return;
 
-              const headerTim = [...document.querySelectorAll('.bg-red-600.text-white.px-4.py-2')]
-                .find(h => h.textContent.includes(timDipilih));
+    const headerTim = [...document.querySelectorAll('.bg-red-600.text-white.px-4.py-2')]
+      .find(h => h.textContent.includes(timDipilih));
 
-              const listKantor = headerTim.parentElement.querySelector('.mt-3');
+    const listKantor = headerTim.parentElement.querySelector('.mt-3');
 
-              const card = document.createElement('div');
-              card.className = 'border rounded p-3 flex justify-between items-center';
-              card.innerHTML = `
+    const card = document.createElement('div');
+    card.className = 'border rounded p-3 flex justify-between items-center';
+    card.innerHTML = `
       <div class="flex items-center gap-3">
         🏢 <span class="font-medium">${namaKantor}</span>
       </div>
@@ -346,32 +347,32 @@
       </button>
     `;
 
-              listKantor.appendChild(card);
+    listKantor.appendChild(card);
 
-              card.querySelector('.btn-delete').onclick = () => {
-                targetElement = card;
-                namaDelete.textContent = namaKantor;
-                modalDelete.classList.remove('hidden');
-                modalDelete.classList.add('flex');
-              };
+    card.querySelector('.btn-delete').onclick = () => {
+      targetElement = card;
+      namaDelete.textContent = namaKantor;
+      modalDelete.classList.remove('hidden');
+      modalDelete.classList.add('flex');
+    };
 
-              modalTambah.classList.add('hidden');
-              inputNama.value = '';
+    modalTambah.classList.add('hidden');
+    inputNama.value = '';
 
-              updateJumlahKantor();
-            };
+    updateJumlahKantor();
+  };
 
-            // ==============================
-            // DELETE
-            // ==============================
-            document.querySelectorAll('.btn-delete').forEach(btn => {
-              btn.onclick = () => {
-                targetElement = btn.closest('.border.rounded.p-3');
-                namaDelete.textContent = btn.dataset.nama;
-                modalDelete.classList.remove('hidden');
-                modalDelete.classList.add('flex');
-              };
-            });
+  // ==============================
+  // DELETE
+  // ==============================
+  document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.onclick = () => {
+      targetElement = btn.closest('.border.rounded.p-3');
+      namaDelete.textContent = btn.dataset.nama;
+      modalDelete.classList.remove('hidden');
+      modalDelete.classList.add('flex');
+    };
+  });
 
             document.getElementById('batalDelete').onclick = () => {
               modalDelete.classList.add('hidden');
@@ -383,11 +384,11 @@
               updateJumlahKantor();
             };
 
-            // ==============================
-            // INIT SAAT LOAD
-            // ==============================
-            updateJumlahKantor();
-          </script>
+  // ==============================
+  // INIT SAAT LOAD
+  // ==============================
+  updateJumlahKantor();
+</script>
 
 </body>
 
