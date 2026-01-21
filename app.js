@@ -19,7 +19,7 @@ const kelolaTimRoutes = require("./routes/kelolaTim");
 const kriteriapenilaianRoutes = require("./routes/kriteriapenilaian");
 const tentangRoutes = require("./routes/tentang");
 app.use("/", kriteriapenilaianRoutes);
-
+const pilihAnggotaRoutes = require("./routes/pilihAnggota");
 
 // middleware auth
 const { harusSuperadmin } = require("./middlewares/auth.middleware");
@@ -53,6 +53,7 @@ app.use(
 // ===== GLOBAL DATA KE VIEW =====
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
+  res.locals.anggotaAktif = req.session.anggotaAktif || null;
   next();
 });
 
@@ -70,7 +71,10 @@ app.use("/dashboardAdmin", dashboardAdminRoutes);
 app.use("/pengaturanBobot", pengaturanBobotRoutes);
 app.use("/pengaturanBobot", pengaturanBobotRoutes);
 app.use("/", kelolaTimRoutes);
+
 app.use("/tentang", tentangRoutes);
+app.use("/", kriteriapenilaianRoutes);
+app.use("/", pilihAnggotaRoutes);
 
 // contoh proteksi superadmin
 app.get("/admin/dashboard", harusSuperadmin, (req, res) => {
@@ -94,4 +98,10 @@ app.use((err, req, res, next) => {
 // ===== START =====
 app.listen(port, () => {
   console.log(`Server berjalan di http://localhost:${port}`);
+});
+
+// Handle Nodemon restart/clean exit
+process.on('SIGINT', () => {
+  console.log("Bye bye!");
+  process.exit();
 });
