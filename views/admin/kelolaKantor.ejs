@@ -1,50 +1,39 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
-  <title>Rekap Penilaian</title>
+  <title>Kelola Kantor Tim</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/images/sp.png" type="image/sp.png">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-gray-100">
-<div class="flex min-h-screen">
+<div class="flex">
 
-  <!-- SIDEBAR -->
-  <%- include('../partials/sidebarAdmin') %>
+    <!-- SIDEBAR -->
+    <%- include('../partials/sidebarAdmin') %>
 
   <!-- MAIN -->
-  <div class="flex-1 flex flex-col">
+  <div class="flex-1 flex flex-col min-h-screen">
     <%- include('../partials/header') %>
 
-    <main class="flex-1">
+  <main class="flex-1 flex flex-col">
 
-      <!-- CONTENT -->
-      <section class="p-6 space-y-6">
+    <!-- CONTENT -->
+    <section class="p-6 space-y-6">
 
-        <!-- TOP BAR -->
-        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+      <!-- BUTTONS -->
+      <div class="flex flex-wrap gap-3 items-center">
+        <button class="px-4 py-2 bg-white border rounded shadow-sm">Kelola Tim Penilai</button>
+        <button class="px-4 py-2 bg-red-600 text-white rounded shadow">Kelola Kantor Tim</button>
 
-          <!-- TABS -->
-          <div class="flex gap-3">
-            <a href="/kelola-tim-penilai"
-               class="px-5 py-3 rounded-xl bg-red-700 text-white shadow">
-              Kelola Tim Penilai
-            </a>
-
-            <a href="/kelolaKantor"
-               class="px-5 py-3 rounded-xl bg-white text-gray-700 shadow border hover:bg-gray-50">
-              Kelola Kantor Tim
-            </a>
-          </div>
-
-          <!-- BUTTON TAMBAH -->
-          <button id="btnTambahKantor"
-            class="px-4 py-2 bg-red-600 text-white rounded-lg shadow flex items-center gap-2">
-            🏢 Tambah Kantor
-          </button>
-        </div>
+        <button id="btnTambahKantor"
+          class="ml-auto px-4 py-2 bg-red-600 text-white rounded-lg shadow flex items-center gap-2">
+          🏢 Tambah Kantor
+        </button>
+      </div>
 
       <!-- CARD -->
       <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
@@ -300,7 +289,7 @@
   const selectTim = formTambah.querySelector('select');
   const inputNama = formTambah.querySelector('input[type="text"]');
 
-  let targetElement = null;
+            let targetElement = null;
 
   // ==============================
   // UPDATE JUMLAH KANTOR PER TIM
@@ -327,10 +316,10 @@
     modalTambah.classList.add('flex');
   };
 
-  document.getElementById('closeModal').onclick =
-  document.getElementById('btnBatal').onclick = () => {
-    modalTambah.classList.add('hidden');
-  };
+            document.getElementById('closeModal').onclick =
+              document.getElementById('btnBatal').onclick = () => {
+                modalTambah.classList.add('hidden');
+              };
 
   // ==============================
   // TAMBAH KANTOR
@@ -385,15 +374,15 @@
     };
   });
 
-  document.getElementById('batalDelete').onclick = () => {
-    modalDelete.classList.add('hidden');
-  };
+            document.getElementById('batalDelete').onclick = () => {
+              modalDelete.classList.add('hidden');
+            };
 
-  document.getElementById('confirmDelete').onclick = () => {
-    if (targetElement) targetElement.remove();
-    modalDelete.classList.add('hidden');
-    updateJumlahKantor();
-  };
+            document.getElementById('confirmDelete').onclick = () => {
+              if (targetElement) targetElement.remove();
+              modalDelete.classList.add('hidden');
+              updateJumlahKantor();
+            };
 
   // ==============================
   // INIT SAAT LOAD
@@ -402,4 +391,5 @@
 </script>
 
 </body>
+
 </html>
