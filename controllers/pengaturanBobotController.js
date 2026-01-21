@@ -24,10 +24,24 @@ exports.simpan = async (req, res) => {
     }
 
     /* =========================
-       1. NONAKTIFKAN KONFIGURASI LAMA
+       1b. CEK PERIODE AKTIF (REQUIRED)
+    ========================== */
+    const activePeriod = await prisma.periodePenilaian.findFirst({
+      where: { statusAktif: true }
+    });
+
+    if (!activePeriod) {
+      return res.status(400).send('Tidak ada Periode Aktif. Silakan aktifkan periode terlebih dahulu.');
+    }
+
+    /* =========================
+       1. NONAKTIFKAN KONFIGURASI LAMA DI PERIODE INI
     ========================== */
     await prisma.konfigurasiBobot.updateMany({
-      where: { statusAktif: true },
+      where: {
+        statusAktif: true,
+        periodeId: activePeriod.id // Scope ke periode aktif
+      },
       data: { statusAktif: false }
     });
 
@@ -40,6 +54,9 @@ exports.simpan = async (req, res) => {
         statusAktif: true,
         dibuatOleh: {
           connect: { email: user.email }
+        },
+        periode: {
+          connect: { id: activePeriod.id }
         }
       }
     });
@@ -47,58 +64,50 @@ exports.simpan = async (req, res) => {
     /* =========================
        3. OLAH INPUT FORM
     ========================== */
-    const detailData = [];
+    const bobotData = [];
 
     for (const key in req.body) {
       const nilai = req.body[key];
       if (nilai === '' || isNaN(nilai)) continue;
 
-      // 🔥 parsing aman (TANPA ubah logika)
+      // Key format: p1_k1, p5_k3
       const match = key.match(/p(\d+)_k(\d+)/i);
       if (!match) continue;
 
-      const kodeKategori = `P${match[1]}`; // P1..P5
-      const nomor = parseInt(match[2], 10);
-      const bobot = Number(nilai);
+      // match[1] = "1" (Kategori P1), match[2] = "1" (Kriteria 1)
+      const katNum = match[1];
+      const kritNum = match[2];
 
-      if (isNaN(nomor) || isNaN(bobot)) continue;
+      const kodeKategori = `P${katNum}`; // "P1"
+      const kunciKriteria = `P${katNum}-${kritNum}`; // "P1-1"
+      const bobot = parseFloat(nilai);
 
-      /* =========================
-         4. AMBIL KRITERIA
-      ========================== */
-      const kriteria = await prisma.kriteriaPenilaian.findFirst({
-        where: {
-          nomor,
-          kategori: {
-            kode: kodeKategori
-          }
-        }
-      });
+      if (isNaN(bobot)) continue;
 
-      if (!kriteria) continue;
-
-      detailData.push({
+      // Push to array untuk createMany
+      bobotData.push({
         konfigurasiId: konfigurasi.id,
-        kriteriaId: kriteria.id,
-        bobotKriteria: bobot
+        kategori: kodeKategori, // Enum P1..P5
+        kunciKriteria: kunciKriteria,
+        bobot: bobot
       });
     }
 
-    if (!detailData.length) {
-      return res.status(400).send('Tidak ada bobot valid');
+    if (!bobotData.length) {
+      return res.status(400).send('Tidak ada bobot valid yang dikirim.');
     }
 
     /* =========================
-      5. SIMPAN DETAIL
+      5. SIMPAN KE TABEL BobotKriteria
     ========================== */
-    await prisma.detailKonfigurasiBobot.createMany({
-      data: detailData
+    await prisma.bobotKriteria.createMany({
+      data: bobotData
     });
 
     return res.render('admin/pengaturanBobot', { success: true });
 
   } catch (error) {
     console.error('ERROR SIMPAN BOBOT:', error);
-    return res.status(500).send('Terjadi kesalahan saat menyimpan pengaturan bobot');
+    res.status(500).send('Terjadi kesalahan saat menyimpan pengaturan bobot: ' + error.message);
   }
 };

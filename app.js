@@ -20,6 +20,7 @@ const kriteriapenilaianRoutes = require("./routes/kriteriapenilaian");
 const tentangRoutes = require("./routes/tentang");
 app.use("/", kriteriapenilaianRoutes);
 const pilihAnggotaRoutes = require("./routes/pilihAnggota");
+const kelolaPeriodeRoutes = require("./routes/kelolaPeriode");
 
 // middleware auth
 const { harusSuperadmin } = require("./middlewares/auth.middleware");
@@ -75,6 +76,7 @@ app.use("/", kelolaTimRoutes);
 app.use("/tentang", tentangRoutes);
 app.use("/", kriteriapenilaianRoutes);
 app.use("/", pilihAnggotaRoutes);
+app.use("/kelola-periode", kelolaPeriodeRoutes);
 
 // contoh proteksi superadmin
 app.get("/admin/dashboard", harusSuperadmin, (req, res) => {
