@@ -3,21 +3,119 @@
     <h2 class="text-xl font-semibold text-gray-800"></h2>
     <div class="flex items-center gap-4">
         <span class="text-sm text-gray-600">Tentang</span>
-            <a href="/kriteriapenilaian" class="text-sm text-gray-600">Kriteria Penilaian 5P</a>
+        <a href="/kriteriapenilaian" class="text-sm text-gray-600">Kriteria Penilaian 5P</a>
         <div class="relative">
             <div class="flex items-center gap-2 cursor-pointer user-menu-toggle" id="userMenuToggle">
                 <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
                     👤
                 </div>
-                <span class="text-sm font-medium text-gray-700">IHSANURRAIS PARDIKA</span>
+                <span class="text-sm font-medium text-gray-700">
+                    <% if (user) { %>
+                        <% if (user.peran==='TIMPENILAI' ) { %>
+                            <%= (typeof anggotaAktif !=='undefined' && anggotaAktif) ? anggotaAktif.nama : user.timLabel
+                                || 'Tim Penilai' %>
+                                <% } else if (user.peran==='ADMIN' ) { %>
+                                    Administrator
+                                    <% } else if (user.peran==='SUPERADMINTPM' ) { %>
+                                        Super Admin
+                                        <% } else { %>
+                                            <%= user.email %>
+                                                <% } %>
+                                                    <% } else { %>
+                                                        Tamu
+                                                        <% } %>
+                </span>
                 <span>▼</span>
             </div>
 
             <!-- Dropdown Menu -->
-            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden z-50" id="userDropdownMenu">
-                <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg">👤 Profil</a>
-                <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg border-t border-gray-200">➜] Logout</a>
+            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden z-50"
+                id="userDropdownMenu">
+                <a href="#" id="btnOpenProfile"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg">👤
+                    Profil</a>
+                <a href="/logout"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg border-t border-gray-200">➜
+                    Logout</a>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODAL: PROFILE ================= -->
+<div id="modalProfile" class="fixed inset-0 z-[60] hidden">
+    <div class="absolute inset-0 bg-black/40" id="bgProfile"></div>
+    <div class="absolute center-absolute bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in-up"
+        style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+
+        <!-- Header Profile -->
+        <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center justify-between">
+            <h3 class="text-white font-bold text-lg">Profil Pengguna</h3>
+            <button type="button" id="closeProfile"
+                class="text-white/80 hover:text-white font-bold text-xl">&times;</button>
+        </div>
+
+        <!-- Body Profile -->
+        <div class="p-6 space-y-4">
+            <div class="text-center mb-6">
+                <div
+                    class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3 text-4xl shadow-inner">
+                    👤
+                </div>
+                <h4 class="text-xl font-bold text-gray-800">
+                    <% if (user) { %>
+                        <% if (user.peran==='TIMPENILAI' ) { %>
+                            <%= (typeof anggotaAktif !=='undefined' && anggotaAktif) ? anggotaAktif.nama : user.timLabel
+                                || 'Tim Penilai' %>
+                                <% } else if (user.peran==='ADMIN' ) { %>
+                                    Administrator
+                                    <% } else if (user.peran==='SUPERADMINTPM' ) { %>
+                                        Super Admin
+                                        <% } else { %>
+                                            User
+                                            <% } %>
+                                                <% } else { %>
+                                                    Tamu
+                                                    <% } %>
+                </h4>
+                <span class="inline-block px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold mt-1">
+                    <%= user ? (user.peran==='TIMPENILAI' ? 'Tim Penilai' : user.peran) : 'Guest' %>
+                </span>
+            </div>
+
+            <div class="space-y-3">
+                <% if (user && user.peran==='TIMPENILAI' && typeof anggotaAktif !=='undefined' && anggotaAktif) { %>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase">Jabatan</label>
+                        <p class="text-gray-700 font-medium border-b border-gray-100 pb-1">
+                            Anggota <%= anggotaAktif.urutan %>
+                                <%= anggotaAktif.urutan===1 ? '(Ketua)' : '' %>
+                        </p>
+                    </div>
+                    <% } %>
+
+                        <% if (user && user.timLabel) { %>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-400 uppercase">Tim</label>
+                                <p class="text-gray-700 font-medium border-b border-gray-100 pb-1">
+                                    <%= user.timLabel %>
+                                </p>
+                            </div>
+                            <% } %>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-400 uppercase">Email Akun</label>
+                                    <p class="text-gray-700 font-medium border-b border-gray-100 pb-1">
+                                        <%= user ? user.email : '-' %>
+                                    </p>
+                                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 text-center">
+            <button type="button" id="btnTutupProfile"
+                class="text-sm text-gray-500 hover:text-red-600 font-semibold transition">Tutup</button>
         </div>
     </div>
 </div>
@@ -27,15 +125,42 @@
     const userMenuToggle = document.getElementById('userMenuToggle');
     const userDropdownMenu = document.getElementById('userDropdownMenu');
 
-    userMenuToggle.addEventListener('click', function(e) {
-        e.stopPropagation();
-        userDropdownMenu.classList.toggle('hidden');
+    if (userMenuToggle && userDropdownMenu) {
+        userMenuToggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            userDropdownMenu.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!userMenuToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+                userDropdownMenu.classList.add('hidden');
+            }
+        });
+    }
+
+    // Modal Profile Logic
+    const btnOpenProfile = document.getElementById('btnOpenProfile');
+    const modalProfile = document.getElementById('modalProfile');
+    const closeProfile = document.getElementById('closeProfile');
+    const bgProfile = document.getElementById('bgProfile');
+    const btnTutupProfile = document.getElementById('btnTutupProfile');
+
+    function toggleModalProfile() {
+        if (modalProfile) {
+            modalProfile.classList.toggle('hidden');
+            // Hide dropdown if open
+            if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
+        }
+    }
+
+    if (btnOpenProfile) btnOpenProfile.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleModalProfile();
     });
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!userMenuToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
-            userDropdownMenu.classList.add('hidden');
-        }
-    });
+    if (closeProfile) closeProfile.addEventListener('click', toggleModalProfile);
+    if (bgProfile) bgProfile.addEventListener('click', toggleModalProfile);
+    if (btnTutupProfile) btnTutupProfile.addEventListener('click', toggleModalProfile);
+
 </script>

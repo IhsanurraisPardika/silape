@@ -43,23 +43,75 @@
   function toggleTimTambah() {
     const selectRoleTambah = $("#selectRoleTambah");
     const wrapTimTambah = $("#wrapTimTambah");
-    if (!selectRoleTambah || !wrapTimTambah) return;
+    const wrapAnggotaTambah = $("#wrapAnggotaTambah");
 
-    const timSelect = wrapTimTambah.querySelector('select[name="timId"]');
+    if (!selectRoleTambah) return;
 
-    if (selectRoleTambah.value === "TIM_PENILAI") {
-      wrapTimTambah.classList.remove("hidden");
-      if (timSelect) timSelect.required = true;
-    } else {
-      wrapTimTambah.classList.add("hidden");
-      if (timSelect) {
-        timSelect.required = false;
-        timSelect.value = "";
+    const isTimPenilai = selectRoleTambah.value === "TIM_PENILAI";
+
+    if (wrapTimTambah) {
+      const timSelect = wrapTimTambah.querySelector('select[name="timId"]');
+      if (isTimPenilai) {
+        wrapTimTambah.classList.remove("hidden");
+        if (timSelect) timSelect.required = true;
+      } else {
+        wrapTimTambah.classList.add("hidden");
+        if (timSelect) {
+          timSelect.required = false;
+          timSelect.value = "";
+        }
+      }
+    }
+
+    if (wrapAnggotaTambah) {
+      const anggota1Input = wrapAnggotaTambah.querySelector('input[name="anggota1"]');
+      if (isTimPenilai) {
+        wrapAnggotaTambah.classList.remove("hidden");
+        // Ketua wajib jika Tim Penilai
+        if (anggota1Input) anggota1Input.required = true;
+      } else {
+        wrapAnggotaTambah.classList.add("hidden");
+        if (anggota1Input) anggota1Input.required = false;
+        // Opsional: Clear inputs
+        wrapAnggotaTambah.querySelectorAll('input').forEach(i => i.value = '');
       }
     }
   }
 
+  // ===== SIDEBAR LOGIC (Moved from EJS) =====
+  function initSidebar() {
+    const sidebarWrapper = $("#sidebarWrapper");
+    const sidebarOverlay = $("#sidebarOverlay");
+    const btnSidebarOpen = $("#btnSidebarOpen");
+    const btnSidebarClose = $("#btnSidebarClose");
+
+    function openSidebar() {
+      if (sidebarWrapper) sidebarWrapper.classList.remove("-translate-x-full");
+      if (sidebarOverlay) sidebarOverlay.classList.remove("hidden");
+      document.body.classList.add("overflow-hidden");
+    }
+
+    function closeSidebar() {
+      if (sidebarWrapper) sidebarWrapper.classList.add("-translate-x-full");
+      if (sidebarOverlay) sidebarOverlay.classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+    }
+
+    if (btnSidebarOpen) btnSidebarOpen.addEventListener("click", openSidebar);
+    if (btnSidebarClose) btnSidebarClose.addEventListener("click", closeSidebar);
+    if (sidebarOverlay) sidebarOverlay.addEventListener("click", closeSidebar);
+
+    // Sync on resize
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 768) {
+        closeSidebar();
+      }
+    });
+  }
+
   ready(() => {
+    initSidebar();
+
     // ===== Close modal via overlay / button (data-close) =====
     document.addEventListener("click", (e) => {
       const t = e.target;
