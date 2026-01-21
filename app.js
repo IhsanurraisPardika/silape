@@ -18,6 +18,7 @@ const pengaturanBobotRoutes = require("./routes/pengaturanBobot");
 const kelolaTimRoutes = require("./routes/kelolaTim");
 const kriteriapenilaianRoutes = require("./routes/kriteriapenilaian");
 const pilihAnggotaRoutes = require("./routes/pilihAnggota");
+const kelolaPeriodeRoutes = require("./routes/kelolaPeriode");
 
 
 
@@ -72,6 +73,7 @@ app.use("/pengaturanBobot", pengaturanBobotRoutes);
 app.use("/", kelolaTimRoutes);
 app.use("/", kriteriapenilaianRoutes);
 app.use("/", pilihAnggotaRoutes);
+app.use("/kelola-periode", kelolaPeriodeRoutes);
 
 // contoh proteksi superadmin
 app.get("/admin/dashboard", harusSuperadmin, (req, res) => {
