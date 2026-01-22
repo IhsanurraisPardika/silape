@@ -37,12 +37,15 @@ exports.getFormPenilaian = async (req, res) => {
 
         let existingDetails = [];
         if (periode) {
+            // PERBAIKAN: Gunakan ID anggota yang aktif
+            const currentAnggotaId = anggotaAktif ? anggotaAktif.id : null;
+
             const existingPenilaian = await prisma.penilaian.findFirst({
                 where: {
                     periodeId: periode.id,
                     kantorId: parseInt(kantorId),
                     akunEmail: user.email,
-                    anggotaId: null
+                    anggotaId: currentAnggotaId // Menggunakan ID anggota spesifik
                 },
                 include: {
                     detail: true
@@ -78,6 +81,10 @@ exports.postFormPenilaian = async (req, res) => {
         const assessments = JSON.parse(req.body.assessments || "[]");
         const user = req.session.user;
 
+        // Ambil anggota yang sedang aktif untuk disimpan ID-nya
+        const anggotaAktif = req.session.anggotaAktif;
+        const currentAnggotaId = anggotaAktif ? anggotaAktif.id : null;
+
         // Cari periode aktif
         const periode = await prisma.periodePenilaian.findFirst({
             where: { statusAktif: true },
@@ -99,7 +106,7 @@ exports.postFormPenilaian = async (req, res) => {
                         periodeId: periode.id,
                         kantorId: parseInt(kantor_id),
                         akunEmail: user.email,
-                        anggotaId: null
+                        anggotaId: currentAnggotaId // Cek berdasarkan anggota spesifik
                     }
                 });
 
@@ -114,7 +121,7 @@ exports.postFormPenilaian = async (req, res) => {
                             periodeId: periode.id,
                             kantorId: parseInt(kantor_id),
                             akunEmail: user.email,
-                            anggotaId: null,
+                            anggotaId: currentAnggotaId, // Simpan ID anggota
                             status: 'DRAFT'
                         }
                     });
@@ -149,7 +156,7 @@ exports.postFormPenilaian = async (req, res) => {
             return res.json({ success: true, message: "Tersimpan" });
         }
 
-        // Logic "submit" (Full Submit) / Old logic starts here
+        // Logic "submit" (Full Submit)
         await prisma.$transaction(async (tx) => {
             // A. Create/Update Header Penilaian
             // Cari dulu
@@ -158,7 +165,7 @@ exports.postFormPenilaian = async (req, res) => {
                     periodeId: periode.id,
                     kantorId: parseInt(kantor_id),
                     akunEmail: user.email,
-                    anggotaId: null
+                    anggotaId: currentAnggotaId // Cek berdasarkan anggota spesifik
                 }
             });
 
@@ -181,7 +188,7 @@ exports.postFormPenilaian = async (req, res) => {
                         periodeId: periode.id,
                         kantorId: parseInt(kantor_id),
                         akunEmail: user.email,
-                        anggotaId: null, // Penting: Null
+                        anggotaId: currentAnggotaId, // Simpan ID anggota
                         status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
                         tanggalSubmit: action === 'submit' ? new Date() : null,
                     }
@@ -192,14 +199,8 @@ exports.postFormPenilaian = async (req, res) => {
             const files = Array.isArray(req.files) ? req.files : [];
             const fileByField = new Map(files.map((f) => [f.fieldname, f]));
 
-            // Pre-fetch konfigurasi bobot (opsional, jika ada logic)
             // Di sini kita update/create detail satu per satu
             for (const item of assessments) {
-                // item.kriteriaKey = "P1-1" misalnya.
-                // Kita perlu parse pKode dan id dari string jika diperlukan, tapi schema pakai String kriteriaKey?
-                // Cek schema DetailPenilaian: kunciKriteria String @db.VarChar(50)
-                // Jadi kita simpan "P1-1" langsung.
-
                 const detail = await tx.detailPenilaian.upsert({
                     where: {
                         penilaianId_kategori_kunciKriteria: { // Map unique constraint
@@ -212,7 +213,7 @@ exports.postFormPenilaian = async (req, res) => {
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
                         bobotSaatDinilai: 0, // Placeholder jika belum ada tabel bobot aktif
-                        namaAnggota: req.session.anggotaAktif ? req.session.anggotaAktif.nama : user.nama
+                        namaAnggota: anggotaAktif ? anggotaAktif.nama : user.nama
                     },
                     create: {
                         penilaianId: penilaianHeader.id,
@@ -221,7 +222,7 @@ exports.postFormPenilaian = async (req, res) => {
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
                         bobotSaatDinilai: 0,
-                        namaAnggota: req.session.anggotaAktif ? req.session.anggotaAktif.nama : user.nama
+                        namaAnggota: anggotaAktif ? anggotaAktif.nama : user.nama
                     }
                 });
 
@@ -235,9 +236,6 @@ exports.postFormPenilaian = async (req, res) => {
                             namaFile: file.originalname,
                             tipeFile: file.mimetype,
                             ukuranFile: file.size,
-                            // dihapus field diunggahOlehEmail karena tidak ada di schema FotoDetailPenilaian yang saya baca di step 19?
-                            // Cek schema step 19: model FotoDetailPenilaian { ... tidak ada diunggahOlehEmail ... }
-                            // Jadi hapus field itu.
                         }
                     });
                 }
