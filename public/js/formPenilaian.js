@@ -21,14 +21,8 @@
   // Load Existing Data
   if (fpData.existingDetails && Array.isArray(fpData.existingDetails)) {
     fpData.existingDetails.forEach(det => {
-      // det.kategori = "P1", det.kunciKriteria = "P1-1"
-      // Key kita formatnya: "P1-1" (kunciKriteria di DB sudah match format kita?)
-      // Cek P1-1 format.
       const key = det.kunciKriteria; // Asumsi di DB disimpan "P1-1"
-      // Parse ID dari key, misal "P1-1" -> id=1
-      // Tapi kita simpan full object
-      // Kita butuh kriteriaId untuk render, jadi perlu extract
-      // Format kunciKriteria: "KODE-ID", mis: "P1-1"
+      // Parse ID dari key
       const parts = key.split('-');
       const kId = parts[1] || "";
 
@@ -38,11 +32,13 @@
         namaKriteria: "", // Akan diisi saat render atau mapping
         nilai: det.nilai,
         catatan: det.catatan || "",
-        namaAnggota: det.namaAnggota || "", // Nama pengisi dari DB
-        file: null // Foto skip dulu logic loadnya biar simple
+        namaAnggota: det.namaAnggota || "",
+        file: null
       };
     });
   }
+
+
 
   // ============================================================
   // 2. OFFICE SELECTION LOGIC
@@ -123,6 +119,28 @@
       ]
     }
   ];
+
+  // ENSURE ALL CRITERIA EXIST IN STATE (DEFAULT 0)
+  // This prevents missing items if user skips steps
+  kategori5P.forEach(kat => {
+    kat.kriteria.forEach(k => {
+      const key = `${kat.kode}-${k.id}`; // e.g. P1-1
+      if (!formState[key]) {
+        formState[key] = {
+          kriteriaId: k.id,
+          pKode: kat.kode,
+          namaKriteria: k.nama,
+          nilai: "", // Default empty string or 0
+          catatan: "",
+          namaAnggota: "",
+          file: null
+        };
+      } else {
+        // Update static info just in case
+        formState[key].namaKriteria = k.nama;
+      }
+    });
+  });
 
   const criteriaData = {};
   const steps = kategori5P.map((kat, idx) => {
@@ -484,7 +502,7 @@
     fd.append("kantor_id", String(fpData.kantorId));
     fd.append("action", "submit");
 
-    // Convert formState object to Array
+    // Convert formState object to Array AND SORT IT
     const allAssessments = Object.values(formState).map(item => ({
       kriteriaId: item.kriteriaId,
       kriteriaKey: `${item.pKode}-${item.kriteriaId}`,
@@ -493,7 +511,10 @@
       nilai: Number(item.nilai) || 0,
       catatan: item.catatan || "",
       namaAnggota: item.namaAnggota // Send author info to server
-    }));
+    })).sort((a, b) => {
+      // Sort by ID ascending (1, 2, 3 ... 16)
+      return parseInt(a.kriteriaId) - parseInt(b.kriteriaId);
+    });
 
     fd.append("assessments", JSON.stringify(allAssessments));
 
