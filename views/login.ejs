@@ -7,6 +7,7 @@
     <title>Login</title>
     <link rel="icon" href="/images/sp.png" type="image/sp.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         /* Small fallback to ensure background covers on some browsers */
         body {
@@ -95,6 +96,28 @@
                 passwordInput.type = 'password';
                 eyeIcon.classList.remove('text-red-600');
             }
+        }
+
+        // Logic SweetAlert Error/Message
+        const errorMsg = "<%= typeof error !== 'undefined' ? error : '' %>";
+        const successMsg = "<%= typeof message !== 'undefined' ? message : '' %>";
+
+        if (errorMsg) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Gagal',
+                text: errorMsg,
+                confirmButtonColor: '#d33'
+            });
+        }
+
+        if (successMsg) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: successMsg,
+                confirmButtonColor: '#10B981'
+            });
         }
     </script>
 
