@@ -18,7 +18,6 @@ const pengaturanBobotRoutes = require("./routes/pengaturanBobot");
 const kelolaTimRoutes = require("./routes/kelolaTim");
 const kriteriapenilaianRoutes = require("./routes/kriteriapenilaian");
 const tentangRoutes = require("./routes/tentang");
-app.use("/", kriteriapenilaianRoutes);
 const pilihAnggotaRoutes = require("./routes/pilihAnggota");
 const kelolaPeriodeRoutes = require("./routes/kelolaPeriode");
 
