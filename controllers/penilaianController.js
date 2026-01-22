@@ -6,24 +6,26 @@ exports.index = async (req, res) => {
     const user = req.session.user;
     if (!user) return res.redirect("/login");
 
-    // Ambil daftar kantor yang ditugaskan ke tim user sesuai schema Prisma
     let kantor = [];
 
-    if (user.timId) {
-      // Jika user memiliki timId, ambil kantor melalui PenugasanKantorTim
-      const penugasan = await prisma.penugasanKantorTim.findMany({
+    // Jika user adalah TIMPENILAI, ambil kantor yang ditugaskan ke akunnya
+    if (user.peran === 'TIMPENILAI' || user.role === 'TIMPENILAI') {
+      // Cek peran dari session, sesuaikan dengan nama field di session
+      const penugasan = await prisma.penugasanKantorAkun.findMany({
         where: {
-          timId: user.timId,
+          akunEmail: user.email,
           statusAktif: true,
-          kantor: { 
-            statusAktif: true 
+          kantor: {
+            statusAktif: true
           },
+          periode: {
+            statusAktif: true
+          }
         },
-        include: { 
-          kantor: true, 
-          tim: true 
+        include: {
+          kantor: true
         },
-        orderBy: { 
+        orderBy: {
           kantor: {
             nama: "asc"
           }
@@ -33,24 +35,26 @@ exports.index = async (req, res) => {
       kantor = penugasan.map((p) => ({
         id: p.kantor.id,
         nama: p.kantor.nama,
-        kode: p.kantor.kode || null,
-        timNama: p.tim?.nama || null,
+        kode: null, // Schema Kantor tidak punya kode, sesuaikan
+        timNama: user.nama || user.email, // Tampilkan siapa yang login
       }));
     } else {
-      // Jika user tidak memiliki timId, ambil semua kantor aktif
+      // Jika ADMIN/SUPERADMIN, mungkin bisa lihat semua? atau kosongkan
+      // Sesuai request "jika tim 1 maka hanya muncul data kantor untuk tim 1 saja"
+      // Asumsi default behavior
       const kantorList = await prisma.kantor.findMany({
-        where: { 
-          statusAktif: true 
+        where: {
+          statusAktif: true
         },
-        orderBy: { 
-          nama: "asc" 
+        orderBy: {
+          nama: "asc"
         },
       });
-      kantor = kantorList.map((k) => ({ 
-        id: k.id, 
-        nama: k.nama, 
-        kode: k.kode || null,
-        timNama: null 
+      kantor = kantorList.map((k) => ({
+        id: k.id,
+        nama: k.nama,
+        kode: null,
+        timNama: null
       }));
     }
 
