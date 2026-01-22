@@ -6,31 +6,56 @@ exports.index = async (req, res) => {
     const user = req.session.user;
     if (!user) return res.redirect("/login");
 
-    // Ambil daftar kantor yang ditugaskan ke tim user (atau semua kantor jika timId kosong)
     let kantor = [];
 
-    if (user.timId) {
-      const penugasan = await prisma.penugasanKantorTim.findMany({
+    // Jika user adalah TIMPENILAI, ambil kantor yang ditugaskan ke akunnya
+    if (user.peran === 'TIMPENILAI' || user.role === 'TIMPENILAI') {
+      // Cek peran dari session, sesuaikan dengan nama field di session
+      const penugasan = await prisma.penugasanKantorAkun.findMany({
         where: {
-          timId: user.timId,
+          akunEmail: user.email,
           statusAktif: true,
-          kantor: { statusAktif: true },
+          kantor: {
+            statusAktif: true
+          },
+          periode: {
+            statusAktif: true
+          }
         },
-        include: { kantor: true, tim: true },
-        orderBy: { kantorId: "asc" },
+        include: {
+          kantor: true
+        },
+        orderBy: {
+          kantor: {
+            nama: "asc"
+          }
+        },
       });
 
       kantor = penugasan.map((p) => ({
         id: p.kantor.id,
         nama: p.kantor.nama,
-        timNama: p.tim?.nama || null,
+        kode: null, // Schema Kantor tidak punya kode, sesuaikan
+        timNama: user.nama || user.email, // Tampilkan siapa yang login
       }));
     } else {
-      const kantor = await prisma.kantor.findMany({
-        where: { statusAktif: true },
-        orderBy: { nama: "asc" },
+      // Jika ADMIN/SUPERADMIN, mungkin bisa lihat semua? atau kosongkan
+      // Sesuai request "jika tim 1 maka hanya muncul data kantor untuk tim 1 saja"
+      // Asumsi default behavior
+      const kantorList = await prisma.kantor.findMany({
+        where: {
+          statusAktif: true
+        },
+        orderBy: {
+          nama: "asc"
+        },
       });
-      kantor = kantor.map((k) => ({ id: k.id, nama: k.nama, timNama: null }));
+      kantor = kantorList.map((k) => ({
+        id: k.id,
+        nama: k.nama,
+        kode: null,
+        timNama: null
+      }));
     }
 
     res.render("penilaian", {
@@ -39,7 +64,7 @@ exports.index = async (req, res) => {
       kantor,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error loading penilaian page:", err);
     res.status(500).send("Error loading penilaian page");
   }
 };

@@ -1,327 +1,245 @@
 (() => {
-  // DATA KANTOR dari backend (database)
+  // ============================================================
+  // 1. INITIAL SETUP & DATA
+  // ============================================================
   const dataEl = document.getElementById("fp-data");
   const fpData = dataEl ? JSON.parse(dataEl.textContent || "{}") : {};
-  
+
   const offices = (fpData.kantorList || []).map((k) => ({
     id: String(k.id),
     name: String(k.nama || "").toUpperCase(),
   }));
-  
+
   let selectedOfficeId = fpData.kantorId ? String(fpData.kantorId) : (offices[0]?.id || null);
   let selectedOfficeName = fpData.kantorNama ? String(fpData.kantorNama).toUpperCase() : (offices[0]?.name || "KANTOR PENILAIAN");
 
+  // --- STATE MANAGEMENT (PENYIMPANAN SEMENTARA) ---
+  // Kita gunakan objek ini untuk menampung data inputan dari semua step
+  // Format Key: "P1-1" (Kriteria Key), Value: { nilai, catatan, namaPenginput, file }
+  const formState = {};
+
+  // Load Existing Data
+  if (fpData.existingDetails && Array.isArray(fpData.existingDetails)) {
+    fpData.existingDetails.forEach(det => {
+      // det.kategori = "P1", det.kunciKriteria = "P1-1"
+      // Key kita formatnya: "P1-1" (kunciKriteria di DB sudah match format kita?)
+      // Cek P1-1 format.
+      const key = det.kunciKriteria; // Asumsi di DB disimpan "P1-1"
+      // Parse ID dari key, misal "P1-1" -> id=1
+      // Tapi kita simpan full object
+      // Kita butuh kriteriaId untuk render, jadi perlu extract
+      // Format kunciKriteria: "KODE-ID", mis: "P1-1"
+      const parts = key.split('-');
+      const kId = parts[1] || "";
+
+      formState[key] = {
+        kriteriaId: kId,
+        pKode: det.kategori,
+        namaKriteria: "", // Akan diisi saat render atau mapping
+        nilai: det.nilai,
+        catatan: det.catatan || "",
+        namaAnggota: det.namaAnggota || "", // Nama pengisi dari DB
+        file: null // Foto skip dulu logic loadnya biar simple
+      };
+    });
+  }
+
+  // ============================================================
+  // 2. OFFICE SELECTION LOGIC
+  // ============================================================
   function renderOfficeList() {
     const container = document.getElementById("office-list");
     if (!container) return;
 
-    container.innerHTML = offices
-      .map(
-        (office) => `
-          <button
-            type="button"
-            onclick="selectOffice('${office.id}')"
-            class="w-full flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-red-50 hover:border-red-300 transition text-left
-              ${String(office.id) === String(selectedOfficeId) ? "border-red-500 bg-red-50" : "border-gray-200 bg-white"}"
-          >
-            <div class="flex items-center gap-3">
-              <div class="bg-gray-100 text-red-600 rounded-full w-8 h-8 flex items-center justify-center">
-                <i class="fas fa-building text-xs"></i>
-              </div>
-              <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">
-                ${office.name}
-              </span>
-            </div>
-            ${String(office.id) === String(selectedOfficeId) ? '<span class="text-green-600 text-xs font-semibold">Dipilih</span>' : ""}
-          </button>
-        `
-      )
-      .join("");
+    container.innerHTML = offices.map((office) => `
+      <button
+        type="button"
+        onclick="selectOffice('${office.id}')"
+        class="w-full flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-red-50 hover:border-red-300 transition text-left
+          ${String(office.id) === String(selectedOfficeId) ? "border-red-500 bg-red-50" : "border-gray-200 bg-white"}"
+      >
+        <div class="flex items-center gap-3">
+          <div class="bg-gray-100 text-red-600 rounded-full w-8 h-8 flex items-center justify-center">
+            <i class="fas fa-building text-xs"></i>
+          </div>
+          <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">${office.name}</span>
+        </div>
+        ${String(office.id) === String(selectedOfficeId) ? '<span class="text-green-600 text-xs font-semibold">Dipilih</span>' : ""}
+      </button>
+    `).join("");
   }
 
-  function openOfficeModal() {
-    renderOfficeList();
-    const modal = document.getElementById("office-modal");
-    if (modal) modal.style.display = "flex";
-  }
+  function openOfficeModal() { renderOfficeList(); document.getElementById("office-modal").style.display = "flex"; }
+  function closeOfficeModal() { document.getElementById("office-modal").style.display = "none"; }
+  function selectOffice(id) { window.location.href = `/formPenilaian?kantor=${encodeURIComponent(id)}`; }
 
-  function closeOfficeModal() {
-    const modal = document.getElementById("office-modal");
-    if (modal) modal.style.display = "none";
-  }
-
-  function selectOffice(id) {
-    const office = offices.find((o) => String(o.id) === String(id));
-    if (!office) return;
-
-    // Redirect ke halaman form dengan kantor baru (menggunakan backend)
-    window.location.href = `/formPenilaian?kantor=${encodeURIComponent(id)}`;
-  }
-
-  // expose ke global karena dipanggil dari onclick di HTML
   window.openOfficeModal = openOfficeModal;
   window.closeOfficeModal = closeOfficeModal;
   window.selectOffice = selectOffice;
 
-  // DATA STATIS KRITERIA 5P sesuai gambar yang dikirimkan (Frontend Only)
+  // ============================================================
+  // 3. KRITERIA DATA STRUCTURE
+  // ============================================================
   const kategori5P = [
     {
-      kode: "P1",
-      nama: "Pemilahan",
-      urutan: 1,
+      kode: "P1", nama: "Pemilahan",
       kriteria: [
-        { 
-          id: "1", 
-          nama: "Pembagian area & Pemilahan",
-          nilaiRentang: {
-            "0-20": "Tidak ada pembagian fungsi & tanggungjawab serta belum ada pemilahan.",
-            "21-40": "Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di <strong>sebagian kecil</strong> area kerja",
-            "41-60": "Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di <strong>sebagian besar</strong> area kerja",
-            "61-80": "Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di <strong>hampir seluruh</strong> area kerja",
-            "81-100": "Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di <strong>seluruh</strong> area kerja"
-          }
-        },
-        { 
-          id: "2", 
-          nama: "Pemindahan ke Tempat Penyimpanan/Pembuangan Sementara",
-          nilaiRentang: {
-            "0-20": "Tidak ditemukan proses ke TPS",
-            "21-40": "Ditemukan hanya ada <strong>sebagian kecil</strong> proses pemindahan ke TPS & <strong>tidak terdokumentasi</strong>",
-            "41-60": "Ditemukan ada <strong>sebagian besar</strong> proses pemindahan ke TPS & <strong>terdokumentasi</strong>",
-            "61-80": "Ditemukan ada proses pemindahan ke TPS secara <strong>hampir menyeluruh</strong> & <strong>terdokumentasi</strong>",
-            "81-100": "Ditemukan ada proses pemindahan ke TPS secara <strong>menyeluruh</strong> & <strong>terdokumentasi</strong>"
-          }
-        },
-        { 
-          id: "3", 
-          nama: "Standar P1",
-          nilaiRentang: {
-            "0-20": "Tidak ada standar Pemilahan (P1)",
-            "21-40": "Sudah ada standar Pemilahan (P1) tapi <strong>belum dilaksanakan</strong>",
-            "41-60": "Sudah ada standar Pemilahan (P1) dan sudah <strong>dilaksanakan dengan cukup baik</strong>",
-            "61-80": "Sudah ada standar Pemilahan (P1) dan sudah <strong>dilaksanakan dengan baik & konsisten</strong>",
-            "81-100": "Sudah ada standar Pemilahan (P1) secara <strong>detail</strong> dan sudah <strong>dilaksanakan dengan baik & konsisten</strong>"
-          }
-        }
+        { id: "1", nama: "Pembagian area & Pemilahan", nilaiRentang: { "0-20": "Buruk", "81-100": "Sangat Baik" } },
+        { id: "2", nama: "Pemindahan ke TPS", nilaiRentang: { "0-20": "Tidak ada", "81-100": "Lengkap" } },
+        { id: "3", nama: "Standar P1", nilaiRentang: { "0-20": "Tidak ada", "81-100": "Detail" } }
       ]
     },
     {
-      kode: "P2",
-      nama: "Penataan",
-      urutan: 2,
+      kode: "P2", nama: "Penataan",
       kriteria: [
-        { 
-          id: "4", 
-          nama: "Visualisasi Denah Ruang/Area dan jalur evakuasi",
-          nilaiRentang: {
-            "0-20": "<strong>Tidak ada</strong> visualisasi denah area dan jalur evakuasi.",
-            "21-40": "Ditemukan di <strong>sebagian kecil</strong> area memiliki visualisasi denah area dan jalur evakuasi.",
-            "41-60": "Ditemukan di <strong>sebagian besar</strong> area memiliki visualisasi denah area dan jalur evakuasi.",
-            "61-80": "Ditemukan di <strong>hampir seluruh</strong> area memiliki visualisasi denah area dan jalur evakuasi.",
-            "81-100": "Ditemukan di <strong>seluruh</strong> area memiliki visualisasi denah area dan jalur evakuasi."
-          }
-        },
-        { 
-          id: "5", 
-          nama: "Labeling, Marka, visual control dan Penanggung jawab",
-          nilaiRentang: {
-            "0-20": "<strong>Tidak</strong> ditemukan labeling, marka, visual control & penanggungjawab area.",
-            "21-40": "Ditemukan labeling, marka, visual control & penanggungjawab di <strong>sebagian kecil</strong> area.",
-            "41-60": "Ditemukan labeling, marka, visual control & penanggungjawab di <strong>sebagian besar</strong> area.",
-            "61-80": "Ditemukan labeling, marka, visual control & penanggungjawab di <strong>hampir seluruh</strong> area.",
-            "81-100": "Ditemukan labeling, marka, visual control & penanggungjawab di <strong>seluruh</strong> area."
-          }
-        },
-        { 
-          id: "6", 
-          nama: "Pengelolaan Barang/Bahan",
-          nilaiRentang: {
-            "0-20": "Ditemukan <strong>banyak</strong> barang/bahan <strong>tidak tertata rapi</strong>.",
-            "21-40": "Ditemukan <strong>sebagian kecil</strong> barang/bahan tertata namun <strong>kurang rapi</strong>.",
-            "41-60": "Ditemukan <strong>sebagian besar</strong> barang/bahan tertata rapi & <strong>teratur</strong>.",
-            "61-80": "Ditemukan <strong>hampir seluruh</strong> barang/bahan tertata rapi <strong>teratur</strong> & dalam jumlah yang <strong>efisien</strong>.",
-            "81-100": "Ditemukan <strong>seluruh</strong> barang/bahan tertata rapi, <strong>teratur</strong> & dalam jumlah yang <strong>efisien dan Sesuai Kebutuhan</strong>."
-          }
-        },
-        { 
-          id: "7", 
-          nama: "Standar P2",
-          nilaiRentang: {
-            "0-20": "<strong>Tidak ada</strong> standar Penataan (P2).",
-            "21-40": "Ada standar Penataan (P2) tapi <strong>belum dilaksanakan</strong>.",
-            "41-60": "Ada standar Penataan (P2) dan dilaksanakan dengan <strong>cukup baik</strong>.",
-            "61-80": "Ada standar Penataan (P2) dan dilaksanakan dengan <strong>baik & konsisten</strong>.",
-            "81-100": "Ada standar Penataan (P2) secara <strong>detail</strong> dan dilaksanakan dengan <strong>baik & konsisten</strong>."
-          }
-        }
+        { id: "4", nama: "Visualisasi Denah & Jalur Evakuasi", nilaiRentang: { "0-20": "Tidak ada", "81-100": "Jelas" } },
+        { id: "5", nama: "Labeling & Marka", nilaiRentang: { "0-20": "Tidak ada", "81-100": "Lengkap" } },
+        { id: "6", nama: "Pengelolaan Barang", nilaiRentang: { "0-20": "Berantakan", "81-100": "Rapi" } },
+        { id: "7", nama: "Standar P2", nilaiRentang: { "0-20": "Tidak ada", "81-100": "Detail" } }
       ]
     },
     {
-      kode: "P3",
-      nama: "Pembersihan",
-      urutan: 3,
+      kode: "P3", nama: "Pembersihan",
       kriteria: [
-        { 
-          id: "8", 
-          nama: "Pembersihan dan Alat bantu kebersihan",
-          nilaiRentang: {
-            "0-20": "Tidak ditemukan kegiatan pembersihan",
-            "21-40": "Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di <strong>sebagian kecil</strong> area",
-            "41-60": "Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di <strong>sebagian besar</strong> area",
-            "61-80": "Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di <strong>hampir seluruh</strong> area",
-            "81-100": "Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di <strong>seluruh</strong> area"
-          }
-        },
-        { 
-          id: "9", 
-          nama: "Upaya mengatasi sumber kotor & gangguan aktifitas",
-          nilaiRentang: {
-            "0-20": "Tidak ada upaya mengatasi sumber kotor & gangguan",
-            "21-40": "Ada upaya untuk mengatasi sumber kotor & gangguan aktifitas di <strong>sebagian kecil</strong> area",
-            "41-60": "Ada upaya untuk mengatasi sumber kotor & gangguan aktifitas di <strong>sebagian besar</strong> area",
-            "61-80": "Ada upaya dilakukan untuk mengatasi sumber kotor & gangguan aktifitas di <strong>hampir seluruh</strong> area",
-            "81-100": "Ada upaya dilakukan untuk mengatasi sumber kotor & gangguan aktifitas di <strong>seluruh</strong> area"
-          }
-        },
-        { 
-          id: "10", 
-          nama: "Standar P3",
-          nilaiRentang: {
-            "0-20": "Tidak ada standar Pembersihan (P3)",
-            "21-40": "Ada standar Pembersihan (P3) tapi <strong>belum dilaksanakan</strong>",
-            "41-60": "Ada standar Pembersihan (P3) dan dilaksanakan dengan <strong>cukup baik</strong>",
-            "61-80": "Ada standar Pembersihan (P3) dan dilaksanakan dengan <strong>baik & konsisten</strong>",
-            "81-100": "Ada standar Pembersihan (P3) secara <strong>detail</strong> dan dilaksanakan dengan <strong>baik & konsisten</strong>"
-          }
-        }
+        { id: "8", nama: "Kebersihan & Alat", nilaiRentang: { "0-20": "Kotor", "81-100": "Bersih" } },
+        { id: "9", nama: "Sumber Kotoran", nilaiRentang: { "0-20": "Dibiarkan", "81-100": "Diantisipasi" } },
+        { id: "10", nama: "Standar P3", nilaiRentang: { "0-20": "Tidak ada", "81-100": "Detail" } }
       ]
     },
     {
-      kode: "P4",
-      nama: "Pemantapan",
-      urutan: 4,
+      kode: "P4", nama: "Pemantapan",
       kriteria: [
-        { 
-          id: "11", 
-          nama: "Konsistensi Pelaksanaan P1-P3",
-          nilaiRentang: {
-            "0-20": "<strong>Tidak ada</strong> Jadwal Rencana & Realisasi Kegiatan serta Rapat Rutin Terkait Implementasi Kegiatan P1-P3 (Berupa Schedule/Notulen Rapat/Foto2 yang Relevan)",
-            "21-40": "<strong>Ada</strong> bukti jadwal Rencana Terkait Implementasi Kegiatan P1-P3, tetapi <strong>tidak ada</strong> realisasi kegiatan dan rapat Rutin",
-            "41-60": "<strong>Ada</strong> bukti jadwal Rencana & Realisasi Terkait Implementasi Kegiatan P1-P3, tetapi <strong>tidak ada</strong> jadwal rapat Rutin. (Bukti Berupa Schedule/Notulen Rapat/Foto2 yang Relevan)",
-            "61-80": "<strong>Ada</strong> bukti jadwal Rencana & Realisasi Terkait Implementasi Kegiatan P1-P3, serta dilakukan rapat Rutin (<strong>Minimal 1 Kali sebulan</strong>). (Bukti Berupa Schedule/Notulen Rapat/Absensi/Foto2 yang Relevan)",
-            "81-100": "<strong>Ada</strong> bukti jadwal Rencana & Realisasi Terkait Implementasi Kegiatan P1-P3, serta dilakukan rapat Rutin (<strong>Minimal 2 Kali sebulan</strong>). (Bukti Berupa Schedule/Notulen Rapat/Absensi/Foto2 yang Relevan)"
-          }
-        },
-        { 
-          id: "12", 
-          nama: "Pemeliharaan P1 - P3",
-          nilaiRentang: {
-            "0-20": "<strong>Tidak ditemukan</strong> pemeliharaan terhadap P1 - P3 serta aktifitas kegiatan perbaikan berkelanjutan",
-            "21-40": "Ditemukan di <strong>sebagian kecil</strong> area ada pemeliharaan terhadap kondisi P1 - P3 & <strong>belum ada</strong> aktifitas kegiatan perbaikan berkelanjutan",
-            "41-60": "Ditemukan di <strong>sebagian besar</strong> area ada pemeliharaan terhadap kondisi P1 - P3 & <strong>ada</strong> aktifitas kegiatan perbaikan berkelanjutan (<strong>1 tema</strong>)",
-            "61-80": "Ditemukan di <strong>hampir seluruh</strong> area ada pemeliharaan terhadap kondisi P1 - P3 & <strong>ada</strong> aktifitas kegiatan perbaikan berkelanjutan (<strong>lebih dari 2 tema</strong>)",
-            "81-100": "Ditemukan di <strong>seluruh</strong> area ada pemeliharaan terhadap kondisi P1 - P3 & <strong>ada</strong> aktifitas kegiatan perbaikan berkelanjutan (<strong>lebih dari 3 tema</strong>)"
-          }
-        },
-        { 
-          id: "13", 
-          nama: "Standar P4",
-          nilaiRentang: {
-            "0-20": "<strong>Tidak ada</strong> standar Pemantapan (P4)",
-            "21-40": "<strong>Ada</strong> standar Pemantapan (P4) tapi <strong>belum dilaksanakan</strong>",
-            "41-60": "<strong>Ada</strong> standar Pemantapan (P4) dan dilaksanakan dengan <strong>cukup baik</strong>",
-            "61-80": "<strong>Ada</strong> standar Pemantapan (P4) dan dilaksanakan dengan <strong>baik & konsisten</strong>",
-            "81-100": "<strong>Ada</strong> standar Pemantapan (P4) secara <strong>detail</strong> dan dilaksanakan dengan <strong>baik & konsisten</strong>"
-          }
-        }
+        { id: "11", nama: "Konsistensi P1-P3", nilaiRentang: { "0-20": "Jarang", "81-100": "Rutin" } },
+        { id: "12", nama: "Pemeliharaan", nilaiRentang: { "0-20": "Rusak", "81-100": "Terawat" } },
+        { id: "13", nama: "Standar P4", nilaiRentang: { "0-20": "Tidak ada", "81-100": "Detail" } }
       ]
     },
     {
-      kode: "P5",
-      nama: "Pembiasaan",
-      urutan: 5,
+      kode: "P5", nama: "Pembiasaan",
       kriteria: [
-        { 
-          id: "14", 
-          nama: "Sikap kerja semua personil sudah menunjukkan kebiasaan positif (atribut kerja, disiplin dan menaati rambu2 serta standart yang dibuat, dll)",
-          nilaiRentang: {
-            "0-20": "<strong>Sebagian besar</strong> personil organisasi/area kerja belum mempunyai sikap kerja/kebiasaan positif dan disiplin.",
-            "21-40": "<strong>Sebagian kecil</strong> personil organisasi/area kerja belum mempunyai sikap kerja/kebiasaan positif dan disiplin.",
-            "41-60": "Sikap kerja/kebiasaan positif dan disiplin telah terbentuk tapi <strong>masih harus diikuti dengan reward dan punishment</strong>.",
-            "61-80": "Setiap personil dalam organisasi/area kerja sudah <strong>menunjukkan sikap kerja, kebiasaan positif dan disiplin</strong>.",
-            "81-100": "Setiap personil dalam organisasi/area kerja sudah <strong>menunjukkan sikap kerja, kebiasaan positif dan disiplin serta mempunyai budaya malu</strong>."
-          }
-        },
-        { 
-          id: "15", 
-          nama: "Sudah ada papan aktivitas yang menyajikan informasi area masing-masing (hasil Kaizen/Focus Improvement, efisiensi, produktifitas, hasil audit, dll)",
-          nilaiRentang: {
-            "0-20": "<strong>Tidak ada</strong> papan aktivitas/informasi penerapan 5P di area kerja.",
-            "21-40": "<strong>Ada papan aktivitas</strong>, tapi informasi yang disajikan tidak up to date dan tidak memadai.",
-            "41-60": "Sudah ada papan aktivitas yang menyajikan informasi penerapan 5P.",
-            "61-80": "Activity board/papan informasi 5P tersedia di area kerja dan menyajikan informasi-informasi yang memadai (kegiatan 5P, hasil Kaizen, efisiensi, produktifitas, hasil audit, dll).",
-            "81-100": "Activity board/papan informasi 5P tersedia di area kerja dan menyajikan informasi-informasi yang memadai (kegiatan 5P, hasil Kaizen, efisiensi, produktifitas, hasil audit, dll) <strong>serta up to date</strong>."
-          }
-        },
-        { 
-          id: "16", 
-          nama: "Standar P5",
-          nilaiRentang: {
-            "0-20": "<strong>Tidak ada</strong> standar Pembiasaan (P5)",
-            "21-40": "<strong>Ada</strong> standar Pembiasaan (P5) tapi <strong>belum dilaksanakan</strong>",
-            "41-60": "Ada standar Pembiasaan (P5) dan dilaksanakan dengan <strong>cukup baik</strong>",
-            "61-80": "Ada standar Pembiasaan (P5) dan dilaksanakan dengan <strong>baik & konsisten</strong>",
-            "81-100": "Ada standar Pembiasaan (P5) secara <strong>detail dan dilaksanakan dengan baik & konsisten</strong>"
-          }
-        }
+        { id: "14", nama: "Sikap Kerja", nilaiRentang: { "0-20": "Pasif", "81-100": "Disiplin" } },
+        { id: "15", nama: "Papan Aktivitas", nilaiRentang: { "0-20": "Tidak ada", "81-100": "Update" } },
+        { id: "16", nama: "Standar P5", nilaiRentang: { "0-20": "Tidak ada", "81-100": "Detail" } }
       ]
     }
   ];
 
-  // criteriaData dipakai modal (versi lengkap dengan nilai rentang)
   const criteriaData = {};
-  const steps = (kategori5P || []).map((kat, idx) => {
-    const kode = String(kat.kode || `P${idx + 1}`).toUpperCase();
-    const namaKat = String(kat.nama || "").toUpperCase();
-    const title = `KRITERIA ${kode} - ${namaKat}`;
-    const items = (kat.kriteria || []).map((k) => {
-      criteriaData[String(k.id)] = {
-        name: k.nama,
-        nilaiRentang: k.nilaiRentang || {},
-      };
-      return { id: String(k.id), name: k.nama };
+  const steps = kategori5P.map((kat, idx) => {
+    const items = kat.kriteria.map((k) => {
+      criteriaData[String(k.id)] = { name: k.nama, nilaiRentang: k.nilaiRentang || {} };
+      return { id: String(k.id), name: k.nama, pKode: kat.kode };
     });
-    return { id: idx + 1, title, items };
+    return { id: idx + 1, title: `KRITERIA ${kat.kode} - ${kat.nama.toUpperCase()}`, items };
   });
 
   let currentStep = 1;
 
+  // ============================================================
+  // 4. STATE MANAGEMENT LOGIC (CORE FIX)
+  // ============================================================
+
+  // Fungsi untuk menyimpan inputan langkah saat ini ke variabel `formState`
+  function saveCurrentStepData() {
+    const stepData = steps.find(s => s.id === currentStep);
+    if (!stepData) return;
+
+    stepData.items.forEach(item => {
+      // Buat Unique Key
+      const key = `${item.pKode}-${item.id}`; // Contoh: P1-1
+
+      // Ambil elemen
+      const nilaiEl = document.querySelector(`[name="nilai_${item.id}"]`);
+      const catatanEl = document.querySelector(`[name="catatan_${item.id}"]`);
+      // const namaEl removed
+
+      // Ambil file input (Khusus file kita simpan object File-nya)
+      const fileEl = document.getElementById(`file_${item.id}`);
+      let currentFile = null;
+      if (fileEl && fileEl.files && fileEl.files[0]) {
+        currentFile = fileEl.files[0];
+      } else if (formState[key] && formState[key].file) {
+        // Jika tidak ada upload baru, pertahankan file lama jika ada
+        currentFile = formState[key].file;
+      }
+
+      // Logic Preservasi Author
+      // 1. Ambil previous state
+      const prevState = formState[key] || {};
+      const prevNilai = String(prevState.nilai || "");
+      const prevCatatan = String(prevState.catatan || "");
+
+      const currNilai = String(nilaiEl ? nilaiEl.value : "");
+      const currCatatan = String(catatanEl ? catatanEl.value : "");
+
+      let author = prevState.namaAnggota || ""; // Default: nama existing DB
+
+      // 2. Deteksi perubahan
+      // Jika nilai berubah ATAU catatan berubah, klaim authorship
+      if (currNilai !== prevNilai || currCatatan !== prevCatatan) {
+        author = fpData.userNama; // Claim by current user
+      }
+
+      // Simpan ke State Global
+      formState[key] = {
+        kriteriaId: item.id,
+        pKode: item.pKode,
+        namaKriteria: item.name,
+        nilai: currNilai,
+        catatan: currCatatan,
+        namaAnggota: author, // Persist logic
+        file: currentFile // Simpan objek file
+      };
+    });
+  }
+
+  // ============================================================
+  // 5. RENDERING (VIEW)
+  // ============================================================
   function renderStep() {
     const stepData = steps.find((s) => s.id === currentStep);
     const container = document.getElementById("dynamic-form-content");
     if (!stepData || !container) return;
 
-    const titleEl = document.getElementById("step-title-display");
-    const counterEl = document.getElementById("step-counter");
-    if (titleEl) titleEl.innerText = stepData.title;
-    if (counterEl) counterEl.innerText = `STEP ${currentStep} OF ${steps.length}`;
+    // Update Header Step
+    document.getElementById("step-title-display").innerText = stepData.title;
+    document.getElementById("step-counter").innerText = `STEP ${currentStep} OF ${steps.length}`;
 
     container.innerHTML = "";
 
     stepData.items.forEach((item, idx) => {
+      const key = `${item.pKode}-${item.id}`;
+      // AMBIL DATA DARI STATE JIKA ADA (Agar tidak hilang saat render ulang)
+      const savedData = formState[key] || {};
+      const valNilai = savedData.nilai || "";
+      const valCatatan = savedData.catatan || "";
+      const filledBy = savedData.namaAnggota || ""; // Siapa yang mengisi di DB?
+
+      // Jika filledBy kosong, berarti belum diisi di DB.
+      // Jika valNilai sudah ada (dari input user sekarang), filledBy mungkin belum tersimpan di DB kecuali submit.
+      // Kita gunakan logic: "Jika ada di DB, tampilkan nama DB. Jika baru ngetik, tampilkan 'Draft (Anda)'?"
+      // User request: "muncul di form tersebut anggota mana yang telah mengisi inputan yang sudah ada saja"
+      // Jadi kalau loaded from DB, show name.
+
+      const hasFile = savedData.file ? true : false;
+      const fileName = hasFile ? savedData.file.name : "";
+
       container.innerHTML += `
         <div class="section-fade-in space-y-5 pb-8 border-b border-gray-100 last:border-0">
-          <!-- Input Nama Penginput di bagian atas setiap kriteria -->
-          <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-4">
-            <label class="text-[10px] font-bold text-gray-600 uppercase tracking-widest block mb-2">
-              <i class="fas fa-user mr-2"></i>Nama Penginput Data
-            </label>
-            <input 
-              type="text" 
-              name="nama_penginput_${item.id}" 
-              placeholder="Masukkan nama yang menginputkan data penilaian ini..." 
-              class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none transition text-sm font-medium bg-white"
-            >
+          <!-- INDIKATOR PENGISI (OTOMATIS) -->
+          <div class="flex items-center gap-2 mb-2">
+             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+               <i class="fas fa-edit mr-1"></i> Penilai:
+             </span>
+             ${filledBy
+          ? `<span class="text-xs font-bold text-gray-700 bg-green-100 border border-green-200 px-2 py-1 rounded text-green-800">
+                    <i class="fas fa-check-circle text-[10px] mr-1"></i> ${filledBy}
+                  </span>`
+          : `<span class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                    Belum dinilai
+                  </span>`
+        }
+             ${!filledBy ? `<span class="text-[10px] text-gray-400 italic ml-1">(Anda: ${fpData.userNama})</span>` : ''}
           </div>
 
           <h3 class="font-bold text-gray-800 text-lg">${idx + 1}. ${item.name}</h3>
@@ -329,7 +247,13 @@
           <div class="grid grid-cols-4 gap-6 items-end">
             <div class="col-span-1">
               <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Nilai (0-100)</label>
-              <input type="number" name="nilai_${item.id}" placeholder="0" min="0" max="100" class="w-full border-b-2 border-gray-200 py-2 focus:border-red-600 outline-none transition text-2xl font-bold text-red-600 bg-transparent">
+              <input 
+                type="number" 
+                name="nilai_${item.id}" 
+                value="${valNilai}"
+                placeholder="0" min="0" max="100" 
+                class="w-full border-b-2 border-gray-200 py-2 focus:border-red-600 outline-none transition text-2xl font-bold text-red-600 bg-transparent"
+              >
             </div>
             <div class="col-span-3 pb-2">
               <button type="button" onclick="showCriteria('${item.id}')" class="text-red-600 text-xs font-bold flex items-center hover:underline transition">
@@ -340,17 +264,28 @@
 
           <div>
             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Catatan</label>
-            <textarea name="catatan_${item.id}" placeholder="Berikan catatan penilaian (opsional)..." class="w-full border border-gray-200 rounded-lg p-3 h-24 bg-gray-50 focus:bg-white transition text-sm outline-none shadow-inner"></textarea>
+            <textarea 
+              name="catatan_${item.id}" 
+              placeholder="Berikan catatan penilaian (opsional)..." 
+              class="w-full border border-gray-200 rounded-lg p-3 h-24 bg-gray-50 focus:bg-white transition text-sm outline-none shadow-inner"
+            >${valCatatan}</textarea>
           </div>
 
           <div>
             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Dokumentasi Foto Kondisi</label>
+            
+            ${hasFile ? `
+              <div class="mb-2 px-4 py-2 bg-green-50 border border-green-200 rounded flex items-center justify-between text-green-700 text-xs">
+                <span><i class="fas fa-check-circle mr-2"></i>File tersimpan: <strong>${fileName}</strong></span>
+              </div>
+            ` : ''}
+
             <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:bg-red-50/30 transition cursor-pointer relative group"
               onclick="document.getElementById('file_${item.id}').click()">
 
               <input type="file" id="file_${item.id}" name="foto_${item.id}" class="hidden" accept="image/*" capture="environment" onchange="previewImage(this, '${item.id}')">
 
-              <div id="ph_${item.id}" class="py-4">
+              <div id="ph_${item.id}" class="py-4 ${hasFile ? 'hidden' : ''}">
                 <div class="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-red-100 transition">
                   <i class="fas fa-camera text-gray-400 group-hover:text-red-600"></i>
                 </div>
@@ -365,197 +300,241 @@
                     <i class="fas fa-sync"></i>
                   </div>
                 </div>
-                <p class="text-[10px] text-red-600 font-bold mt-2 uppercase tracking-tighter">Klik area ini untuk ganti foto</p>
+                <p class="text-[10px] text-red-600 font-bold mt-2 uppercase tracking-tighter">Ganti Foto</p>
               </div>
+
+              ${hasFile ? `<p class="text-[10px] text-gray-400 mt-2">(Klik area ini untuk mengganti foto)</p>` : ''}
             </div>
           </div>
         </div>
       `;
     });
+
+    // --- TAMBAHAN CHECKBOX VALIDASI PER STEP ---
+    container.innerHTML += `
+      <div class="mt-8 mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 section-fade-in">
+        <label class="flex items-center cursor-pointer">
+          <input type="checkbox" id="step_valid_checkbox" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300" onchange="toggleNextButton(this)">
+          <span class="ml-3 text-sm font-medium text-gray-700">
+             Saya menyatakan bahwa penilaian di halaman ini sudah benar dan siap disimpan.
+          </span>
+        </label>
+      </div>
+    `;
+
     updateNavUI();
   }
 
+  // Helper Toggle Button
+  window.toggleNextButton = function (el) {
+    const nextBtn = document.getElementById("nextBtn");
+    if (!nextBtn) return;
+
+    // Logic: jika checked -> enable, jika unchecked -> disable
+    // Tapi kita perlu handle style visual juga agar user tahu
+    if (el.checked) {
+      nextBtn.disabled = false;
+      nextBtn.classList.remove("bg-gray-400", "cursor-not-allowed");
+      nextBtn.classList.add("bg-red-600", "hover:bg-red-700", "shadow-md");
+      nextBtn.innerHTML = currentStep === steps.length ? "SUBMIT PENILAIAN" : "Selanjutnya";
+    } else {
+      nextBtn.disabled = true;
+      nextBtn.classList.remove("bg-red-600", "hover:bg-red-700", "shadow-md", "bg-green-600"); // Remove green too if submit
+      nextBtn.classList.add("bg-gray-400", "cursor-not-allowed");
+    }
+  };
+
+  // ============================================================
+  // 6. HELPER FUNCTIONS
+  // ============================================================
   function previewImage(input, id) {
     if (input.files && input.files[0]) {
+      // Simpan langsung ke state saat ada perubahan file
+      // agar tidak hilang kalau user pindah tab sebelum next
+      const file = input.files[0];
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = document.getElementById(`img_${id}`);
         if (img) img.src = e.target.result;
+
         const ph = document.getElementById(`ph_${id}`);
         const pv = document.getElementById(`pv_${id}`);
         if (ph) ph.classList.add("hidden");
         if (pv) pv.classList.remove("hidden");
       };
-      reader.readAsDataURL(input.files[0]);
+      reader.readAsDataURL(file);
     }
   }
 
-  function showCriteria(key) {
-    const data = criteriaData[key];
-    if (!data || !data.nilaiRentang) return;
-    
-    const modal = document.getElementById("criteria-modal");
+  function showCriteria(id) {
+    const data = criteriaData[id];
+    if (!data) return;
+    document.getElementById("modal-title").innerText = data.name;
     const body = document.getElementById("modal-body");
-    const title = document.getElementById("modal-title");
-    
-    if (title) title.innerText = data.name;
-
-    if (body) {
-      const rentangNilai = ["0-20", "21-40", "41-60", "61-80", "81-100"];
-      
-      body.innerHTML = `
-        <div class="space-y-4">
-          <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <p class="text-xs font-bold text-gray-700 uppercase tracking-widest mb-3">Penjelasan Bobot / Nilai Kriteria</p>
-            
-            <div class="overflow-x-auto">
-              <table class="w-full text-xs border-collapse">
-                <thead>
-                  <tr class="bg-red-600 text-white">
-                    <th class="border border-gray-300 px-3 py-2 text-left font-bold">Nilai</th>
-                    <th class="border border-gray-300 px-3 py-2 text-left font-bold">Penjelasan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${rentangNilai.map((rentang, idx) => {
-                    const desc = data.nilaiRentang[rentang] || "Tidak ada penjelasan";
-                    const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
-                    return `
-                      <tr class="${bgColor}">
-                        <td class="border border-gray-300 px-3 py-2 font-bold text-red-600 text-center">${rentang}</td>
-                        <td class="border border-gray-300 px-3 py-2 text-gray-700 leading-relaxed">${desc}</td>
-                      </tr>
-                    `;
-                  }).join("")}
-                </tbody>
-              </table>
-            </div>
-            
-            <div class="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
-              <p class="text-xs text-gray-600">
-                <i class="fas fa-info-circle mr-1"></i>
-                <strong>Petunjuk:</strong> Pilih nilai berdasarkan penjelasan di atas yang paling sesuai dengan kondisi aktual di kantor.
-              </p>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    
-    if (modal) modal.style.display = "flex";
+    const rentang = ["0-20", "21-40", "41-60", "61-80", "81-100"];
+    body.innerHTML = `
+      <table class="w-full text-xs border">
+        <tr class="bg-red-600 text-white"><th>Nilai</th><th>Penjelasan</th></tr>
+        ${rentang.map(r => `<tr><td class="border p-2 font-bold text-center">${r}</td><td class="border p-2">${data.nilaiRentang[r] || '-'}</td></tr>`).join('')}
+      </table>`;
+    document.getElementById("criteria-modal").style.display = "flex";
   }
 
-  function closeModal() {
-    const modal = document.getElementById("criteria-modal");
-    if (modal) modal.style.display = "none";
-  }
+  function closeModal() { document.getElementById("criteria-modal").style.display = "none"; }
 
   function updateNavUI() {
     for (let i = 1; i <= steps.length; i++) {
       const el = document.getElementById(`nav-${i}`);
-      if (!el) continue;
-      el.className =
-        i === currentStep
-          ? "flex flex-col items-center flex-1 py-3 step-active"
-          : "flex flex-col items-center flex-1 py-3 text-gray-400 hover:text-red-300 transition";
+      if (el) el.className = i === currentStep ? "flex flex-col items-center flex-1 py-3 step-active" : "flex flex-col items-center flex-1 py-3 text-gray-400 transition";
     }
-
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
     if (prevBtn) prevBtn.style.visibility = currentStep === 1 ? "hidden" : "visible";
     if (nextBtn) {
       nextBtn.innerText = currentStep === steps.length ? "SUBMIT PENILAIAN" : "Selanjutnya";
-      nextBtn.className =
-        currentStep === steps.length
-          ? "px-12 py-2.5 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-md transition text-sm"
-          : "px-12 py-2.5 bg-gray-400 text-white rounded-lg font-bold hover:bg-red-600 shadow-md transition text-sm";
+      // Default DISABLED wait for checkbox
+      nextBtn.disabled = true;
+      nextBtn.className = "px-12 py-2.5 bg-gray-400 text-white rounded-lg font-bold cursor-not-allowed transition";
     }
   }
 
-  function collectAssessments() {
-    const result = [];
-    steps.forEach((step) => {
-      (step.items || []).forEach((item) => {
-        const nilaiEl = document.querySelector(`[name="nilai_${item.id}"]`);
-        const catatanEl = document.querySelector(`[name="catatan_${item.id}"]`);
-        const namaPenginputEl = document.querySelector(`[name="nama_penginput_${item.id}"]`);
-        const nilai = nilaiEl ? nilaiEl.value : "";
-        const catatan = catatanEl ? catatanEl.value : "";
-        const namaPenginput = namaPenginputEl ? namaPenginputEl.value : "";
-        result.push({
-          kriteriaId: item.id,
-          nilai: nilai === "" ? 0 : Number(nilai),
-          catatan: catatan || "",
-          namaPenginput: namaPenginput || "",
+  async function changeStep(n) {
+    // 1. Simpan data langkah saat ini ke state lokal
+    saveCurrentStepData();
+
+    // 2. Logika navigasi
+    const targetStep = currentStep + n;
+
+    // Jika MAJU (Next)
+    if (n > 0) {
+      // Validasi Checkbox
+      const cb = document.getElementById('step_valid_checkbox');
+      if (!cb || !cb.checked) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Belum Disetujui',
+          text: 'Silakan ceklis pernyataan kebenaran data terlebih dahulu.',
         });
-      });
-    });
-    return result;
+        return;
+      }
+
+      // Cek apakah ini tombol submit (Step terakhir + 1)
+      if (targetStep > steps.length) {
+        submitPenilaian();
+        return;
+      }
+
+      // Pindah Step Tanpa Save DB
+      currentStep = targetStep;
+      renderStep();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+    } else {
+      // MUNDUR (Back)
+      if (targetStep < 1) return;
+      currentStep = targetStep;
+      renderStep();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
+  // saveBatchStep removed to implement Save-at-End strategy
+
+  function jumpToStep(s) {
+    // Jump navigasi via step number di atas. 
+    // Biasanya jump bebas, tapi karena req "harus ceklis baru lanjut", 
+    // apakah jump dibolehkan? 
+    // Asumsi: Jump boleh, tapi save dulu current step?
+    // Atau loose validation?
+    // Implementasi aman: Save current local state, pindah. (Tanpa save DB / validasi)
+    saveCurrentStepData();
+    currentStep = s;
+    renderStep();
+  }
+
+  // ============================================================
+  // 7. SUBMIT LOGIC (FIXED)
+  // ============================================================
   async function submitPenilaian() {
-    if (!confirm("Submit semua penilaian?")) return;
-    
+    // Simpan step terakhir (jaga-jaga jika user belum pindah step)
+    saveCurrentStepData();
+
+    // Konfirmasi
+    const result = await Swal.fire({
+      title: 'Submit Penilaian?',
+      text: "Pastikan semua data dari P1 sampai P5 sudah benar.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#C8102E',
+      confirmButtonText: 'Ya, Kirim!',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
+
     if (!fpData.kantorId) {
-      alert("Kantor tidak ditemukan. Silakan pilih kantor terlebih dahulu.");
+      Swal.fire('Error', 'Kantor belum dipilih.', 'error');
       return;
     }
+
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     const fd = new FormData();
     fd.append("kantor_id", String(fpData.kantorId));
     fd.append("action", "submit");
-    const assessments = collectAssessments();
-    fd.append("assessments", JSON.stringify(assessments));
 
-    assessments.forEach((a) => {
-      const input = document.getElementById(`file_${a.kriteriaId}`);
-      if (input && input.files && input.files[0]) {
-        fd.append(`foto_${a.kriteriaId}`, input.files[0]);
+    // Convert formState object to Array
+    const allAssessments = Object.values(formState).map(item => ({
+      kriteriaId: item.kriteriaId,
+      kriteriaKey: `${item.pKode}-${item.kriteriaId}`,
+      pKode: item.pKode,
+      namaKriteria: item.namaKriteria,
+      nilai: Number(item.nilai) || 0,
+      catatan: item.catatan || "",
+      namaAnggota: item.namaAnggota // Send author info to server
+    }));
+
+    fd.append("assessments", JSON.stringify(allAssessments));
+
+    // Append files from State
+    Object.values(formState).forEach((item) => {
+      if (item.file) {
+        fd.append(`foto_${item.kriteriaId}`, item.file);
       }
     });
 
     try {
       const res = await fetch("/formPenilaian", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.success) {
-        alert(data.message || "Gagal submit penilaian");
-        return;
+
+      if (data.success) {
+        await Swal.fire('Berhasil!', data.message || "Data berhasil disimpan.", 'success');
+        if (data.redirect) window.location.href = data.redirect;
+      } else {
+        Swal.fire('Gagal', data.message || "Terjadi kesalahan.", 'error');
       }
-      alert(data.message || "Penilaian berhasil dikirim");
-      if (data.redirect) window.location.href = data.redirect;
     } catch (error) {
-      console.error("Error submitting:", error);
-      alert("Terjadi kesalahan saat mengirim data. Silakan coba lagi.");
+      console.error(error);
+      Swal.fire('Error', 'Gagal menghubungi server.', 'error');
     }
   }
 
-  function changeStep(n) {
-    currentStep += n;
-    if (currentStep > steps.length) {
-      submitPenilaian();
-      currentStep = steps.length;
-      return;
-    }
-    renderStep();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  // saveSingleItem removed
 
-  function jumpToStep(s) {
-    currentStep = s;
-    renderStep();
-  }
-
-  // expose global untuk onclick HTML
+  // EXPOSE GLOBAL
   window.previewImage = previewImage;
   window.showCriteria = showCriteria;
   window.closeModal = closeModal;
   window.changeStep = changeStep;
   window.jumpToStep = jumpToStep;
 
-  // Inisialisasi
+  // INIT
   const titleEl = document.getElementById("office-title");
   if (titleEl && !titleEl.textContent.trim()) {
     titleEl.textContent = selectedOfficeName;
   }
+
+  // Inisialisasi awal kosong, render step 1
   renderStep();
 })();

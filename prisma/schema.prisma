@@ -200,7 +200,7 @@ model Penilaian {
   akunEmail String @db.VarChar(191)
 
   // siapa anggota yang dipilih saat menilai
-  anggotaId Int
+  anggotaId Int?
 
   konfigurasiBobotId Int?
 
@@ -218,7 +218,7 @@ model Penilaian {
   periode PeriodePenilaian @relation(fields: [periodeId], references: [id], onDelete: Cascade)
   kantor  Kantor           @relation(fields: [kantorId], references: [id], onDelete: Cascade)
   akun    Pengguna         @relation(fields: [akunEmail], references: [email], onDelete: Cascade)
-  anggota AnggotaTim @relation("AnggotaPenilai", fields: [anggotaId], references: [id], onDelete: Restrict)
+  anggota AnggotaTim?      @relation("AnggotaPenilai", fields: [anggotaId], references: [id], onDelete: Restrict)
 
   konfigurasiBobot KonfigurasiBobot? @relation(fields: [konfigurasiBobotId], references: [id], onDelete: SetNull)
 
@@ -241,6 +241,7 @@ model DetailPenilaian {
 
   nilai   Decimal @db.Decimal(6, 2)
   catatan String? @db.Text
+  namaAnggota String? @db.VarChar(191) // Menyimpan nama anggota yang mengisi
 
   // snapshot bobot saat input (biar laporan stabil meski bobot berubah)
   bobotSaatDinilai Decimal @db.Decimal(10, 2)

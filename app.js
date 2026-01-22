@@ -17,9 +17,9 @@ const dashboardAdminRoutes = require("./routes/dashboardAdmin");
 const pengaturanBobotRoutes = require("./routes/pengaturanBobot");
 const kelolaTimRoutes = require("./routes/kelolaTim");
 const kriteriapenilaianRoutes = require("./routes/kriteriapenilaian");
+const tentangRoutes = require("./routes/tentang");
 const pilihAnggotaRoutes = require("./routes/pilihAnggota");
-
-
+const kelolaPeriodeRoutes = require("./routes/kelolaPeriode");
 
 // middleware auth
 const { harusSuperadmin } = require("./middlewares/auth.middleware");
@@ -69,9 +69,13 @@ app.use("/kelolaKantor", kelolaKantorRoutes);
 app.use("/daftarPenilaian", daftarPenilaianRoutes);
 app.use("/dashboardAdmin", dashboardAdminRoutes);
 app.use("/pengaturanBobot", pengaturanBobotRoutes);
+app.use("/pengaturanBobot", pengaturanBobotRoutes);
 app.use("/", kelolaTimRoutes);
+
+app.use("/tentang", tentangRoutes);
 app.use("/", kriteriapenilaianRoutes);
 app.use("/", pilihAnggotaRoutes);
+app.use("/kelola-periode", kelolaPeriodeRoutes);
 
 // contoh proteksi superadmin
 app.get("/admin/dashboard", harusSuperadmin, (req, res) => {
