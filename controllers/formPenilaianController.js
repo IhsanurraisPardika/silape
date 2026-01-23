@@ -5,20 +5,29 @@ const prisma = new PrismaClient();
 exports.getFormPenilaian = async (req, res) => {
     try {
         const kantorId = req.query.kantor;
+        // Jika tidak ada parameter kantor, redirect ke halaman list penilaian atau dashboard
         if (!kantorId) return res.redirect('/penilaian');
+
         const user = req.session.user;
         if (!user) return res.redirect('/login');
 
         // Ambil anggota yang sedang aktif (Login as member context)
         const anggotaAktif = req.session.anggotaAktif;
 
-        // Ambil data kantor dan daftar kantor untuk dropdown ganti kantor
+        // Tentukan apakah user yang login adalah TIM PENILAI
+        // Sesuai schema: enum PeranPengguna { SUPERADMINTPM, ADMIN, TIMPENILAI }
+        const isTimPenilai = user.peran === 'TIMPENILAI';
+
+        // Ambil data kantor yang sedang dipilih & daftar kantor untuk dropdown "Ganti Kantor"
         const [kantor, rawKantorList] = await Promise.all([
+            // 1. Ambil detail kantor yang sedang dipilih
             prisma.kantor.findUnique({ where: { id: parseInt(kantorId) } }),
-            user?.timId
-                ? prisma.penugasanKantorAkun.findMany({
+
+            // 2. Ambil daftar kantor untuk dropdown
+            isTimPenilai
+                ? prisma.penugasanKantorAkun.findMany({ // Jika TIMPENILAI, ambil dari penugasan
                     where: {
-                        akunEmail: user.email,
+                        akunEmail: user.email, // Filter berdasarkan email tim yang login
                         statusAktif: true,
                         kantor: { statusAktif: true },
                         periode: { statusAktif: true }
@@ -26,8 +35,18 @@ exports.getFormPenilaian = async (req, res) => {
                     include: { kantor: true },
                     orderBy: { kantor: { nama: "asc" } },
                 })
-                : prisma.kantor.findMany({ where: { statusAktif: true }, orderBy: { nama: "asc" } })
+                : prisma.kantor.findMany({ // Jika ADMIN, ambil semua kantor
+                    where: { statusAktif: true },
+                    orderBy: { nama: "asc" } 
+                })
         ]);
+
+        // Mapping hasil query agar formatnya seragam (id, nama) untuk frontend
+        const kantorList = Array.isArray(rawKantorList)
+            ? (isTimPenilai
+                ? rawKantorList.map((p) => ({ id: p.kantor.id, nama: p.kantor.nama }))
+                : rawKantorList.map((k) => ({ id: k.id, nama: k.nama })))
+            : [];
 
         // Ambil Existing Data (Nilai yang sudah diisi)
         const periode = await prisma.periodePenilaian.findFirst({
@@ -37,7 +56,7 @@ exports.getFormPenilaian = async (req, res) => {
 
         let existingDetails = [];
         if (periode) {
-            // PERBAIKAN: Gunakan ID anggota yang aktif
+            // Gunakan ID anggota yang aktif agar data tidak tertimpa antar anggota tim
             const currentAnggotaId = anggotaAktif ? anggotaAktif.id : null;
 
             const existingPenilaian = await prisma.penilaian.findFirst({
@@ -59,11 +78,7 @@ exports.getFormPenilaian = async (req, res) => {
         res.render('formPenilaian', {
             title: 'Form Penilaian 5P',
             kantor: kantor,
-            kantorList: Array.isArray(rawKantorList)
-                ? (user?.timId
-                    ? rawKantorList.map((p) => ({ id: p.kantor.id, nama: p.kantor.nama }))
-                    : rawKantorList.map((k) => ({ id: k.id, nama: k.nama })))
-                : [],
+            kantorList: kantorList, // Daftar kantor yang sudah difilter
             user,
             anggotaAktif,
             existingDetails
@@ -94,17 +109,17 @@ exports.postFormPenilaian = async (req, res) => {
         if (!periode) return res.status(400).json({ success: false, message: "Periode aktif tidak ditemukan" });
         if (!kantor_id) return res.status(400).json({ success: false, message: "Kantor ID wajib diisi" });
 
-        // Logic "save-item" (Single Save)
+        // Logic "save-item" (Simpan per item/draft)
         if (action === 'save-item') {
             const item = assessments[0]; // Expect single item in array
             if (!item) return res.status(400).json({ success: false, message: "Data item kosong" });
 
             await prisma.$transaction(async (tx) => {
-                // Upsert Header (as Draft)
+                // Cari atau Buat Header Penilaian
                 let penilaianHeader = await tx.penilaian.findFirst({
                     where: {
                         periodeId: periode.id,
-                        kantorId: parseInt(kantor_id),
+                        kantorId: parseInt(kantor_id), // Pastikan tersimpan sesuai kantor yang dipilih
                         akunEmail: user.email,
                         anggotaId: currentAnggotaId // Cek berdasarkan anggota spesifik
                     }
@@ -127,7 +142,7 @@ exports.postFormPenilaian = async (req, res) => {
                     });
                 }
 
-                // Upsert Detail
+                // Upsert Detail (Simpan Nilai)
                 await tx.detailPenilaian.upsert({
                     where: {
                         penilaianId_kategori_kunciKriteria: {
@@ -156,23 +171,22 @@ exports.postFormPenilaian = async (req, res) => {
             return res.json({ success: true, message: "Tersimpan" });
         }
 
-        // Logic "submit" (Full Submit)
+        // Logic "submit" (Simpan semua & Finalisasi)
         await prisma.$transaction(async (tx) => {
             // A. Create/Update Header Penilaian
-            // Cari dulu
             let penilaianHeader = await tx.penilaian.findFirst({
                 where: {
                     periodeId: periode.id,
                     kantorId: parseInt(kantor_id),
                     akunEmail: user.email,
-                    anggotaId: currentAnggotaId // Cek berdasarkan anggota spesifik
+                    anggotaId: currentAnggotaId
                 }
             });
 
             const dataHeader = {
                 status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
                 tanggalSubmit: action === 'submit' ? new Date() : null,
-                tanggalMulaiInput: new Date() // Update timestamp aktivitas terakhir
+                tanggalMulaiInput: new Date()
             };
 
             if (penilaianHeader) {
@@ -188,7 +202,7 @@ exports.postFormPenilaian = async (req, res) => {
                         periodeId: periode.id,
                         kantorId: parseInt(kantor_id),
                         akunEmail: user.email,
-                        anggotaId: currentAnggotaId, // Simpan ID anggota
+                        anggotaId: currentAnggotaId,
                         status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
                         tanggalSubmit: action === 'submit' ? new Date() : null,
                     }
@@ -199,20 +213,19 @@ exports.postFormPenilaian = async (req, res) => {
             const files = Array.isArray(req.files) ? req.files : [];
             const fileByField = new Map(files.map((f) => [f.fieldname, f]));
 
-            // Di sini kita update/create detail satu per satu
             for (const item of assessments) {
                 const detail = await tx.detailPenilaian.upsert({
                     where: {
-                        penilaianId_kategori_kunciKriteria: { // Map unique constraint
+                        penilaianId_kategori_kunciKriteria: {
                             penilaianId: penilaianHeader.id,
-                            kategori: item.pKode, // Enum KategoriPenilaian (P1, P2...)
+                            kategori: item.pKode,
                             kunciKriteria: item.kriteriaKey
                         }
                     },
                     update: {
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
-                        bobotSaatDinilai: 0, // Placeholder jika belum ada tabel bobot aktif
+                        bobotSaatDinilai: 0,
                         namaAnggota: anggotaAktif ? anggotaAktif.nama : user.nama
                     },
                     create: {

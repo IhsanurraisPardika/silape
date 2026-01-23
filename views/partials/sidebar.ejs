@@ -1,8 +1,6 @@
-<!-- Sidebar -->
-<div class="w-56 bg-red-600 text-white flex flex-col shadow-lg h-screen">
-    <!-- Logo dan Judul Sidebar -->
+<div class="w-56 bg-red-600 text-white flex flex-col shadow-lg h-screen sticky top-0">
     <div class="p-6 border-b border-red-700">
-         <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3">
             <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
                 <img src="/images/sp.png" alt="Logo SP" class="w-10 h-10">
             </div>
@@ -12,30 +10,59 @@
         </div>
     </div>
 
-<!-- Navigation Menu -->
-<nav class="flex flex-col p-4 space-y-3">
-    <a href="/home" class="block px-4 py-3 font-medium text-white hover:bg-red-700 transition rounded-xl flex items-center gap-3">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-        </svg>
-        Beranda
-    </a>
-    <a href="/penilaian" class="block px-4 py-3 font-medium text-white hover:bg-red-700 transition rounded-xl flex items-center gap-3">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M21 3H3v18h18V3zm-2 16H5V5h14v14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h6v2H7v-2z" fill="white"/>>
-        </svg>
-        Input Penilaian
-    </a>
-    <a href="/daftarPenilaian" class="block px-4 py-3 font-medium text-white hover:bg-red-700 transition rounded-xl flex items-center gap-3">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-8h14V7H7v2z"/>
-        </svg>
-        Daftar Penilaian
-    </a>
-</nav>
+    <nav class="flex flex-col p-4 space-y-3">
+        <a href="/home" 
+           class="nav-link block px-4 py-3 font-medium text-white hover:bg-red-800 transition rounded-xl flex items-center gap-3"
+           data-path="/home">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg>
+            Beranda
+        </a>
+        <a href="/penilaian" 
+           class="nav-link block px-4 py-3 font-medium text-white hover:bg-red-800 transition rounded-xl flex items-center gap-3"
+           data-path="/penilaian">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M21 3H3v18h18V3zm-2 16H5V5h14v14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h6v2H7v-2z"
+                    fill="white" />>
+            </svg>
+            Input Penilaian
+        </a>
+        <a href="/daftarPenilaian" 
+           class="nav-link block px-4 py-3 font-medium text-white hover:bg-red-800 transition rounded-xl flex items-center gap-3"
+           data-path="/daftarPenilaian">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-8h14V7H7v2z" />
+            </svg>
+            Daftar Penilaian
+        </a>
+    </nav>
 
-<div class="mt-auto p-2 text-left flex flex-col">
-    <p class="text-[10px] text-white opacity-80 tracking-widest uppercase font-medium">
-        © 2026 SILAPE
-    </p>
+    <div class="mt-auto p-2 text-left flex flex-col">
+        <p class="text-[10px] text-white opacity-80 tracking-widest uppercase font-medium">
+            © 2026 SILAPE
+        </p>
+    </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        navLinks.forEach(link => {
+            const linkPath = link.getAttribute('data-path');
+            
+            // Hapus kelas aktif default jika ada (opsional, disini kita biarkan bersih)
+            link.classList.remove('bg-red-700'); 
+
+            if (!linkPath) return;
+
+            // Logika untuk menandai menu yang aktif
+            // Jika path sama persis atau diawali dengan path tersebut (untuk sub-menu)
+            if (currentPath === linkPath || currentPath.startsWith(linkPath + '/')) {
+                link.classList.add('bg-red-700'); // Menambahkan background merah gelap saat aktif
+            }
+        });
+    });
+</script>
