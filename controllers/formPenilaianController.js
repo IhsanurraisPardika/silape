@@ -37,7 +37,7 @@ exports.getFormPenilaian = async (req, res) => {
                 })
                 : prisma.kantor.findMany({ // Jika ADMIN, ambil semua kantor
                     where: { statusAktif: true },
-                    orderBy: { nama: "asc" } 
+                    orderBy: { nama: "asc" }
                 })
         ]);
 
@@ -93,12 +93,29 @@ exports.getFormPenilaian = async (req, res) => {
 exports.postFormPenilaian = async (req, res) => {
     try {
         const { kantor_id, action } = req.body;
-        const assessments = JSON.parse(req.body.assessments || "[]");
+        let assessments = JSON.parse(req.body.assessments || "[]");
         const user = req.session.user;
+
+        // 1. Sort Assessments by ID (1-16) to ensure DB insertion order
+        assessments.sort((a, b) => {
+            const idA = parseInt(a.kriteriaId) || 0;
+            const idB = parseInt(b.kriteriaId) || 0;
+            return idA - idB;
+        });
+
+        // 2. Mapping from Frontend Absolute Keys to Backend ID Keys (Relative per Category)
+        const criteriaMapping = {
+            "P1-1": "P1-1", "P1-2": "P1-2", "P1-3": "P1-3",
+            "P2-4": "P2-1", "P2-5": "P2-2", "P2-6": "P2-3", "P2-7": "P2-4",
+            "P3-8": "P3-1", "P3-9": "P3-2", "P3-10": "P3-3",
+            "P4-11": "P4-1", "P4-12": "P4-2", "P4-13": "P4-3",
+            "P5-14": "P5-1", "P5-15": "P5-2", "P5-16": "P5-3"
+        };
 
         // Ambil anggota yang sedang aktif untuk disimpan ID-nya
         const anggotaAktif = req.session.anggotaAktif;
         const currentAnggotaId = anggotaAktif ? anggotaAktif.id : null;
+
 
         // Cari periode aktif
         const periode = await prisma.periodePenilaian.findFirst({
@@ -109,10 +126,44 @@ exports.postFormPenilaian = async (req, res) => {
         if (!periode) return res.status(400).json({ success: false, message: "Periode aktif tidak ditemukan" });
         if (!kantor_id) return res.status(400).json({ success: false, message: "Kantor ID wajib diisi" });
 
+
+        // Fetch Active Weights Configuration
+        const konfigurasiBobot = await prisma.konfigurasiBobot.findFirst({
+            where: {
+                periodeId: periode.id,
+                statusAktif: true
+            },
+            include: {
+                bobotKriteria: true
+            }
+        });
+
+        const weightMap = new Map();
+        if (konfigurasiBobot && konfigurasiBobot.bobotKriteria) {
+            konfigurasiBobot.bobotKriteria.forEach(b => {
+                // Key format: CATEGORY-KEY (e.g., P1-P1-1)
+                weightMap.set(`${b.kategori}-${b.kunciKriteria}`, b.bobot);
+            });
+        }
+
+        // Logic "save-item" (Single Save)
+
         // Logic "save-item" (Simpan per item/draft)
         if (action === 'save-item') {
             const item = assessments[0]; // Expect single item in array
             if (!item) return res.status(400).json({ success: false, message: "Data item kosong" });
+
+            // Lookup logic: Try direct match first, then mapped match
+            let bobot = 0;
+            const directKey = `${item.pKode}-${item.kriteriaKey}`;
+            const mappedKeySuffix = criteriaMapping[item.kriteriaKey]; // e.g. "P2-1"
+            const mappedKey = mappedKeySuffix ? `${item.pKode}-${mappedKeySuffix}` : null;
+
+            if (weightMap.has(directKey)) {
+                bobot = weightMap.get(directKey);
+            } else if (mappedKey && weightMap.has(mappedKey)) {
+                bobot = weightMap.get(mappedKey);
+            }
 
             await prisma.$transaction(async (tx) => {
                 // Cari atau Buat Header Penilaian
@@ -128,7 +179,11 @@ exports.postFormPenilaian = async (req, res) => {
                 if (penilaianHeader) {
                     await tx.penilaian.update({
                         where: { id: penilaianHeader.id },
-                        data: { tanggalMulaiInput: new Date() } // Touch timestamp
+                        data: {
+                            tanggalMulaiInput: new Date(),
+                            // Update link to config bobot if not set? Optional but good practice
+                            konfigurasiBobotId: konfigurasiBobot?.id
+                        }
                     });
                 } else {
                     penilaianHeader = await tx.penilaian.create({
@@ -136,8 +191,10 @@ exports.postFormPenilaian = async (req, res) => {
                             periodeId: periode.id,
                             kantorId: parseInt(kantor_id),
                             akunEmail: user.email,
-                            anggotaId: currentAnggotaId, // Simpan ID anggota
-                            status: 'DRAFT'
+
+                            anggotaId: null,
+                            status: 'DRAFT',
+                            konfigurasiBobotId: konfigurasiBobot?.id,
                         }
                     });
                 }
@@ -154,7 +211,7 @@ exports.postFormPenilaian = async (req, res) => {
                     update: {
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan || null,
-                        namaAnggota: anggotaAktif ? anggotaAktif.nama : user.nama
+                        bobotSaatDinilai: bobot
                     },
                     create: {
                         penilaianId: penilaianHeader.id,
@@ -162,9 +219,9 @@ exports.postFormPenilaian = async (req, res) => {
                         kunciKriteria: item.kriteriaKey,
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan || null,
-                        bobotSaatDinilai: 0,
-                        namaAnggota: anggotaAktif ? anggotaAktif.nama : user.nama
-                    }
+                        bobotSaatDinilai: bobot
+                    },
+                    select: { id: true }
                 });
             });
 
@@ -186,7 +243,9 @@ exports.postFormPenilaian = async (req, res) => {
             const dataHeader = {
                 status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
                 tanggalSubmit: action === 'submit' ? new Date() : null,
-                tanggalMulaiInput: new Date()
+
+                tanggalMulaiInput: new Date(), // Update timestamp aktivitas terakhir,
+                konfigurasiBobotId: konfigurasiBobot?.id
             };
 
             if (penilaianHeader) {
@@ -205,6 +264,7 @@ exports.postFormPenilaian = async (req, res) => {
                         anggotaId: currentAnggotaId,
                         status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
                         tanggalSubmit: action === 'submit' ? new Date() : null,
+                        konfigurasiBobotId: konfigurasiBobot?.id
                     }
                 });
             }
@@ -214,6 +274,19 @@ exports.postFormPenilaian = async (req, res) => {
             const fileByField = new Map(files.map((f) => [f.fieldname, f]));
 
             for (const item of assessments) {
+
+                // Lookup logic: Try direct match first, then mapped match
+                let bobot = 0;
+                const directKey = `${item.pKode}-${item.kriteriaKey}`;
+                const mappedKeySuffix = criteriaMapping[item.kriteriaKey]; // e.g. "P2-1"
+                const mappedKey = mappedKeySuffix ? `${item.pKode}-${mappedKeySuffix}` : null;
+
+                if (weightMap.has(directKey)) {
+                    bobot = weightMap.get(directKey);
+                } else if (mappedKey && weightMap.has(mappedKey)) {
+                    bobot = weightMap.get(mappedKey);
+                }
+
                 const detail = await tx.detailPenilaian.upsert({
                     where: {
                         penilaianId_kategori_kunciKriteria: {
@@ -225,8 +298,7 @@ exports.postFormPenilaian = async (req, res) => {
                     update: {
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
-                        bobotSaatDinilai: 0,
-                        namaAnggota: anggotaAktif ? anggotaAktif.nama : user.nama
+                        bobotSaatDinilai: bobot
                     },
                     create: {
                         penilaianId: penilaianHeader.id,
@@ -234,9 +306,9 @@ exports.postFormPenilaian = async (req, res) => {
                         kunciKriteria: item.kriteriaKey,
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
-                        bobotSaatDinilai: 0,
-                        namaAnggota: anggotaAktif ? anggotaAktif.nama : user.nama
-                    }
+                        bobotSaatDinilai: bobot
+                    },
+                    select: { id: true }
                 });
 
                 // C. Simpan Foto jika ada
