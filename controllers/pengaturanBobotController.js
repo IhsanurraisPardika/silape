@@ -6,7 +6,51 @@ const prisma = new PrismaClient();
  */
 exports.index = async (req, res) => {
   try {
-    res.render('admin/pengaturanBobot', { success: false });
+    const user = req.session.user;
+    if (!user?.email) {
+      return res.redirect('/login');
+    }
+
+    // 1. Ambil Periode Aktif
+    const activePeriod = await prisma.periodePenilaian.findFirst({
+      where: { statusAktif: true }
+    });
+
+    let existingWeights = {};
+
+    if (activePeriod) {
+      // 2. Ambil Konfigurasi Aktif
+      const activeConfig = await prisma.konfigurasiBobot.findFirst({
+        where: {
+          periodeId: activePeriod.id,
+          statusAktif: true
+        },
+        include: { bobotKriteria: true }
+      });
+
+      // 3. Mapping ke format { p1_k1: 10, ... }
+      if (activeConfig && activeConfig.bobotKriteria) {
+        activeConfig.bobotKriteria.forEach(b => {
+          // b.kunciKriteria misal "P1-1" -> ubah jadi "p1_k1"
+          // Format kunciKriteria di DB: "P1-1"
+          // Format name di HTML: "p1_k1"
+          // Kita perlu parser sederhana atau mapping manual
+
+          // Extract angka
+          const match = b.kunciKriteria.match(/P(\d+)-(\d+)/);
+          if (match) {
+            const key = `p${match[1]}_k${match[2]}`;
+            existingWeights[key] = b.bobot;
+          }
+        });
+      }
+    }
+
+    res.render('admin/pengaturanBobot', {
+      success: req.query.success === 'true',
+      existingWeights,
+      user
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send('Gagal memuat halaman');
@@ -35,31 +79,41 @@ exports.simpan = async (req, res) => {
     }
 
     /* =========================
-       1. NONAKTIFKAN KONFIGURASI LAMA DI PERIODE INI
+       1. CEK KONFIGURASI LAMA DI PERIODE INI
     ========================== */
-    await prisma.konfigurasiBobot.updateMany({
+    let konfigurasi = await prisma.konfigurasiBobot.findFirst({
       where: {
         statusAktif: true,
-        periodeId: activePeriod.id // Scope ke periode aktif
-      },
-      data: { statusAktif: false }
-    });
-
-    /* =========================
-       2. BUAT KONFIGURASI BARU
-    ========================== */
-    const konfigurasi = await prisma.konfigurasiBobot.create({
-      data: {
-        nama: `Konfigurasi ${new Date().toLocaleString('id-ID')}`,
-        statusAktif: true,
-        dibuatOleh: {
-          connect: { email: user.email }
-        },
-        periode: {
-          connect: { id: activePeriod.id }
-        }
+        periodeId: activePeriod.id
       }
     });
+
+    if (konfigurasi) {
+      // Jika ada, hapus bobot kriteria lama agar bisa diganti yang baru
+      await prisma.bobotKriteria.deleteMany({
+        where: { konfigurasiId: konfigurasi.id }
+      });
+
+      // Update timestamp di parent config
+      await prisma.konfigurasiBobot.update({
+        where: { id: konfigurasi.id },
+        data: { diubahPada: new Date() }
+      });
+    } else {
+      // Jika belum ada, buat baru
+      konfigurasi = await prisma.konfigurasiBobot.create({
+        data: {
+          nama: `Konfigurasi ${new Date().toLocaleString('id-ID')}`,
+          statusAktif: true,
+          dibuatOleh: {
+            connect: { email: user.email }
+          },
+          periode: {
+            connect: { id: activePeriod.id }
+          }
+        }
+      });
+    }
 
     /* =========================
        3. OLAH INPUT FORM
@@ -104,7 +158,7 @@ exports.simpan = async (req, res) => {
       data: bobotData
     });
 
-    return res.render('admin/pengaturanBobot', { success: true });
+    return res.redirect('/pengaturanBobot?success=true');
 
   } catch (error) {
     console.error('ERROR SIMPAN BOBOT:', error);

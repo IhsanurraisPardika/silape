@@ -37,7 +37,7 @@ exports.getFormPenilaian = async (req, res) => {
                 })
                 : prisma.kantor.findMany({ // Jika ADMIN, ambil semua kantor
                     where: { statusAktif: true },
-                    orderBy: { nama: "asc" } 
+                    orderBy: { nama: "asc" }
                 })
         ]);
 
@@ -192,7 +192,7 @@ exports.postFormPenilaian = async (req, res) => {
                             kantorId: parseInt(kantor_id),
                             akunEmail: user.email,
 
-                            anggotaId: null, // Simpan ID anggota
+                            anggotaId: null,
                             status: 'DRAFT',
                             konfigurasiBobotId: konfigurasiBobot?.id,
                         }
@@ -211,8 +211,7 @@ exports.postFormPenilaian = async (req, res) => {
                     update: {
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan || null,
-                        namaAnggota: anggotaAktif ? anggotaAktif.nama : user.nama,
-                        bobotSaatDinilai: bobot // Update bobot too if it changes? Or keep original? Usually update to current active.
+                        bobotSaatDinilai: bobot
                     },
                     create: {
                         penilaianId: penilaianHeader.id,
@@ -220,9 +219,9 @@ exports.postFormPenilaian = async (req, res) => {
                         kunciKriteria: item.kriteriaKey,
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan || null,
-                        bobotSaatDinilai: bobot,
-                        namaAnggota: anggotaAktif ? anggotaAktif.nama : user.nama
-                    }
+                        bobotSaatDinilai: bobot
+                    },
+                    select: { id: true }
                 });
             });
 
@@ -276,11 +275,6 @@ exports.postFormPenilaian = async (req, res) => {
 
             for (const item of assessments) {
 
-                // item.kriteriaKey = "P1-1" misalnya.
-                // Kita perlu parse pKode dan id dari string jika diperlukan, tapi schema pakai String kriteriaKey?
-                // Cek schema DetailPenilaian: kunciKriteria String @db.VarChar(50)
-                // Jadi kita simpan "P1-1" langsung.
-
                 // Lookup logic: Try direct match first, then mapped match
                 let bobot = 0;
                 const directKey = `${item.pKode}-${item.kriteriaKey}`;
@@ -304,8 +298,7 @@ exports.postFormPenilaian = async (req, res) => {
                     update: {
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
-                        bobotSaatDinilai: bobot,
-                        namaAnggota: req.session.anggotaAktif ? req.session.anggotaAktif.nama : user.nama
+                        bobotSaatDinilai: bobot
                     },
                     create: {
                         penilaianId: penilaianHeader.id,
@@ -313,9 +306,9 @@ exports.postFormPenilaian = async (req, res) => {
                         kunciKriteria: item.kriteriaKey,
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
-                        bobotSaatDinilai: bobot,
-                        namaAnggota: req.session.anggotaAktif ? req.session.anggotaAktif.nama : user.nama
-                    }
+                        bobotSaatDinilai: bobot
+                    },
+                    select: { id: true }
                 });
 
                 // C. Simpan Foto jika ada

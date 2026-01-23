@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,191 +10,130 @@
 </head>
 
 <body class="bg-gray-100 antialiased">
-<div class="flex h-screen overflow-hidden">
-  <!-- SIDEBAR -->
-  <%- include('../partials/sidebarAdmin') %>
+  <div class="flex h-screen overflow-hidden">
+    <!-- SIDEBAR -->
+    <%- include('../partials/sidebarAdmin') %>
 
-  <!-- CONTENT -->
-  <div class="flex-1 flex flex-col overflow-hidden">
-    <%- include('../partials/header') %>
+      <!-- CONTENT -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <%- include('../partials/header') %>
 
-    <main class="flex-1 overflow-auto bg-gray-50">
-        <div class="p-8 pb-24">
-          <h1 class="text-3xl font-bold text-gray-800 mb-6">Rekap Penilaian 5P</h1>
+          <main class="flex-1 overflow-auto bg-gray-50 flex flex-col">
+            <div class="p-8 pb-24 flex-grow">
+              <h1 class="text-3xl font-bold text-gray-800 mb-6">Rekap Penilaian 5P</h1>
 
-      <!-- FILTER & BUTTON -->
-      <div class="bg-white p-4 rounded shadow mb-6 flex justify-between items-center">
-        <div class="flex gap-3">
-          <a href="/dashboardAdmin/rekapKantorAdmin"
-            class="bg-red-600 text-white px-5 py-2 rounded shadow">
-            Rekap Kantor
-          </a>
-          <a href="/dashboardAdmin/rekapPenilaianAdmin"
-            class="px-5 py-2 bg-white rounded shadow">
-            Rekap Penilaian
-          </a>
-          <a href="/dashboardAdmin/rekapKriteriaAdmin"
-            class="px-5 py-2 bg-white rounded shadow">
-            Rekap Kriteria
-          </a>
-        </div>
+              <!-- FILTER & BUTTON -->
+              <div class="bg-white p-4 rounded shadow mb-6 flex justify-between items-center">
+                <div class="flex gap-3">
+                  <a href="/dashboardAdmin/rekapKantorAdmin" class="bg-red-600 text-white px-5 py-2 rounded shadow">
+                    Rekap Kantor
+                  </a>
+                  <a href="/dashboardAdmin/rekapPenilaianAdmin" class="px-5 py-2 bg-white rounded shadow">
+                    Rekap Penilaian
+                  </a>
+                  <a href="/dashboardAdmin/rekapKriteriaAdmin" class="px-5 py-2 bg-white rounded shadow">
+                    Rekap Kriteria
+                  </a>
+                </div>
 
-        <button class="bg-green-600 text-white px-4 py-2 rounded">
-          Download Rekap
-        </button>
-      </div>
+                <button class="bg-green-600 text-white px-4 py-2 rounded">
+                  Download Rekap
+                </button>
+              </div>
 
-      <div class="mb-4">
-        <label class="font-small">Filter Kantor :</label>
-        <input type="text" list="kantor-list" placeholder="Cari atau pilih kantor..." class="border rounded px-3 py-2 ml-2 w-64">
-        <datalist id="kantor-list">
-          <option value="KANTOR SALES AREA SUMBAR LT.2 KANTOR PUSAT">
-          <option value="KANTOR PROCUREMENT LT.2 KANTOR PUSAT">
-          <option value="KANTOR UNIT SATUAN PENGAMANAN">
-          <option value="KANTOR BINS GEDUNG REKAYASA LT.2">
-          <option value="KANTOR AKUNTANSI LT.1 KANTOR PUSAT">
-          <option value="KANTOR USM">
-          <option value="KANTOR ARSIP">
-          <option value="KANTOR HUKUM">
-          <option value="KANTOR GRC">
-          <option value="KANTOR CSR">
-          <option value="KANTOR ICT LT.5 KANTOR PUSAT">
-          <option value="KANTOR PORTOFOLIO LT.5 KANTOR PUSAT">
-          <option value="KANTOR SDM LT.4 KANTOR PUSAT">
-          <option value="KANTOR SARANA UMUM">
-          <option value="KANTOR GUDANG SP">
-          <option value="KANTOR WORKSHOP">
-          <option value="KANTOR RETAIL SALES SUPPORT/RSS 1 LT.2 KANTOR PUSAT">
-          <option value="KANTOR OUTBOND INVENTORY KANTOR PUSAT">
-          <option value="KANTOR WISMA INDARUNG">
-          <option value="KANTOR HUMAS LT.3 KANTOR PUSAT">
-          <option value="GEDUNG SERBA GUNA">
-          <option value="KANTOR DIKLAT SP">
-          <option value="KANTOR AKUNTANSI LT.4 KANTOR PUSAT">
-          <option value="KANTOR INTERNAL AUDIT LT.5 KANTOR PUSAT">
-          <option value="KANTOR OPERASIONAL TRANSPORTATION LT.1 KANTOR PUSAT">
-        </datalist>
-      </div>
+              <div class="mb-4">
+                <form method="GET" action="/dashboardAdmin/rekapKantorAdmin" class="flex items-center">
+                  <label class="font-small whitespace-nowrap">Filter Kantor :</label>
+                  <select name="kantorId" onchange="this.form.submit()" class="border rounded px-3 py-2 ml-2 w-64">
+                    <option value="">-- Pilih Kantor --</option>
+                    <% kantorList.forEach(function(kantor) { %>
+                      <option value="<%= kantor.id %>" <%=selectedKantorId===kantor.id ? 'selected' : '' %>>
+                        <%= kantor.nama %>
+                      </option>
+                      <% }); %>
+                  </select>
+                </form>
+              </div>
 
-      <!-- TABLE -->
-        <div class="bg-white rounded shadow overflow-x-auto">
-            <div class="bg-red-700 text-white font-bold p-3">
-            KANTOR SALES AREA SUMBAR LT.2 KANTOR PUSAT
+              <!-- TABLE -->
+              <div class="bg-white rounded shadow overflow-x-auto">
+                <% if (selectedKantor) { %>
+                  <div class="bg-red-700 text-white font-bold p-3">
+                    <%= selectedKantor.nama %>
+                  </div>
+
+                  <table class="w-full border text-center">
+                    <thead class="bg-gray-100">
+                      <tr>
+                        <th class="border p-2">Kriteria</th>
+                        <th class="border p-2"></th>
+                        <% headerColumns.forEach(function(nama) { %>
+                          <th class="border p-2">
+                            <%= nama %>
+                          </th>
+                          <% }); %>
+                            <th class="border p-2 bg-cyan-200">Rata-rata</th>
+                            <th class="border p-2 bg-green-200">Bobot</th>
+                      </tr>
+                    </thead>
+
+                    <% Object.keys(rekapData.groupedData).forEach(function(pKey) { %>
+                      <% const rows=rekapData.groupedData[pKey]; %>
+                        <tbody>
+                          <tr class="font-semibold">
+                            <td colspan="<%= 4 + headerColumns.length %>" class="border p-2 text-left">
+                              Penilaian <%= pKey %>
+                            </td>
+                          </tr>
+
+                          <% rows.forEach(function(row) { %>
+                            <tr>
+                              <td class="border p-2">
+                                <%= row.kunci %>
+                              </td>
+                              <td class="border p-2">Nilai</td>
+                              <% headerColumns.forEach(function(nama) { %>
+                                <td class="border p-2">
+                                  <%= row.nilaiPerPenilai[nama] || '-' %>
+                                </td>
+                                <% }); %>
+                                  <td class="border p-2 bg-cyan-200">
+                                    <%= row.rataRata %>
+                                  </td>
+                                  <td class="border p-2 bg-green-200">
+                                    <%= row.bobot %>
+                                  </td>
+                            </tr>
+                            <% }); %>
+
+                              <tr>
+                                <td colspan="<%= 2 + headerColumns.length %>"
+                                  class="border p-2 text-right font-semibold">
+                                  Rata-rata <%= pKey %>
+                                </td>
+                                <td class="border p-2 font-bold">
+                                  <%= rekapData.pAverages[pKey] %>
+                                </td>
+                                <td class="border p-2"></td>
+                              </tr>
+                        </tbody>
+                        <% }); %>
+
+                  </table>
+
+                  <% } else { %>
+                    <div class="p-4 text-center text-gray-500">
+                      Silakan pilih kantor terlebih dahulu.
+                    </div>
+                    <% } %>
+              </div>
             </div>
-
-            <table class="w-full border text-center">
-            <thead class="bg-gray-100">
-                <tr>
-                <th class="border p-2">Kriteria</th>
-                <th class="border p-2"></th>
-                <th class="border p-2">Arie Ronaldo</th>
-                <th class="border p-2">Fery Fuadi</th>
-                <th class="border p-2">Dina Armiya</th>
-                <th class="border p-2 bg-cyan-200">Rata-rata</th>
-                <th class="border p-2 bg-green-200">Bobot</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <tr class="font-semibold">
-                <td colspan="7" class="border p-2 text-left">
-                    Penilaian P1
-                </td>
-                </tr>
-
-                <tr>
-                <td class="border p-2">Kriteria 1</td>
-                <td class="border p-2">Nilai</td>
-                <td class="border p-2">30</td>
-                <td class="border p-2">70</td>
-                <td class="border p-2">80</td>
-                <td class="border p-2 bg-cyan-200">60</td>
-                <td class="border p-2 bg-green-200">5.6</td>
-                </tr>
-
-                <tr>
-                <td class="border p-2">Kriteria 2</td>
-                <td class="border p-2">Nilai</td>
-                <td class="border p-2">30</td>
-                <td class="border p-2">70</td>
-                <td class="border p-2">80</td>
-                <td class="border p-2 bg-cyan-200">60</td>
-                <td class="border p-2 bg-green-200">5.6</td>
-                </tr>
-
-                <tr>
-                <td class="border p-2">Kriteria 2</td>
-                <td class="border p-2">Nilai</td>
-                <td class="border p-2">30</td>
-                <td class="border p-2">70</td>
-                <td class="border p-2">80</td>
-                <td class="border p-2 bg-cyan-200">60</td>
-                <td class="border p-2 bg-green-200">5.6</td>
-                </tr>
-
-                <tr>
-                <td colspan="5" class="border p-2 text-right font-semibold">
-                    Rata-rata
-                </td>
-                <td class="border p-2">60</td>
-                <td class="border p-2"></td>
-                </tr>
-            </tbody>
-
-            <tbody>
-                <tr class="font-semibold">
-                <td colspan="7" class="border p-2 text-left">
-                    Penilaian P2
-                </td>
-                </tr>
-
-                <tr>
-                <td class="border p-2">Kriteria 1</td>
-                <td class="border p-2">Nilai</td>
-                <td class="border p-2">30</td>
-                <td class="border p-2">70</td>
-                <td class="border p-2">80</td>
-                <td class="border p-2 bg-cyan-200">60</td>
-                <td class="border p-2 bg-green-200">5.6</td>
-                </tr>
-
-                <tr>
-                <td class="border p-2">Kriteria 2</td>
-                <td class="border p-2">Nilai</td>
-                <td class="border p-2">30</td>
-                <td class="border p-2">70</td>
-                <td class="border p-2">80</td>
-                <td class="border p-2 bg-cyan-200">60</td>
-                <td class="border p-2 bg-green-200">5.6</td>
-                </tr>
-
-                <tr>
-                <td class="border p-2">Kriteria 2</td>
-                <td class="border p-2">Nilai</td>
-                <td class="border p-2">30</td>
-                <td class="border p-2">70</td>
-                <td class="border p-2">80</td>
-                <td class="border p-2 bg-cyan-200">60</td>
-                <td class="border p-2 bg-green-200">5.6</td>
-                </tr>
-
-                <tr>
-                <td colspan="5" class="border p-2 text-right font-semibold">
-                    Rata-rata
-                </td>
-                <td class="border p-2">60</td>
-                <td class="border p-2"></td>
-                </tr>
-            </tbody>
-
-            </table>
-        </div>
-        </div>
-        <div class="mt-auto">
-          <%- include('../partials/footer') %>
-        </div>
-    </main>
+            <div class="mt-auto">
+              <%- include('../partials/footer') %>
+            </div>
+          </main>
+      </div>
   </div>
-</div>
 </body>
+
 </html>
