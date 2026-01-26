@@ -37,7 +37,7 @@ exports.getFormPenilaian = async (req, res) => {
                 })
                 : prisma.kantor.findMany({ // Jika ADMIN, ambil semua kantor
                     where: { statusAktif: true },
-                    orderBy: { nama: "asc" } 
+                    orderBy: { nama: "asc" }
                 })
         ]);
 
@@ -49,10 +49,23 @@ exports.getFormPenilaian = async (req, res) => {
             : [];
 
         // Ambil Existing Data (Nilai yang sudah diisi)
-        const periode = await prisma.periodePenilaian.findFirst({
-            where: { statusAktif: true },
-            orderBy: { dibuatPada: 'desc' }
-        });
+        // Jika ada query param periode, gunakan itu. Jika tidak, cari yang aktif.
+        let periodeId = req.query.periode ? parseInt(req.query.periode) : null;
+        let periode;
+
+        if (periodeId) {
+            periode = await prisma.periodePenilaian.findUnique({
+                where: { id: periodeId }
+            });
+        }
+
+        // Fallback jika belum ketemu atau tidak ada param
+        if (!periode) {
+            periode = await prisma.periodePenilaian.findFirst({
+                where: { statusAktif: true },
+                orderBy: { dibuatPada: 'desc' }
+            });
+        }
 
         let existingDetails = [];
         if (periode) {

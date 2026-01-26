@@ -16,7 +16,7 @@ exports.index = async (req, res) => {
         user: req.session.user || 'ADMIN',
         dataTim: [],
         activeTab: 'kantor',
-        error: 'Belum ada Periode Penilaian yang aktif.'
+        message: 'Belum ada Periode Penilaian yang aktif.'
       });
     }
 
