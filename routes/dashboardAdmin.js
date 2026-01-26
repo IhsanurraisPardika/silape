@@ -12,9 +12,8 @@ router.get("/", harusAdmin, (req, res) => {
 });
 
 // Halaman Rekap Kantor Admin
-router.get("/rekapKantorAdmin", harusAdmin, (req, res) => {
-  res.render("admin/rekapKantor");
-});
+const dashboardAdminController = require("../controllers/dashboardAdminController");
+router.get("/rekapKantorAdmin", harusAdmin, dashboardAdminController.rekapKantor);
 
 // Halaman Rekap Penilaian Admin
 router.get("/rekapPenilaianAdmin", harusAdmin, (req, res) => {

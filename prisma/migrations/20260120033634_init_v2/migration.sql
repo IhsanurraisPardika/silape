@@ -1,4 +1,3 @@
--- CreateTable
 CREATE TABLE `pengguna` (
     `email` VARCHAR(191) NOT NULL,
     `kataSandiHash` VARCHAR(191) NOT NULL,
