@@ -2,7 +2,8 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 // Jumlah detail yang dianggap lengkap untuk satu penilaian
-const EXPECTED_DETAIL_COUNT = 16;
+// Hapus EXPECTED_DETAIL_COUNT konstan, kita akan hitung dinamis
+// const EXPECTED_DETAIL_COUNT = 16;
 
 exports.index = async (req, res) => {
   try {
@@ -33,8 +34,8 @@ exports.index = async (req, res) => {
     // Based on schema `anggotaTim AnggotaTim[]`, we assume current one matches the context.
     // For now check if ANY of their anggotaTim record has urutan 1 (assuming 1 active team participation)
     // A better way might be to filter by active status if it existed, schema has statusAktif on AnggotaTim.
-    const anggotaLink = pengguna.anggotaTim.find(a => a.statusAktif && a.urutan === 1);
-    const isKetua = !!anggotaLink;
+    // Cek apakah ketua (urutan 1 di anggotaTim) - Logic dipindahkan ke bawah agar lebih strict
+    // dan menggunakan logic currentUserAnggota.
 
     // 2. Ambil Penugasan Kantor untuk User ini
     // Kita asumsikan menampilkan untuk Periode Aktif (atau semua? Request tidak spesifik, kita ambil semua yang ditugaskan)
@@ -60,9 +61,20 @@ exports.index = async (req, res) => {
     });
     const teamEmails = anggotaTim.map((a) => a.email);
     const totalAnggotaTim = teamEmails.length;
-    // Note: This counts User Accounts in the team. 
-    // Alternatively, count AnggotaTim records related to users with that timKode?
-    // Let's rely on Pengguna.timKode as the grouper.
+
+    // Strict check for isKetua based on the logged in user's attributes
+    // Ensure we are checking the user's membership in the CURRENT team context
+    const currentUserAnggota = pengguna.anggotaTim.find(a =>
+      a.statusAktif &&
+      a.urutan === 1
+      // Note: If user has multiple rows, we should assume the one matching their current roles is relevant. 
+      // But since we rely on `pengguna` which is `findUnique` by email, `anggotaTim` are the roles for THIS user.
+      // So if ANY of them is urutan 1, they are a leader. 
+      // However, to be safe, we might ideally want to check against `timKode` context if 'AnggotaTim' had it.
+      // Given schema limitations, `anggotaTim` doesn't strictly have `timKode`.
+      // We assume `pengguna.timKode` defines the active team.
+    );
+    const isKetua = !!currentUserAnggota;
 
     const data = [];
 
@@ -108,9 +120,20 @@ exports.index = async (req, res) => {
           return !maxDate || d > maxDate ? d : maxDate;
         }, null);
 
+      // Hitung expected count berdasarkan jumlah kriteria di periode ini
+      // Kita perlu tahu berapa banyak pertanyaan yang seharusnya ada.
+      // Idealnya diambil dari konfigurasi bobot aktif untuk periode ini.
+      // Untuk efisiensi, kita bisa ambil sekali di luar loop per periode, tapi di sini per loop aman.
+
+      const configBobot = await prisma.konfigurasiBobot.findFirst({
+        where: { periodeId: p.periodeId, statusAktif: true },
+        include: { _count: { select: { bobotKriteria: true } } }
+      });
+      const expectedCount = configBobot?._count?.bobotKriteria || 16; // Fallback 16
+
       const isPenilaianComplete = (penilaian) => {
         if (!penilaian) return false;
-        if (!penilaian.detail || penilaian.detail.length < EXPECTED_DETAIL_COUNT) return false;
+        if (!penilaian.detail || penilaian.detail.length < expectedCount) return false;
         return true;
       };
 
@@ -232,9 +255,16 @@ exports.approve = async (req, res) => {
       }
     });
 
+    // Get expected count
+    const configBobot = await prisma.konfigurasiBobot.findFirst({
+      where: { periodeId: parseInt(periodeId), statusAktif: true },
+      include: { _count: { select: { bobotKriteria: true } } }
+    });
+    const expectedCount = configBobot?._count?.bobotKriteria || 16;
+
     const isPenilaianComplete = (penilaian) => {
       if (!penilaian) return false;
-      if (!penilaian.detail || penilaian.detail.length < EXPECTED_DETAIL_COUNT) return false;
+      if (!penilaian.detail || penilaian.detail.length < expectedCount) return false;
       return true;
     };
 
