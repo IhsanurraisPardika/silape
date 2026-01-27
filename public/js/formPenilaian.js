@@ -38,6 +38,11 @@
     });
   }
 
+  // Load Recommendation
+  if (fpData.catatanRekomendasi) {
+    formState['rekomendasi_akhir'] = fpData.catatanRekomendasi;
+  }
+
 
 
   // ============================================================
@@ -329,6 +334,12 @@
         files: currentFiles
       };
     });
+
+    // START FIX: Save Recommendation if present in this step
+    const rekomendasiEl = document.getElementById("rekomendasi_input");
+    if (rekomendasiEl) {
+      formState['rekomendasi_akhir'] = rekomendasiEl.value;
+    }
   }
 
   // ============================================================
@@ -474,7 +485,7 @@
             <textarea 
                 id="rekomendasi_input"
                 name="rekomendasi" 
-                oninput="updateRekomendasi(this.value)"
+                oninput="triggerAutoSaveRecommendation(this.value)"
                 placeholder="Tuliskan rekomendasi perbaikan atau kesimpulan penilaian..." 
                 class="w-full border border-gray-300 rounded-lg p-4 h-32 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition shadow-sm"
             >${recValue}</textarea>
@@ -498,8 +509,11 @@
 
     updateNavUI();
 
-    // Sync all file inputs with current state (so they contain the files even after nav)
+    // Sync all file inputs with current state
     stepData.items.forEach(item => syncInputFiles(item.id));
+
+    // ATTACH AUTO SAVE LISTENERS
+    attachAutoSaveListeners(stepData);
   }
 
   // Override updateNavUI to handle conditional disabling
@@ -588,6 +602,101 @@
   }
 
   function closeModal() { document.getElementById("criteria-modal").style.display = "none"; }
+
+  // ============================================================
+  // AUTO-SAVE LOGIC
+  // ============================================================
+
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  // Trigger save per item
+  const triggerAutoSave = debounce(async (id) => {
+    // 1. Pastikan state lokal update dengan data terbaru dari DOM
+    saveCurrentStepData();
+
+    const key = getFormStateKey(id);
+    if (!key || !formState[key]) return;
+
+    const item = formState[key];
+
+    // Prepare Data
+    const fd = new FormData();
+    fd.append("kantor_id", String(fpData.kantorId));
+    fd.append("action", "save-item");
+
+    const assessmentItem = {
+      kriteriaId: item.kriteriaId,
+      kriteriaKey: `${item.pKode}-${item.kriteriaId}`,
+      pKode: item.pKode,
+      namaKriteria: item.namaKriteria,
+      nilai: Number(item.nilai) || 0,
+      catatan: item.catatan || "",
+      namaAnggota: item.namaAnggota || fpData.userNama // Ensure author is sent
+    };
+
+    fd.append("assessments", JSON.stringify([assessmentItem]));
+
+    // Send silently (no loading spinner)
+    try {
+      const res = await fetch("/formPenilaian", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (data.success) {
+        console.log(`Auto-save success for item ${id}`);
+        // Opsional: Kasih indikator visual kecil (misal: "Tersimpan" di dekat input)
+      }
+    } catch (e) {
+      console.warn(`Auto-save failed for item ${id}`, e);
+    }
+  }, 1000); // Wait 1 sec after typing stops
+
+  // Trigger save rekomendasi
+  const triggerAutoSaveRecommendation = debounce(async (val) => {
+    formState['rekomendasi_akhir'] = val;
+
+    const fd = new FormData();
+    fd.append("kantor_id", String(fpData.kantorId));
+    fd.append("action", "save-item");
+    fd.append("rekomendasi", val);
+    // Kirim assessments kosong
+    fd.append("assessments", "[]");
+
+    try {
+      const res = await fetch("/formPenilaian", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (data.success) {
+        console.log("Auto-save recommendation success");
+      }
+    } catch (e) {
+      console.warn("Auto-save recommendation failed", e);
+    }
+  }, 1000);
+
+
+
+  // Attach listeners helper
+  function attachAutoSaveListeners(stepData) {
+    stepData.items.forEach(item => {
+      const nilaiEl = document.querySelector(`[name="nilai_${item.id}"]`);
+      const catatanEl = document.querySelector(`[name="catatan_${item.id}"]`);
+
+      if (nilaiEl) {
+        nilaiEl.addEventListener("input", () => triggerAutoSave(item.id));
+      }
+      if (catatanEl) {
+        catatanEl.addEventListener("input", () => triggerAutoSave(item.id));
+      }
+    });
+  }
 
   async function changeStep(n) {
     // 1. Simpan data langkah saat ini ke state lokal
@@ -808,9 +917,7 @@
     renderStep();
   }
 
-  window.updateRekomendasi = function (val) {
-    formState['rekomendasi_akhir'] = val;
-  }
+
 
   // CAMERA LOGIC
   let activeCameraKey = null;

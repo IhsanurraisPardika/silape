@@ -195,7 +195,8 @@
         kantorNama: kantor ? kantor.nama : null,
         kantorList: (kantorList || []).map(k => ({ id: k.id, nama: k.nama })),
         userNama: anggotaAktif ? anggotaAktif.nama : (user.nama || user.email),
-        existingDetails: existingDetails || [] 
+        existingDetails: existingDetails || [],
+        catatanRekomendasi: catatanRekomendasi || ""
     }) %></script>
     <script src="/js/formPenilaian.js"></script>
 </body>
