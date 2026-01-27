@@ -7,6 +7,7 @@
   <title>Daftar Penilaian</title>
   <link rel="icon" href="/images/sp.png" type="image/sp.png">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body class="antialiased bg-gray-100">
@@ -69,13 +70,17 @@
                       <div>
                         <% if (item.status==='Selesai' ) { %>
                           <span class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-700">
-                            Selesai
+                            <%= item.status %>
                           </span>
-                          <% } else { %>
-                            <span class="px-3 py-1 text-sm rounded-full bg-yellow-100 text-yellow-700">
-                              Process
-                            </span>
-                            <% } %>
+                        <% } else if (item.status==='Approval') { %>
+                          <span class="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700">
+                            <%= item.status %>
+                          </span>
+                        <% } else { %>
+                          <span class="px-3 py-1 text-sm rounded-full bg-yellow-100 text-yellow-700">
+                            <%= item.status %>
+                          </span>
+                        <% } %>
                       </div>
 
                       <div>
@@ -87,13 +92,16 @@
 
                       <% if (isKetua) { %>
                         <div>
-                          <button
-                            class="px-3 py-1 text-sm rounded-lg font-bold text-white transition <%= item.isSelesai ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed' %>"
-                            <%=item.isSelesai ? '' : 'disabled' %>
-                            onclick="approvePenilaian('<%= item.kantorId %>', '<%= item.periodeId %>')"
-                                >
-                                Approve
-                          </button>
+                          <% if (item.isSelesai) { %>
+                            <button
+                              class="px-3 py-1 text-sm rounded-lg font-bold text-white transition bg-blue-600 hover:bg-blue-700"
+                              onclick="approvePenilaian('<%= item.kantorId %>', '<%= item.periodeId %>')"
+                            >
+                              Approve
+                            </button>
+                          <% } else { %>
+                            <span class="text-sm text-gray-400">-</span>
+                          <% } %>
                         </div>
                         <% } %>
 
@@ -103,9 +111,50 @@
 
                         <!-- Simple script for handling approve -->
                         <script>
-                          function approvePenilaian(kantorId, periodeId) {
-                            if (confirm('Apakah Anda yakin ingin melakukan Approve untuk penilaian ini?')) {
-                              alert('Fitur Approve akan diimplementasikan pada tahap selanjutnya.');
+                          async function approvePenilaian(kantorId, periodeId) {
+                            const result = await Swal.fire({
+                              title: 'Approve Penilaian?'
+                              , text: 'Tindakan ini akan mengubah status menjadi Approval.'
+                              , icon: 'question'
+                              , showCancelButton: true
+                              , confirmButtonText: 'Ya, Approve'
+                              , cancelButtonText: 'Batal'
+                              , confirmButtonColor: '#1d4ed8'
+                            });
+
+                            if (!result.isConfirmed) return;
+
+                            try {
+                              const res = await fetch('/daftarPenilaian/approve', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ kantorId, periodeId })
+                              });
+                              const data = await res.json().catch(() => ({}));
+
+                              if (res.ok && data.success) {
+                                await Swal.fire({
+                                  icon: 'success',
+                                  title: 'Berhasil',
+                                  text: 'Penilaian berhasil di-approve.',
+                                  confirmButtonColor: '#1d4ed8'
+                                });
+                                window.location.reload();
+                              } else {
+                                await Swal.fire({
+                                  icon: 'error',
+                                  title: 'Gagal',
+                                  text: data.message || 'Approval gagal diproses.',
+                                  confirmButtonColor: '#1d4ed8'
+                                });
+                              }
+                            } catch (e) {
+                              await Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Gagal menghubungi server.',
+                                confirmButtonColor: '#1d4ed8'
+                              });
                             }
                           }
                         </script>

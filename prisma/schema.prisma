@@ -16,6 +16,7 @@ enum PeranPengguna {
 enum StatusPenilaian {
   DRAFT
   SUBMIT
+  APPROVED
 }
 
 enum TimKode {
