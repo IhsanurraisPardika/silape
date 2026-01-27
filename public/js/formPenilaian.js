@@ -455,6 +455,33 @@
       `;
     });
 
+    // --- REKOMENDASI FORM (HANYA DI STEP TERAKHIR / P5) ---
+    if (currentStep === steps.length) {
+      const recKey = "rekomendasi_akhir";
+      // Ambil dari global formState agar persisten saat bolak-balik step
+      // Kita simpan di formState dengan key khusus? Atau terpisah?
+      // Agar konsisten, kita simpan di formState['rekomendasi']?
+      const recValue = formState[recKey] || "";
+
+      container.innerHTML += `
+        <div class="mt-8 pt-8 border-t-2 border-dashed border-gray-200 section-fade-in">
+            <h3 class="font-bold text-gray-800 text-lg mb-4">
+                <i class="fas fa-comment-dots text-red-600 mr-2"></i>Rekomendasi / Kesimpulan
+            </h3>
+            <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4 text-sm text-blue-700">
+                Silakan berikan rekomendasi atau kesimpulan menyeluruh terkait kondisi 5P di kantor ini sebelum melakukan submit.
+            </div>
+            <textarea 
+                id="rekomendasi_input"
+                name="rekomendasi" 
+                oninput="updateRekomendasi(this.value)"
+                placeholder="Tuliskan rekomendasi perbaikan atau kesimpulan penilaian..." 
+                class="w-full border border-gray-300 rounded-lg p-4 h-32 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition shadow-sm"
+            >${recValue}</textarea>
+        </div>
+      `;
+    }
+
     // --- CHECKBOX VALIDASI HANYA DI STEP TERAKHIR ---
     if (currentStep === steps.length) {
       container.innerHTML += `
@@ -650,18 +677,26 @@
     fd.append("action", "submit");
 
     // Convert formState object to Array AND SORT IT
-    const allAssessments = Object.values(formState).map(item => ({
-      kriteriaId: item.kriteriaId,
-      kriteriaKey: `${item.pKode}-${item.kriteriaId}`,
-      pKode: item.pKode,
-      namaKriteria: item.namaKriteria,
-      nilai: Number(item.nilai) || 0,
-      catatan: item.catatan || "",
-      namaAnggota: item.namaAnggota // Send author info to server
-    })).sort((a, b) => {
-      // Sort by ID ascending (1, 2, 3 ... 16)
-      return parseInt(a.kriteriaId) - parseInt(b.kriteriaId);
-    });
+    // Only include valid assessment items (must be object and have kriteriaId)
+    const allAssessments = Object.values(formState)
+      .filter(item => item && typeof item === 'object' && item.kriteriaId)
+      .map(item => ({
+        kriteriaId: item.kriteriaId,
+        kriteriaKey: `${item.pKode}-${item.kriteriaId}`,
+        pKode: item.pKode,
+        namaKriteria: item.namaKriteria,
+        nilai: Number(item.nilai) || 0,
+        catatan: item.catatan || "",
+        namaAnggota: item.namaAnggota // Send author info to server
+      })).sort((a, b) => {
+        // Sort by ID ascending (1, 2, 3 ... 16)
+        return parseInt(a.kriteriaId) - parseInt(b.kriteriaId);
+      });
+
+    // Include recommendation
+    if (formState['rekomendasi_akhir']) {
+      fd.append("rekomendasi", formState['rekomendasi_akhir']);
+    }
 
     fd.append("assessments", JSON.stringify(allAssessments));
 
@@ -771,6 +806,10 @@
 
     formState[key].files.splice(index, 1);
     renderStep();
+  }
+
+  window.updateRekomendasi = function (val) {
+    formState['rekomendasi_akhir'] = val;
   }
 
   // CAMERA LOGIC

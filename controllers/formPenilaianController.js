@@ -256,6 +256,7 @@ exports.postFormPenilaian = async (req, res) => {
             const dataHeader = {
                 status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
                 tanggalSubmit: action === 'submit' ? new Date() : null,
+                catatanRekomendasi: req.body.rekomendasi || null, // Simpan rekomendasi
 
                 tanggalMulaiInput: new Date(), // Update timestamp aktivitas terakhir,
                 konfigurasiBobotId: konfigurasiBobot?.id
@@ -277,6 +278,7 @@ exports.postFormPenilaian = async (req, res) => {
                         anggotaId: currentAnggotaId,
                         status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
                         tanggalSubmit: action === 'submit' ? new Date() : null,
+                        catatanRekomendasi: req.body.rekomendasi || null, // Simpan rekomendasi saat create juga
                         konfigurasiBobotId: konfigurasiBobot?.id
                     }
                 });
