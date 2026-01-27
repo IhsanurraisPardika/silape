@@ -49,10 +49,23 @@ exports.getFormPenilaian = async (req, res) => {
             : [];
 
         // Ambil Existing Data (Nilai yang sudah diisi)
-        const periode = await prisma.periodePenilaian.findFirst({
-            where: { statusAktif: true },
-            orderBy: { dibuatPada: 'desc' }
-        });
+        // Jika ada query param periode, gunakan itu. Jika tidak, cari yang aktif.
+        let periodeId = req.query.periode ? parseInt(req.query.periode) : null;
+        let periode;
+
+        if (periodeId) {
+            periode = await prisma.periodePenilaian.findUnique({
+                where: { id: periodeId }
+            });
+        }
+
+        // Fallback jika belum ketemu atau tidak ada param
+        if (!periode) {
+            periode = await prisma.periodePenilaian.findFirst({
+                where: { statusAktif: true },
+                orderBy: { dibuatPada: 'desc' }
+            });
+        }
 
         let existingDetails = [];
         if (periode) {
@@ -247,6 +260,7 @@ exports.postFormPenilaian = async (req, res) => {
             const dataHeader = {
                 status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
                 tanggalSubmit: action === 'submit' ? new Date() : null,
+                catatanRekomendasi: req.body.rekomendasi || null, // Simpan rekomendasi
 
                 tanggalMulaiInput: new Date(), // Update timestamp aktivitas terakhir,
                 konfigurasiBobotId: konfigurasiBobot?.id
@@ -268,6 +282,7 @@ exports.postFormPenilaian = async (req, res) => {
                         anggotaId: currentAnggotaId,
                         status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
                         tanggalSubmit: action === 'submit' ? new Date() : null,
+                        catatanRekomendasi: req.body.rekomendasi || null, // Simpan rekomendasi saat create juga
                         konfigurasiBobotId: konfigurasiBobot?.id
                     }
                 });
@@ -275,7 +290,16 @@ exports.postFormPenilaian = async (req, res) => {
 
             // B. Simpan Detail (DetailPenilaian)
             const files = Array.isArray(req.files) ? req.files : [];
-            const fileByField = new Map(files.map((f) => [f.fieldname, f]));
+            const filesByField = files.reduce((map, f) => {
+                const list = map.get(f.fieldname) || [];
+                list.push(f);
+                map.set(f.fieldname, list);
+                return map;
+            }, new Map());
+
+
+            // Define default author (fallback)
+            const namaPenginput = anggotaAktif ? anggotaAktif.nama : (user.nama || user.email);
 
             for (const item of assessments) {
 
@@ -313,6 +337,10 @@ exports.postFormPenilaian = async (req, res) => {
                     bobot = weightMap.get(weightLookupKey);
                 }
 
+                // Determine effective author for this item
+                // Use explicit author from frontend if available, otherwise use current submitter
+                const effectiveAuthor = item.namaAnggota || namaPenginput;
+
                 const detail = await tx.detailPenilaian.upsert({
                     where: {
                         penilaianId_kategori_kunciKriteria: {
@@ -324,7 +352,8 @@ exports.postFormPenilaian = async (req, res) => {
                     update: {
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
-                        bobotSaatDinilai: bobot
+                        bobotSaatDinilai: bobot,
+                        namaAnggota: effectiveAuthor
                     },
                     create: {
                         penilaianId: penilaianHeader.id,
@@ -332,14 +361,15 @@ exports.postFormPenilaian = async (req, res) => {
                         kunciKriteria: keyToSave,
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
-                        bobotSaatDinilai: bobot
+                        bobotSaatDinilai: bobot,
+                        namaAnggota: effectiveAuthor
                     },
                     select: { id: true }
                 });
 
                 // C. Simpan Foto jika ada
-                const file = fileByField.get(`foto_${item.kriteriaId}`);
-                if (file) {
+                const filesForItem = filesByField.get(`foto_${item.kriteriaId}`) || [];
+                for (const file of filesForItem) {
                     await tx.fotoDetailPenilaian.create({
                         data: {
                             detailId: detail.id,

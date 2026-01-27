@@ -161,12 +161,143 @@ exports.logout = (req, res) => {
   });
 };
 
-exports.gethome = (req, res) => {
+// Konstanta jumlah detail yang dianggap lengkap (samakan dengan daftarPenilaianController)
+const EXPECTED_DETAIL_COUNT = 16;
+
+exports.gethome = async (req, res) => {
   if (!req.session?.user?.email) return res.redirect("/login");
+
+  let totalAssessed = 0;
+  let finalAverage = 0;
+
+  try {
+    const user = req.session.user;
+
+    // 1. Ambil data user lengkap untuk tahu timKode
+    const pengguna = await prisma.pengguna.findUnique({
+      where: { email: user.email },
+      include: { anggotaTim: true }
+    });
+
+    if (pengguna && pengguna.peran === 'TIMPENILAI' && pengguna.timKode) {
+      // 2. Ambil Penugasan Kantor untuk User ini
+      const penugasan = await prisma.penugasanKantorAkun.findMany({
+        where: {
+          akunEmail: user.email,
+          statusAktif: true
+        },
+        include: {
+          kantor: true
+        }
+      });
+
+      // 3. Ambil anggota tim di tim yang sama
+      const anggotaTim = await prisma.pengguna.findMany({
+        where: {
+          timKode: pengguna.timKode,
+          statusAktif: true,
+          peran: 'TIMPENILAI'
+        },
+        select: { email: true }
+      });
+      const teamEmails = anggotaTim.map((a) => a.email);
+      const totalAnggotaTim = teamEmails.length;
+
+      let sumRata = 0;
+      let countRata = 0;
+
+      // 4. Loop setiap kantor yang ditugaskan
+      for (const p of penugasan) {
+        // Ambil semua penilaian tim untuk kantor & periode ini
+        const penilaianTim = await prisma.penilaian.findMany({
+          where: {
+            periodeId: p.periodeId,
+            kantorId: p.kantorId,
+            akunEmail: { in: teamEmails }
+          },
+          select: {
+            akunEmail: true,
+            status: true,
+            tanggalMulaiInput: true,
+            tanggalSubmit: true,
+            dibuatPada: true,
+            diubahPada: true,
+            detail: {
+              select: {
+                nilai: true
+              }
+            }
+          }
+        });
+
+        const hasStarted = penilaianTim.length > 0;
+        if (hasStarted) {
+          totalAssessed++;
+        }
+
+        // Logic Hitung Rata-rata (Mirip daftarPenilaianController)
+        const isPenilaianComplete = (penilaian) => {
+          if (!penilaian) return false;
+          // Cek jumlah detail
+          if (!penilaian.detail || penilaian.detail.length < EXPECTED_DETAIL_COUNT) return false;
+          return true;
+        };
+
+        const completedByEmail = new Map();
+        for (const email of teamEmails) {
+          const list = penilaianTim.filter((pTim) => pTim.akunEmail === email);
+          const completed = list.some(isPenilaianComplete);
+          completedByEmail.set(email, completed);
+        }
+
+        const completedCount = Array.from(completedByEmail.values()).filter(Boolean).length;
+        const allComplete = totalAnggotaTim > 0 && completedCount >= totalAnggotaTim;
+
+        if (allComplete) {
+          // Ambil penilaian "terbaru" (atau yang paling valid) dari tiap anggota
+          const completedPerEmail = new Map();
+          for (const email of teamEmails) {
+            const list = penilaianTim
+              .filter((pTim) => pTim.akunEmail === email)
+              .filter(isPenilaianComplete)
+              .sort((a, b) => {
+                const da = a.diubahPada || a.tanggalSubmit || a.tanggalMulaiInput || a.dibuatPada || new Date(0);
+                const db = b.diubahPada || b.tanggalSubmit || b.tanggalMulaiInput || b.dibuatPada || new Date(0);
+                return db - da; // Descending
+              });
+            if (list.length > 0) completedPerEmail.set(email, list[0]);
+          }
+
+          const completedList = Array.from(completedPerEmail.values());
+          const allDetails = completedList.flatMap((pTim) => pTim.detail || []);
+          if (allDetails.length > 0) {
+            const total = allDetails.reduce((sum, d) => sum + Number(d.nilai), 0);
+            const rata = total / allDetails.length;
+            sumRata += rata;
+            countRata++;
+          }
+        }
+      }
+
+      // Hitung final average
+      if (countRata > 0) {
+        finalAverage = (sumRata / countRata).valueOf(); // Biarkan number dulu
+      }
+    }
+
+  } catch (err) {
+    console.error("Error calculating home stats:", err);
+  }
+
+  // Format ke string fixed 1 desimal jika perlu, atau kirim sebagai number
+  // Di view nanti ditampilkan. Kalau 0 tetap 0.
+  const formattedAverage = finalAverage % 1 === 0 ? finalAverage : finalAverage.toFixed(2);
 
   return res.render("home", {
     title: "Home",
     user: req.session.user,
+    totalAssessed,
+    finalAverage: formattedAverage
   });
 };
 

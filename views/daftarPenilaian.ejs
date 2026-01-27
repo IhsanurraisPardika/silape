@@ -7,6 +7,7 @@
   <title>Daftar Penilaian</title>
   <link rel="icon" href="/images/sp.png" type="image/sp.png">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body class="antialiased bg-gray-100">
@@ -14,74 +15,154 @@
   <div class="flex h-screen">
     <%- include('partials/sidebar') %>
 
-  <!-- Main Area -->
-  <div class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+      <!-- Main Area -->
+      <div class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
 
-    <!-- Header (SAMA PERSIS DENGAN HOME) -->
-    <%- include('partials/header') %>
+        <!-- Header (SAMA PERSIS DENGAN HOME) -->
+        <%- include('partials/header') %>
 
-      <!-- Content -->
-      <div class="flex-1 overflow-auto p-8">
+          <!-- Content -->
+          <div class="flex-1 overflow-auto p-8">
 
-        <!-- Title -->
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">
-          Daftar Penilaian
-        </h1>
+            <!-- Title -->
+            <h1 class="text-3xl font-bold text-gray-800 mb-6">
+              Daftar Penilaian
+            </h1>
 
-        <!-- Table Card -->
-        <div class="bg-white rounded-xl shadow">
+            <!-- Table Card -->
+            <div class="bg-white rounded-xl shadow">
 
-          <!-- Table Head -->
-          <div class="grid grid-cols-5 px-6 py-4 font-semibold text-white bg-red-600 rounded-t-xl">
-            <div>Tanggal</div>
-            <div>Kantor</div>
-            <div>Rata-rata</div>
-            <div>Status</div>
-            <div>Aksi</div>
-          </div>
-
-          <!-- Table Body -->
-          <% data.forEach(item=> { %>
-            <div class="grid grid-cols-5 px-6 py-4 items-center border-b last:border-none">
-
-              <div class="text-sm text-gray-700">
-                <%= item.tanggal %>
+              <!-- Table Head -->
+              <div
+                class="grid <%= isKetua ? 'grid-cols-6' : 'grid-cols-5' %> px-6 py-4 font-semibold text-white bg-red-600 rounded-t-xl">
+                <div>Tanggal</div>
+                <div>Kantor</div>
+                <div>Rata-rata</div>
+                <div>Status</div>
+                <div>Aksi</div>
+                <% if (isKetua) { %>
+                  <div>Approve</div>
+                  <% } %>
               </div>
 
-              <div class="text-sm text-gray-700">
-                <%- item.kantor %>
-              </div>
+              <!-- Table Body -->
+              <% if (data.length===0) { %>
+                <div class="px-6 py-8 text-center text-gray-500 italic">
+                  Belum ada riwayat daftar Penilaian
+                </div>
+                <% } else { %>
+                  <% data.forEach(item=> { %>
+                    <div
+                      class="grid <%= isKetua ? 'grid-cols-6' : 'grid-cols-5' %> px-6 py-4 items-center border-b last:border-none">
 
-              <div class="font-semibold text-green-600">
-                <%= item.rata ?? '-' %>
-              </div>
+                      <div class="text-sm text-gray-700">
+                        <%= item.tanggal %>
+                      </div>
 
-              <div>
-                <% if (item.status==='Approval' ) { %>
-                  <span class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-700">
-                    Approval
-                  </span>
-                  <% } else { %>
-                    <span class="px-3 py-1 text-sm rounded-full bg-yellow-100 text-yellow-700">
-                      Process
-                    </span>
-                    <% } %>
-              </div>
+                      <div class="text-sm text-gray-700">
+                        <%- item.kantor %>
+                      </div>
 
-              <div>
-                <a href="<%= item.detailUrl %>"
-                  class="text-blue-600 font-semibold hover:underline bg-blue-50 px-3 py-1 rounded-lg">
-                  <i class="fas fa-edit mr-1"></i> Edit
-                </a>
-              </div>
+                      <div class="font-semibold text-green-600">
+                        <%= item.rata %>
+                      </div>
+
+                      <div>
+                        <% if (item.status==='Selesai' ) { %>
+                          <span class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-700">
+                            <%= item.status %>
+                          </span>
+                        <% } else if (item.status==='Approval') { %>
+                          <span class="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700">
+                            <%= item.status %>
+                          </span>
+                        <% } else { %>
+                          <span class="px-3 py-1 text-sm rounded-full bg-yellow-100 text-yellow-700">
+                            <%= item.status %>
+                          </span>
+                        <% } %>
+                      </div>
+
+                      <div>
+                        <a href="<%= item.detailUrl %>"
+                          class="text-blue-600 font-semibold hover:underline bg-blue-50 px-3 py-1 rounded-lg">
+                          <i class="fas fa-edit mr-1"></i> Edit
+                        </a>
+                      </div>
+
+                      <% if (isKetua) { %>
+                        <div>
+                          <% if (item.isSelesai) { %>
+                            <button
+                              class="px-3 py-1 text-sm rounded-lg font-bold text-white transition bg-blue-600 hover:bg-blue-700"
+                              onclick="approvePenilaian('<%= item.kantorId %>', '<%= item.periodeId %>')"
+                            >
+                              Approve
+                            </button>
+                          <% } else { %>
+                            <span class="text-sm text-gray-400">-</span>
+                          <% } %>
+                        </div>
+                        <% } %>
+
+                    </div>
+                    <% }) %>
+                      <% } %>
+
+                        <!-- Simple script for handling approve -->
+                        <script>
+                          async function approvePenilaian(kantorId, periodeId) {
+                            const result = await Swal.fire({
+                              title: 'Approve Penilaian?'
+                              , text: 'Tindakan ini akan mengubah status menjadi Approval.'
+                              , icon: 'question'
+                              , showCancelButton: true
+                              , confirmButtonText: 'Ya, Approve'
+                              , cancelButtonText: 'Batal'
+                              , confirmButtonColor: '#1d4ed8'
+                            });
+
+                            if (!result.isConfirmed) return;
+
+                            try {
+                              const res = await fetch('/daftarPenilaian/approve', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ kantorId, periodeId })
+                              });
+                              const data = await res.json().catch(() => ({}));
+
+                              if (res.ok && data.success) {
+                                await Swal.fire({
+                                  icon: 'success',
+                                  title: 'Berhasil',
+                                  text: 'Penilaian berhasil di-approve.',
+                                  confirmButtonColor: '#1d4ed8'
+                                });
+                                window.location.reload();
+                              } else {
+                                await Swal.fire({
+                                  icon: 'error',
+                                  title: 'Gagal',
+                                  text: data.message || 'Approval gagal diproses.',
+                                  confirmButtonColor: '#1d4ed8'
+                                });
+                              }
+                            } catch (e) {
+                              await Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Gagal menghubungi server.',
+                                confirmButtonColor: '#1d4ed8'
+                              });
+                            }
+                          }
+                        </script>
 
             </div>
-            <% }) %>
 
-        </div>
-
+          </div>
       </div>
-  </div>
   </div>
 
 </body>
