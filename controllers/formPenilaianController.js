@@ -155,14 +155,18 @@ exports.postFormPenilaian = async (req, res) => {
 
             // Lookup logic: Try direct match first, then mapped match
             let bobot = 0;
-            const directKey = `${item.pKode}-${item.kriteriaKey}`;
-            const mappedKeySuffix = criteriaMapping[item.kriteriaKey]; // e.g. "P2-1"
-            const mappedKey = mappedKeySuffix ? `${item.pKode}-${mappedKeySuffix}` : null;
+            const originalKey = item.kriteriaKey; // e.g. P2-4
 
-            if (weightMap.has(directKey)) {
-                bobot = weightMap.get(directKey);
-            } else if (mappedKey && weightMap.has(mappedKey)) {
-                bobot = weightMap.get(mappedKey);
+            // Use the mapped key for SAVING to DB
+            let keyToSave = originalKey;
+            if (criteriaMapping[originalKey]) {
+                keyToSave = criteriaMapping[originalKey];
+            }
+
+            const weightLookupKey = `${item.pKode}-${keyToSave}`;
+
+            if (weightMap.has(weightLookupKey)) {
+                bobot = weightMap.get(weightLookupKey);
             }
 
             await prisma.$transaction(async (tx) => {
@@ -205,7 +209,7 @@ exports.postFormPenilaian = async (req, res) => {
                         penilaianId_kategori_kunciKriteria: {
                             penilaianId: penilaianHeader.id,
                             kategori: item.pKode,
-                            kunciKriteria: item.kriteriaKey
+                            kunciKriteria: keyToSave
                         }
                     },
                     update: {
@@ -216,7 +220,7 @@ exports.postFormPenilaian = async (req, res) => {
                     create: {
                         penilaianId: penilaianHeader.id,
                         kategori: item.pKode,
-                        kunciKriteria: item.kriteriaKey,
+                        kunciKriteria: keyToSave,
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan || null,
                         bobotSaatDinilai: bobot
@@ -277,14 +281,36 @@ exports.postFormPenilaian = async (req, res) => {
 
                 // Lookup logic: Try direct match first, then mapped match
                 let bobot = 0;
-                const directKey = `${item.pKode}-${item.kriteriaKey}`;
-                const mappedKeySuffix = criteriaMapping[item.kriteriaKey]; // e.g. "P2-1"
-                const mappedKey = mappedKeySuffix ? `${item.pKode}-${mappedKeySuffix}` : null;
+                // Fix: Use mappedKey for saving to ensure consistency with config/report keys
+                // The frontend sends "P2-4", we need "P2-1"
 
-                if (weightMap.has(directKey)) {
-                    bobot = weightMap.get(directKey);
-                } else if (mappedKey && weightMap.has(mappedKey)) {
-                    bobot = weightMap.get(mappedKey);
+                // Original: P2-4
+                const originalKey = item.kriteriaKey; // e.g. P2-4
+
+                // Get mapped suffix: P2-4 -> P2-1
+                // The mapping is: "P2-4": "P2-1"
+                // So mappedKey should be "P2-1"
+
+                // Criteria Mapping (defined above)
+                // "P2-4": "P2-1" ...
+
+                // Use the mapped key for SAVING to DB
+                let keyToSave = originalKey;
+                if (criteriaMapping[originalKey]) {
+                    keyToSave = criteriaMapping[originalKey];
+                }
+
+                // For weight lookup, we might need to check both?
+                // Config usually uses "P2-1" (relative)
+
+                const directKey = `${item.pKode}-${keyToSave}`; // Should be P2-P2-1 or similar? 
+                // Wait, weightMap keys are: `${b.kategori}-${b.kunciKriteria}` -> "P2-P2-1"
+
+                // So we should construct key based on keyToSave
+                const weightLookupKey = `${item.pKode}-${keyToSave}`;
+
+                if (weightMap.has(weightLookupKey)) {
+                    bobot = weightMap.get(weightLookupKey);
                 }
 
                 const detail = await tx.detailPenilaian.upsert({
@@ -292,7 +318,7 @@ exports.postFormPenilaian = async (req, res) => {
                         penilaianId_kategori_kunciKriteria: {
                             penilaianId: penilaianHeader.id,
                             kategori: item.pKode,
-                            kunciKriteria: item.kriteriaKey
+                            kunciKriteria: keyToSave // USE CORRECT KEY
                         }
                     },
                     update: {
@@ -303,7 +329,7 @@ exports.postFormPenilaian = async (req, res) => {
                     create: {
                         penilaianId: penilaianHeader.id,
                         kategori: item.pKode,
-                        kunciKriteria: item.kriteriaKey,
+                        kunciKriteria: keyToSave,
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
                         bobotSaatDinilai: bobot

@@ -16,14 +16,14 @@ const dashboardAdminController = require("../controllers/dashboardAdminControlle
 router.get("/rekapKantorAdmin", harusAdmin, dashboardAdminController.rekapKantor);
 
 // Halaman Rekap Penilaian Admin
-router.get("/rekapPenilaianAdmin", harusAdmin, (req, res) => {
-  res.render("admin/rekapPenilaian");
-});
+router.get("/rekapPenilaianAdmin", harusAdmin, dashboardAdminController.rekapPenilaian);
 
 // Halaman Rekap Kriteria Admin
-router.get("/rekapKriteriaAdmin", harusAdmin, (req, res) => {
-  res.render("admin/rekapKriteria");
-});
+router.get("/rekapKriteriaAdmin", harusAdmin, dashboardAdminController.rekapKriteria);
+
+// Halaman Download Rekap
+router.get("/downloadRekapKantor", harusAdmin, dashboardAdminController.downloadRekapKantor);
+router.get("/downloadRekapKriteria", harusAdmin, dashboardAdminController.downloadRekapKriteria);
 
 // Halaman Kelola Tim
 router.get("/kelolaTim", harusAdmin, (req, res) => {
