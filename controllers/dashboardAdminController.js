@@ -189,32 +189,43 @@ exports.rekapKantor = async (req, res) => {
 
 exports.rekapKriteria = async (req, res) => {
     try {
-        // 1. Ambil Periode Aktif
-        const periodeAktif = await prisma.periodePenilaian.findFirst({
-            where: { statusAktif: true },
-        });
+        const { periodeId } = req.query;
+
+        // 1. Ambil Periode
+        let periodeTarget;
+        if (periodeId) {
+            periodeTarget = await prisma.periodePenilaian.findUnique({
+                where: { id: parseInt(periodeId) }
+            });
+        } else {
+            periodeTarget = await prisma.periodePenilaian.findFirst({
+                where: { statusAktif: true },
+            });
+        }
+
+        const periodeAktif = periodeTarget; // Keep variable name for template compatibility
 
         // 2. Ambil Config untuk Header Tabel (Daftar Kriteria)
         let criteriaList = [];
         if (periodeAktif) {
             const config = await prisma.konfigurasiBobot.findFirst({
-                where: { periodeId: periodeAktif.id, statusAktif: true },
-                include: { bobotKriteria: true }
+                where: { periodeId: periodeAktif.id },
+                include: { bobotKriteria: true },
+                orderBy: { statusAktif: 'desc' }
             });
 
             if (config && config.bobotKriteria) {
-                // Sort kriteria? Assuming order by id or implicit
-                // We might want to sort by kategori P1..P5 then kunci?
-                // Let's rely on DB order or specific sort if needed.
-                // Assuming P1-1, P1-2 order is preserved or we can sort manually.
+                // Sort kriteria
                 criteriaList = config.bobotKriteria.sort((a, b) => {
-                    // Simple sort by keys string comparison usually works for P1-1 vs P1-2
-                    // But P1-10 comes before P1-2 alphabetically.
-                    // Better: Extract numbers. But for now standard string sort might suffice or custom.
                     return a.kunciKriteria.localeCompare(b.kunciKriteria, undefined, { numeric: true });
                 });
             }
         }
+
+        // 3. Ambil Semua Periode (untuk filter)
+        const periodes = await prisma.periodePenilaian.findMany({
+            orderBy: [{ tahun: 'desc' }, { semester: 'desc' }]
+        });
 
         let rekapList = [];
 
@@ -283,6 +294,7 @@ exports.rekapKriteria = async (req, res) => {
             title: 'Rekap Kriteria',
             user: req.session.user || 'ADMIN',
             periodeAktif,
+            periodes,
             criteriaList,
             rekapList
         });
@@ -296,9 +308,21 @@ exports.rekapKriteria = async (req, res) => {
 // --- REKAP PENILAIAN ---
 exports.rekapPenilaian = async (req, res) => {
     try {
-        const periodeAktif = await prisma.periodePenilaian.findFirst({
-            where: { statusAktif: true }
-        });
+        const { periodeId } = req.query;
+
+        // 1. Ambil Periode
+        let periodeTarget;
+        if (periodeId) {
+            periodeTarget = await prisma.periodePenilaian.findUnique({
+                where: { id: parseInt(periodeId) }
+            });
+        } else {
+            periodeTarget = await prisma.periodePenilaian.findFirst({
+                where: { statusAktif: true }
+            });
+        }
+
+        const periodeAktif = periodeTarget; // Keep variable name for template compatibility
 
         let rekapList = [];
         // Predicate Helper
@@ -312,8 +336,9 @@ exports.rekapPenilaian = async (req, res) => {
 
         if (periodeAktif) {
             const konfigurasi = await prisma.konfigurasiBobot.findFirst({
-                where: { periodeId: periodeAktif.id, statusAktif: true },
-                include: { bobotKriteria: true }
+                where: { periodeId: periodeAktif.id },
+                include: { bobotKriteria: true },
+                orderBy: { statusAktif: 'desc' }
             });
 
             if (konfigurasi) {
@@ -399,16 +424,45 @@ exports.rekapPenilaian = async (req, res) => {
             }
         }
 
+        // Ambil semua periode untuk filter
+        const periodes = await prisma.periodePenilaian.findMany({
+            orderBy: [{ tahun: 'desc' }, { semester: 'desc' }]
+        });
+
         res.render('admin/rekapPenilaian', {
             title: 'Rekap Penilaian',
             user: req.session.user || 'ADMIN',
             periodeAktif,
+            periodes,
             rekapList
         });
 
     } catch (error) {
         console.error('Error rekapPenilaian:', error);
         res.status(500).render('error', { title: 'Error', message: error.message });
+    }
+};
+
+exports.unduhLaporan = async (req, res) => {
+    try {
+        const periodes = await prisma.periodePenilaian.findMany({
+            orderBy: [{ tahun: 'desc' }, { semester: 'desc' }]
+        });
+
+        const teams = await prisma.pengguna.findMany({
+            where: { peran: 'TIMPENILAI' },
+            orderBy: { timKode: 'asc' }
+        });
+
+        res.render('admin/unduhLaporanAdmin', {
+            title: 'Unduh Laporan',
+            user: req.session.user,
+            periodes,
+            teams
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Error loading download page.");
     }
 };
 
@@ -480,6 +534,7 @@ async function getRekapKantorData(kantorIdStr) {
                     kunci: b.kunciKriteria,
                     configWeight: configWeight,
                     nilaiPerPenilai: {},
+                    catatanPerPenilai: {},
                     totalNilai: 0,
                     jumlahPenilai: 0,
                 };
@@ -493,9 +548,13 @@ async function getRekapKantorData(kantorIdStr) {
                             val = parseFloat(detail.nilai);
                             rowData.totalNilai += val;
                             rowData.jumlahPenilai++;
+                            rowData.catatanPerPenilai[nama] = detail.catatan || '-';
                         }
                     }
                     rowData.nilaiPerPenilai[nama] = val;
+                    if (!rowData.catatanPerPenilai[nama]) {
+                        rowData.catatanPerPenilai[nama] = '-';
+                    }
                 });
 
                 rowData.rataRata = rowData.jumlahPenilai > 0
@@ -550,7 +609,7 @@ exports.downloadRekapKantor = async (req, res) => {
         worksheet.addRow([]);
 
         // Table Header
-        const headers = ['Kriteria', ...headerColumns, 'Rata-rata', 'Bobot'];
+        const headers = ['Kriteria', '', ...headerColumns, 'Rata-rata', 'Bobot'];
         const headerRow = worksheet.addRow(headers);
         headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         headerRow.eachCell(cell => {
@@ -568,25 +627,48 @@ exports.downloadRekapKantor = async (req, res) => {
             rows.forEach(row => {
                 const rowCells = [
                     row.kunci,
+                    'Nilai',
                     ...headerColumns.map(nama => row.nilaiPerPenilai[nama] || 0),
                     parseFloat(row.rataRata),
                     parseFloat(row.bobot)
                 ];
-                worksheet.addRow(rowCells);
+                const scoreRow = worksheet.addRow(rowCells);
+
+                const noteCells = [
+                    '',
+                    'Catatan',
+                    ...headerColumns.map(nama => row.catatanPerPenilai[nama] || '-'),
+                    '',
+                    ''
+                ];
+                const noteRow = worksheet.addRow(noteCells);
+                noteRow.font = { italic: true, size: 9, color: { argb: 'FF666666' } };
+
+                // Merge Kriteria column cells for Row 1 and Row 2
+                const colLetter = 'A';
+                worksheet.mergeCells(`${colLetter}${scoreRow.number}:${colLetter}${noteRow.number}`);
+                // Also merge Rata-rata and Bobot columns if needed, but per-P footer handles them mostly.
+                // However, for consistency with web view:
+                const lastCol = String.fromCharCode(65 + headers.length - 1);
+                const secondLastCol = String.fromCharCode(64 + headers.length - 1);
+                worksheet.mergeCells(`${secondLastCol}${scoreRow.number}:${secondLastCol}${noteRow.number}`);
+                worksheet.mergeCells(`${lastCol}${scoreRow.number}:${lastCol}${noteRow.number}`);
             });
 
             // Footer per P
-            const footerRowData = [`Rata-rata ${pKey}`, ...headerColumns.map(() => ''), rekapData.pAverages[pKey], rekapData.pTotalBobot[pKey]];
+            const footerRowData = [`Rata-rata ${pKey}`, '', ...headerColumns.map(() => ''), rekapData.pAverages[pKey], rekapData.pTotalBobot[pKey]];
             const footerRow = worksheet.addRow(footerRowData);
             footerRow.font = { bold: true, italic: true };
+            // Adjusted index for Bobot column because of the new label column
             footerRow.getCell(headers.length).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF90EE90' } }; // Light Green for Bobot
+            footerRow.getCell(headers.length - 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFFFF' } }; // Light Cyan for Rata-rata
 
             worksheet.addRow([]); // Spacer
         });
 
         // Grand Total
         worksheet.addRow([]);
-        const totalRow = worksheet.addRow(['Nilai Akhir (Total Bobot)', '', '', '', '', rekapData.totalSkorAkhir]);
+        const totalRow = worksheet.addRow(['Nilai Akhir (Total Bobot)', '', '', '', '', '', rekapData.totalSkorAkhir]);
         totalRow.font = { size: 14, bold: true };
         totalRow.getCell(1).alignment = { horizontal: 'right' };
 
@@ -611,18 +693,32 @@ exports.downloadRekapKriteria = async (req, res) => {
         // Let's copy-paste core logic for speed as refactoring `rekapKriteria` to pure data function might affect existing render flow if not careful, 
         // though refactoring is cleaner. Given context, I'll inline fetch here.
 
-        const periodeAktif = await prisma.periodePenilaian.findFirst({ where: { statusAktif: true } });
-        if (!periodeAktif) return res.status(404).send("Tidak ada periode aktif.");
+        const { periodeId } = req.query;
+
+        // 1. Ambil Periode
+        let periodeTarget;
+        if (periodeId) {
+            periodeTarget = await prisma.periodePenilaian.findUnique({
+                where: { id: parseInt(periodeId) }
+            });
+        } else {
+            periodeTarget = await prisma.periodePenilaian.findFirst({
+                where: { statusAktif: true }
+            });
+        }
+
+        if (!periodeTarget) return res.status(404).send("Periode tidak ditemukan.");
 
         const config = await prisma.konfigurasiBobot.findFirst({
-            where: { periodeId: periodeAktif.id, statusAktif: true },
-            include: { bobotKriteria: true }
+            where: { periodeId: periodeTarget.id },
+            include: { bobotKriteria: true },
+            orderBy: { statusAktif: 'desc' }
         });
 
         const criteriaList = config ? config.bobotKriteria.sort((a, b) => a.kunciKriteria.localeCompare(b.kunciKriteria, undefined, { numeric: true })) : [];
 
         const assessments = await prisma.penilaian.findMany({
-            where: { periodeId: periodeAktif.id, status: 'SUBMIT' },
+            where: { periodeId: periodeTarget.id, status: 'SUBMIT' },
             include: { kantor: true, akun: true, detail: true }
         });
 
@@ -661,7 +757,7 @@ exports.downloadRekapKriteria = async (req, res) => {
         const worksheet = workbook.addWorksheet('Rekap Kriteria');
 
         worksheet.addRow(['Rekap Kriteria Penilaian 5P']);
-        worksheet.addRow(['Periode:', periodeAktif.namaPeriode]);
+        worksheet.addRow(['Periode:', periodeTarget.namaPeriode]);
         worksheet.addRow([]);
 
         // Header
@@ -684,7 +780,7 @@ exports.downloadRekapKriteria = async (req, res) => {
             worksheet.addRow(rowValues);
         });
 
-        const filename = `Rekap_Kriteria_${periodeAktif.namaPeriode.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
+        const filename = `Rekap_Kriteria_${periodeTarget.namaPeriode.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
 
@@ -696,3 +792,200 @@ exports.downloadRekapKriteria = async (req, res) => {
         res.status(500).send("Gagal mengunduh excel.");
     }
 };
+
+exports.downloadRekapPenilaian = async (req, res) => {
+    try {
+        const { periodeId, timEmail } = req.query;
+
+        // 1. Ambil Periode
+        let periodeTarget;
+        if (periodeId) {
+            periodeTarget = await prisma.periodePenilaian.findUnique({
+                where: { id: parseInt(periodeId) }
+            });
+        } else {
+            periodeTarget = await prisma.periodePenilaian.findFirst({
+                where: { statusAktif: true }
+            });
+        }
+
+        if (!periodeTarget) return res.status(404).send("Periode tidak ditemukan.");
+
+        // 2. Ambil Konfigurasi Bobot (Cari yang untuk periode ini, tidak harus statusAktif=true jika itu periode sejarah)
+        const konfigurasi = await prisma.konfigurasiBobot.findFirst({
+            where: { periodeId: periodeTarget.id },
+            include: { bobotKriteria: true },
+            orderBy: { statusAktif: 'desc' } // Prioritaskan yang aktif jika ada ganda
+        });
+
+        if (!konfigurasi) return res.status(404).send("Konfigurasi bobot tidak ditemukan untuk periode ini.");
+
+        // 3. Build Query Penilaian
+        const whereClause = {
+            periodeId: periodeTarget.id,
+            status: 'SUBMIT'
+        };
+        if (timEmail && timEmail !== 'all') {
+            whereClause.akunEmail = timEmail;
+        }
+
+        const assessments = await prisma.penilaian.findMany({
+            where: whereClause,
+            include: {
+                kantor: true,
+                akun: true,
+                anggota: true,
+                detail: true
+            }
+        });
+
+        // Helper Predikat
+        function getPredikat(score) {
+            if (score >= 80) return 'Sangat Baik';
+            if (score >= 60) return 'Baik';
+            if (score >= 40) return 'Cukup';
+            if (score >= 20) return 'Buruk';
+            return 'Sangat Buruk';
+        }
+
+        // Processing (Similar to rekapPenilaian)
+        const groupedByKantor = {};
+        assessments.forEach(ass => {
+            const kId = ass.kantorId;
+            if (!groupedByKantor[kId]) {
+                groupedByKantor[kId] = {
+                    kantor: ass.kantor,
+                    timNama: ass.akun.timKode || ass.akunEmail,
+                    tanggalSubmit: ass.tanggalSubmit,
+                    details: [],
+                    recommendations: []
+                };
+            }
+            groupedByKantor[kId].details.push(...ass.detail);
+            if (ass.catatanRekomendasi) {
+                // Cantumkan siapa yang memberikan rekomendasi
+                const namaAssesor = ass.anggota ? ass.anggota.nama : (ass.akun.timKode || ass.akunEmail);
+                groupedByKantor[kId].recommendations.push(`${namaAssesor.toUpperCase()}: ${ass.catatanRekomendasi}`);
+            }
+            if (ass.tanggalSubmit > groupedByKantor[kId].tanggalSubmit) {
+                groupedByKantor[kId].tanggalSubmit = ass.tanggalSubmit;
+            }
+        });
+
+        const rekapList = Object.values(groupedByKantor).map(group => {
+            const scores = { P1: 0, P2: 0, P3: 0, P4: 0, P5: 0 };
+            konfigurasi.bobotKriteria.forEach(b => {
+                const pKey = b.kategori;
+                const relevantDetails = group.details.filter(d => d.kunciKriteria === b.kunciKriteria);
+                if (relevantDetails.length > 0) {
+                    const avgVal = relevantDetails.reduce((acc, d) => acc + parseFloat(d.nilai), 0) / relevantDetails.length;
+                    scores[pKey] += avgVal * parseFloat(b.bobot);
+                }
+            });
+
+            const nilaiAkhir = Object.values(scores).reduce((a, b) => a + b, 0);
+            const dateObj = new Date(group.tanggalSubmit);
+            const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+
+            return {
+                waktu: dateStr,
+                unit: group.kantor.nama,
+                tim: group.timNama,
+                P1: scores.P1.toFixed(2),
+                P2: scores.P2.toFixed(2),
+                P3: scores.P3.toFixed(2),
+                P4: scores.P4.toFixed(2),
+                P5: scores.P5.toFixed(2),
+                nilaiAkhir: nilaiAkhir.toFixed(2),
+                predikat: getPredikat(nilaiAkhir),
+                rekomendasi: group.recommendations.join('\n') // Pindah baris untuk tiap rekomendasi
+            };
+        }).sort((a, b) => a.unit.localeCompare(b.unit));
+
+        // Create Excel
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Rekap Penilaian');
+
+        worksheet.addRow(['Rekap Penilaian 5P']);
+        worksheet.addRow(['Periode:', periodeTarget.namaPeriode]);
+        worksheet.addRow([]);
+
+        const headers = ['Waktu', 'Nama Unit', 'Tim', 'P1', 'P2', 'P3', 'P4', 'P5', 'Nilai Akhir', 'Predikat', 'Catatan Rekomendasi'];
+        const headerRow = worksheet.addRow(headers);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.eachCell(cell => {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC8102E' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        // Set Column Widths
+        worksheet.columns = [
+            { width: 20 }, // Waktu
+            { width: 30 }, // Nama Unit
+            { width: 10 }, // Tim
+            { width: 10 }, // P1
+            { width: 10 }, // P2
+            { width: 10 }, // P3
+            { width: 10 }, // P4
+            { width: 10 }, // P5
+            { width: 15 }, // Nilai Akhir
+            { width: 20 }, // Predikat
+            { width: 50 }, // Catatan Rekomendasi
+        ];
+
+        // Style Mapping for Predikat
+        const colorMap = {
+            'Sangat Baik': { bg: 'FF22C55E', fg: 'FFFFFFFF' }, // Green
+            'Baik': { bg: 'FF3B82F6', fg: 'FFFFFFFF' },        // Blue
+            'Cukup': { bg: 'FFFACC15', fg: 'FF000000' },       // Yellow
+            'Buruk': { bg: 'FFDC2626', fg: 'FFFFFFFF' },       // Red
+            'Sangat Buruk': { bg: 'FF000000', fg: 'FFFFFFFF' } // Black
+        };
+
+        rekapList.forEach(row => {
+            const newRow = worksheet.addRow([
+                row.waktu,
+                row.unit,
+                row.tim,
+                parseFloat(row.P1),
+                parseFloat(row.P2),
+                parseFloat(row.P3),
+                parseFloat(row.P4),
+                parseFloat(row.P5),
+                parseFloat(row.nilaiAkhir),
+                row.predikat,
+                row.rekomendasi
+            ]);
+
+            // Styling Predikat Cell (Index 10)
+            const predCell = newRow.getCell(10);
+            const style = colorMap[row.predikat];
+            if (style) {
+                predCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: style.bg } };
+                predCell.font = { color: { argb: style.fg }, bold: true };
+            }
+            predCell.alignment = { horizontal: 'center' };
+
+            // Styling Rekomendasi Cell (Index 11)
+            const recCell = newRow.getCell(11);
+            recCell.alignment = { wrapText: true, vertical: 'top' };
+        });
+
+        let teamSuffix = "";
+        if (timEmail && timEmail !== 'all' && rekapList.length > 0) {
+            teamSuffix = `_${rekapList[0].tim.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        }
+
+        const filename = `Rekap_Penilaian${teamSuffix}_${periodeTarget.namaPeriode.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+        await workbook.xlsx.write(res);
+        res.end();
+
+    } catch (error) {
+        console.error('Download Penilaian Error:', error);
+        res.status(500).send("Gagal mengunduh excel.");
+    }
+};
+

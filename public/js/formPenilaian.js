@@ -639,10 +639,19 @@
       kriteriaKey: `${item.pKode}-${item.kriteriaId}`,
       pKode: item.pKode,
       namaKriteria: item.namaKriteria,
-      nilai: Number(item.nilai) || 0,
+      nilai: item.nilai, // Keep as string for check
       catatan: item.catatan || "",
       namaAnggota: item.namaAnggota || fpData.userNama // Ensure author is sent
     };
+
+    // ONLY SAVE IF VALUE IS NOT EMPTY
+    if (assessmentItem.nilai === "" || assessmentItem.nilai === null) {
+      console.log(`Skipping auto-save for item ${id} - empty value`);
+      return;
+    }
+
+    // Convert to number for DB
+    assessmentItem.nilai = Number(assessmentItem.nilai);
 
     fd.append("assessments", JSON.stringify([assessmentItem]));
 
@@ -785,16 +794,15 @@
     fd.append("kantor_id", String(fpData.kantorId));
     fd.append("action", "submit");
 
-    // Convert formState object to Array AND SORT IT
-    // Only include valid assessment items (must be object and have kriteriaId)
+    // ONLY include items that HAVE VALUE
     const allAssessments = Object.values(formState)
-      .filter(item => item && typeof item === 'object' && item.kriteriaId)
+      .filter(item => item && typeof item === 'object' && item.kriteriaId && item.nilai !== "" && item.nilai !== null)
       .map(item => ({
         kriteriaId: item.kriteriaId,
         kriteriaKey: `${item.pKode}-${item.kriteriaId}`,
         pKode: item.pKode,
         namaKriteria: item.namaKriteria,
-        nilai: Number(item.nilai) || 0,
+        nilai: Number(item.nilai), // Convert string to number
         catatan: item.catatan || "",
         namaAnggota: item.namaAnggota // Send author info to server
       })).sort((a, b) => {

@@ -43,24 +43,102 @@
               <div class="bg-white p-5 rounded shadow mb-6 space-y-4">
                 <div>
                   <label class="block font-medium mb-1">Tahun</label>
-                  <select class="w-full border rounded px-3 py-2">
-                    <option>2025</option>
-                    <option>2024</option>
+                  <select id="tahunFilter" class="w-full border rounded px-3 py-2">
+                    <% [...new Set(periodes.map(p=> p.tahun))].forEach(tahun => { %>
+                      <option value="<%= tahun %>" <%=periodeAktif && periodeAktif.tahun===tahun ? 'selected' : '' %>>
+                        <%= tahun %>
+                      </option>
+                      <% }) %>
                   </select>
                 </div>
 
                 <div>
                   <label class="block font-medium mb-1">Semester</label>
-                  <select class="w-full border rounded px-3 py-2">
-                    <option>1</option>
-                    <option>2</option>
+                  <select id="semesterFilter" class="w-full border rounded px-3 py-2">
+                    <option value="1" <%=periodeAktif && periodeAktif.semester===1 ? 'selected' : '' %>>1</option>
+                    <option value="2" <%=periodeAktif && periodeAktif.semester===2 ? 'selected' : '' %>>2</option>
                   </select>
                 </div>
 
-                <a href="/dashboardAdmin/downloadRekapKriteria" class="bg-green-600 text-white px-5 py-2 rounded">
-                  Download Rekap
-                </a>
+                <div class="pt-2">
+                  <a id="downloadBtn" href="/dashboardAdmin/downloadRekapKriteria"
+                    class="inline-block bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 transition">
+                    Download Rekap
+                  </a>
+                </div>
               </div>
+
+              <div id="periodesData" data-periodes="<%= JSON.stringify(periodes) %>" class="hidden"></div>
+
+              <script>
+                const periodes = JSON.parse(document.getElementById('periodesData').dataset.periodes);
+                const tahunSelect = document.getElementById('tahunFilter');
+                const semesterSelect = document.getElementById('semesterFilter');
+                const downloadBtn = document.getElementById('downloadBtn');
+
+                // Get current periodeId from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const currentPeriodeId = urlParams.get('periodeId');
+
+                function updateSemesters(isInit = false) {
+                  const selectedTahun = parseInt(tahunSelect.value);
+                  const validSemesters = periodes
+                    .filter(p => p.tahun === selectedTahun)
+                    .map(p => p.semester)
+                    .sort((a, b) => a - b);
+
+                  // Keep current semester if it exists in new list
+                  const currentVal = semesterSelect.value;
+                  semesterSelect.innerHTML = '';
+
+                  validSemesters.forEach(sms => {
+                    const opt = document.createElement('option');
+                    opt.value = sms;
+                    opt.innerText = sms;
+                    if (sms.toString() === currentVal) opt.selected = true;
+                    semesterSelect.appendChild(opt);
+                  });
+
+                  if (!isInit) {
+                    applyFilter();
+                  } else {
+                    updateDownloadLink();
+                  }
+                }
+
+                function applyFilter() {
+                  const thn = parseInt(tahunSelect.value);
+                  const sms = parseInt(semesterSelect.value);
+                  const p = periodes.find(item => item.tahun === thn && item.semester === sms);
+
+                  if (p && p.id.toString() !== currentPeriodeId) {
+                    window.location.href = `/dashboardAdmin/rekapKriteriaAdmin?periodeId=${p.id}`;
+                  } else {
+                    updateDownloadLink();
+                  }
+                }
+
+                function updateDownloadLink() {
+                  const thn = parseInt(tahunSelect.value);
+                  const sms = parseInt(semesterSelect.value);
+                  const p = periodes.find(item => item.tahun === thn && item.semester === sms);
+                  if (p) {
+                    downloadBtn.href = `/dashboardAdmin/downloadRekapKriteria?periodeId=${p.id}`;
+                    downloadBtn.classList.remove('opacity-50', 'pointer-events-none');
+                    downloadBtn.innerText = 'Download Rekap';
+                  } else {
+                    downloadBtn.href = "#";
+                    downloadBtn.classList.add('opacity-50', 'pointer-events-none');
+                    downloadBtn.innerText = 'Periode Tidak Ditemukan';
+                  }
+                }
+
+                tahunSelect.addEventListener('change', () => updateSemesters(false));
+                semesterSelect.addEventListener('change', applyFilter);
+
+                // Init: update semesters without reloading
+                updateSemesters(true); 
+              </script>
 
               <!-- TABLE -->
               <div class="bg-white rounded shadow overflow-x-auto">
