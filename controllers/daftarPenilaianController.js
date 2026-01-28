@@ -149,9 +149,9 @@ exports.index = async (req, res) => {
 
       let status;
       if (approvedAt) status = 'Approval';
-      else if (!hasStarted) status = 'Belum Dinilai';
       else if (allComplete) status = 'Selesai';
-      else status = 'Process';
+      else if (completedCount > 0) status = 'Process';
+      else status = 'Belum Dinilai';
 
       // Hitung rata-rata tim hanya jika semua anggota selesai input nilai
       let rata = 0;
