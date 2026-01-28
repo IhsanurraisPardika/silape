@@ -68,6 +68,8 @@ exports.getFormPenilaian = async (req, res) => {
         }
 
         let existingDetails = [];
+        let catatanRekomendasi = "";
+
         if (periode) {
             // Gunakan ID anggota yang aktif agar data tidak tertimpa antar anggota tim
             const currentAnggotaId = anggotaAktif ? anggotaAktif.id : null;
@@ -83,8 +85,11 @@ exports.getFormPenilaian = async (req, res) => {
                     detail: true
                 }
             });
-            if (existingPenilaian && existingPenilaian.detail) {
-                existingDetails = existingPenilaian.detail;
+            if (existingPenilaian) {
+                if (existingPenilaian.detail) {
+                    existingDetails = existingPenilaian.detail;
+                }
+                catatanRekomendasi = existingPenilaian.catatanRekomendasi || "";
             }
         }
 
@@ -94,7 +99,8 @@ exports.getFormPenilaian = async (req, res) => {
             kantorList: kantorList, // Daftar kantor yang sudah difilter
             user,
             anggotaAktif,
-            existingDetails
+            existingDetails,
+            catatanRekomendasi // Pass recommendation to view
         });
     } catch (error) {
         console.error("Error loading form:", error);
@@ -163,23 +169,25 @@ exports.postFormPenilaian = async (req, res) => {
 
         // Logic "save-item" (Simpan per item/draft)
         if (action === 'save-item') {
-            const item = assessments[0]; // Expect single item in array
-            if (!item) return res.status(400).json({ success: false, message: "Data item kosong" });
+            const item = assessments[0]; // Expect single item in array OR empty if just saving recommendation
+            const rekomendasi = req.body.rekomendasi;
 
-            // Lookup logic: Try direct match first, then mapped match
-            let bobot = 0;
-            const originalKey = item.kriteriaKey; // e.g. P2-4
-
-            // Use the mapped key for SAVING to DB
-            let keyToSave = originalKey;
-            if (criteriaMapping[originalKey]) {
-                keyToSave = criteriaMapping[originalKey];
+            if (!item && typeof rekomendasi === 'undefined') {
+                return res.status(400).json({ success: false, message: "Data item atau rekomendasi kosong" });
             }
 
-            const weightLookupKey = `${item.pKode}-${keyToSave}`;
+            // Lookup logic: Try direct match first, then mapped match (Only if item exists)
+            let bobot = 0;
+            if (item) {
+                const directKey = `${item.pKode}-${item.kriteriaKey}`;
+                const mappedKeySuffix = criteriaMapping[item.kriteriaKey]; // e.g. "P2-1"
+                const mappedKey = mappedKeySuffix ? `${item.pKode}-${mappedKeySuffix}` : null;
 
-            if (weightMap.has(weightLookupKey)) {
-                bobot = weightMap.get(weightLookupKey);
+                if (weightMap.has(directKey)) {
+                    bobot = weightMap.get(directKey);
+                } else if (mappedKey && weightMap.has(mappedKey)) {
+                    bobot = weightMap.get(mappedKey);
+                }
             }
 
             await prisma.$transaction(async (tx) => {
@@ -193,14 +201,20 @@ exports.postFormPenilaian = async (req, res) => {
                     }
                 });
 
+                const headerData = {
+                    tanggalMulaiInput: new Date(),
+                    konfigurasiBobotId: konfigurasiBobot?.id
+                };
+
+                // Jika ada rekomendasi yang dikirim, update juga
+                if (typeof rekomendasi !== 'undefined') {
+                    headerData.catatanRekomendasi = rekomendasi;
+                }
+
                 if (penilaianHeader) {
                     await tx.penilaian.update({
                         where: { id: penilaianHeader.id },
-                        data: {
-                            tanggalMulaiInput: new Date(),
-                            // Update link to config bobot if not set? Optional but good practice
-                            konfigurasiBobotId: konfigurasiBobot?.id
-                        }
+                        data: headerData
                     });
                 } else {
                     penilaianHeader = await tx.penilaian.create({
@@ -208,41 +222,47 @@ exports.postFormPenilaian = async (req, res) => {
                             periodeId: periode.id,
                             kantorId: parseInt(kantor_id),
                             akunEmail: user.email,
-
-                            anggotaId: null,
+                            anggotaId: currentAnggotaId,
                             status: 'DRAFT',
-                            konfigurasiBobotId: konfigurasiBobot?.id,
+                            ...headerData
                         }
                     });
                 }
 
-                // Upsert Detail (Simpan Nilai)
-                await tx.detailPenilaian.upsert({
-                    where: {
-                        penilaianId_kategori_kunciKriteria: {
+                // Upsert Detail (Simpan Nilai) - Hanya jika ada item
+                if (item) {
+                    // Determine effective author for this item
+                    const effectiveAuthor = item.namaAnggota || anggotaAktif?.nama || user.nama || user.email;
+
+                    await tx.detailPenilaian.upsert({
+                        where: {
+                            penilaianId_kategori_kunciKriteria: {
+                                penilaianId: penilaianHeader.id,
+                                kategori: item.pKode,
+                                kunciKriteria: item.kriteriaKey
+                            }
+                        },
+                        update: {
+                            nilai: parseFloat(item.nilai),
+                            catatan: item.catatan || null,
+                            bobotSaatDinilai: bobot,
+                            namaAnggota: effectiveAuthor
+                        },
+                        create: {
                             penilaianId: penilaianHeader.id,
                             kategori: item.pKode,
-                            kunciKriteria: keyToSave
-                        }
-                    },
-                    update: {
-                        nilai: parseFloat(item.nilai),
-                        catatan: item.catatan || null,
-                        bobotSaatDinilai: bobot
-                    },
-                    create: {
-                        penilaianId: penilaianHeader.id,
-                        kategori: item.pKode,
-                        kunciKriteria: keyToSave,
-                        nilai: parseFloat(item.nilai),
-                        catatan: item.catatan || null,
-                        bobotSaatDinilai: bobot
-                    },
-                    select: { id: true }
-                });
+                            kunciKriteria: item.kriteriaKey,
+                            nilai: parseFloat(item.nilai),
+                            catatan: item.catatan || null,
+                            bobotSaatDinilai: bobot,
+                            namaAnggota: effectiveAuthor
+                        },
+                        select: { id: true }
+                    });
+                }
             });
 
-            return res.json({ success: true, message: "Tersimpan" });
+            return res.json({ success: true, message: "Tersimpan otomatis" });
         }
 
         // Logic "submit" (Simpan semua & Finalisasi)
@@ -305,36 +325,14 @@ exports.postFormPenilaian = async (req, res) => {
 
                 // Lookup logic: Try direct match first, then mapped match
                 let bobot = 0;
-                // Fix: Use mappedKey for saving to ensure consistency with config/report keys
-                // The frontend sends "P2-4", we need "P2-1"
+                const directKey = `${item.pKode}-${item.kriteriaKey}`;
+                const mappedKeySuffix = criteriaMapping[item.kriteriaKey]; // e.g. "P2-1"
+                const mappedKey = mappedKeySuffix ? `${item.pKode}-${mappedKeySuffix}` : null;
 
-                // Original: P2-4
-                const originalKey = item.kriteriaKey; // e.g. P2-4
-
-                // Get mapped suffix: P2-4 -> P2-1
-                // The mapping is: "P2-4": "P2-1"
-                // So mappedKey should be "P2-1"
-
-                // Criteria Mapping (defined above)
-                // "P2-4": "P2-1" ...
-
-                // Use the mapped key for SAVING to DB
-                let keyToSave = originalKey;
-                if (criteriaMapping[originalKey]) {
-                    keyToSave = criteriaMapping[originalKey];
-                }
-
-                // For weight lookup, we might need to check both?
-                // Config usually uses "P2-1" (relative)
-
-                const directKey = `${item.pKode}-${keyToSave}`; // Should be P2-P2-1 or similar? 
-                // Wait, weightMap keys are: `${b.kategori}-${b.kunciKriteria}` -> "P2-P2-1"
-
-                // So we should construct key based on keyToSave
-                const weightLookupKey = `${item.pKode}-${keyToSave}`;
-
-                if (weightMap.has(weightLookupKey)) {
-                    bobot = weightMap.get(weightLookupKey);
+                if (weightMap.has(directKey)) {
+                    bobot = weightMap.get(directKey);
+                } else if (mappedKey && weightMap.has(mappedKey)) {
+                    bobot = weightMap.get(mappedKey);
                 }
 
                 // Determine effective author for this item
@@ -346,7 +344,7 @@ exports.postFormPenilaian = async (req, res) => {
                         penilaianId_kategori_kunciKriteria: {
                             penilaianId: penilaianHeader.id,
                             kategori: item.pKode,
-                            kunciKriteria: keyToSave // USE CORRECT KEY
+                            kunciKriteria: item.kriteriaKey
                         }
                     },
                     update: {
@@ -358,7 +356,7 @@ exports.postFormPenilaian = async (req, res) => {
                     create: {
                         penilaianId: penilaianHeader.id,
                         kategori: item.pKode,
-                        kunciKriteria: keyToSave,
+                        kunciKriteria: item.kriteriaKey,
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
                         bobotSaatDinilai: bobot,
