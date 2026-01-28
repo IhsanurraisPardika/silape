@@ -178,9 +178,16 @@ exports.postFormPenilaian = async (req, res) => {
 
             // Lookup logic: Try direct match first, then mapped match (Only if item exists)
             let bobot = 0;
+            let keyToSave = "";
             if (item) {
-                const directKey = `${item.pKode}-${item.kriteriaKey}`;
-                const mappedKeySuffix = criteriaMapping[item.kriteriaKey]; // e.g. "P2-1"
+                const originalKey = item.kriteriaKey; // e.g. P2-4
+                keyToSave = originalKey;
+                if (criteriaMapping[originalKey]) {
+                    keyToSave = criteriaMapping[originalKey];
+                }
+
+                const directKey = `${item.pKode}-${originalKey}`;
+                const mappedKeySuffix = criteriaMapping[originalKey];
                 const mappedKey = mappedKeySuffix ? `${item.pKode}-${mappedKeySuffix}` : null;
 
                 if (weightMap.has(directKey)) {
@@ -239,7 +246,7 @@ exports.postFormPenilaian = async (req, res) => {
                             penilaianId_kategori_kunciKriteria: {
                                 penilaianId: penilaianHeader.id,
                                 kategori: item.pKode,
-                                kunciKriteria: item.kriteriaKey
+                                kunciKriteria: keyToSave
                             }
                         },
                         update: {
@@ -251,7 +258,7 @@ exports.postFormPenilaian = async (req, res) => {
                         create: {
                             penilaianId: penilaianHeader.id,
                             kategori: item.pKode,
-                            kunciKriteria: item.kriteriaKey,
+                            kunciKriteria: keyToSave,
                             nilai: parseFloat(item.nilai),
                             catatan: item.catatan || null,
                             bobotSaatDinilai: bobot,
@@ -325,8 +332,14 @@ exports.postFormPenilaian = async (req, res) => {
 
                 // Lookup logic: Try direct match first, then mapped match
                 let bobot = 0;
-                const directKey = `${item.pKode}-${item.kriteriaKey}`;
-                const mappedKeySuffix = criteriaMapping[item.kriteriaKey]; // e.g. "P2-1"
+                const originalKey = item.kriteriaKey;
+                let keyToSave = originalKey;
+                if (criteriaMapping[originalKey]) {
+                    keyToSave = criteriaMapping[originalKey];
+                }
+
+                const directKey = `${item.pKode}-${originalKey}`;
+                const mappedKeySuffix = criteriaMapping[originalKey];
                 const mappedKey = mappedKeySuffix ? `${item.pKode}-${mappedKeySuffix}` : null;
 
                 if (weightMap.has(directKey)) {
@@ -344,7 +357,7 @@ exports.postFormPenilaian = async (req, res) => {
                         penilaianId_kategori_kunciKriteria: {
                             penilaianId: penilaianHeader.id,
                             kategori: item.pKode,
-                            kunciKriteria: item.kriteriaKey
+                            kunciKriteria: keyToSave
                         }
                     },
                     update: {
@@ -356,7 +369,7 @@ exports.postFormPenilaian = async (req, res) => {
                     create: {
                         penilaianId: penilaianHeader.id,
                         kategori: item.pKode,
-                        kunciKriteria: item.kriteriaKey,
+                        kunciKriteria: keyToSave,
                         nilai: parseFloat(item.nilai),
                         catatan: item.catatan,
                         bobotSaatDinilai: bobot,

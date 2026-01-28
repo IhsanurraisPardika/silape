@@ -9,35 +9,41 @@ async function debug() {
         const period = await prisma.periodePenilaian.findFirst({
             where: { statusAktif: true }
         });
-        console.log('Active Period:', period);
+        console.log('Active Period:', period ? period.id : 'NONE');
 
-        if (!period) {
-            console.log('NO ACTIVE PERIOD!');
-            return;
-        }
+        if (!period) return;
 
-        // 2. Check Configuration
+        // 2. Check Configuration & Criteria keys
         const config = await prisma.konfigurasiBobot.findFirst({
-            where: { periodeId: period.id, statusAktif: true }
+            where: { periodeId: period.id, statusAktif: true },
+            include: { bobotKriteria: true }
         });
-        console.log('Active Config:', config);
 
-        if (!config) {
-            console.log('NO ACTIVE CONFIGURATION for this period!');
+        if (config) {
+            console.log(`Config Found. Criteria Keys:`);
+            console.log(config.bobotKriteria.map(b => `${b.kategori}: ${b.kunciKriteria}`).join(', '));
+        } else {
+            console.log('NO ACTIVE CONFIG!');
         }
 
-        // 3. Check Assessments (All Status)
+        // 3. Check Assessments details
         const assessments = await prisma.penilaian.findMany({
-            where: { periodeId: period.id },
+            where: { periodeId: period.id, status: 'SUBMIT' },
             include: {
                 kantor: true,
-                anggota: true
-            }
+                anggota: true,
+                detail: true
+            },
+            take: 3 // Just check a few
         });
 
-        console.log(`Found ${assessments.length} assessments in this period.`);
+        console.log(`Found ${assessments.length} SUBMITTED assessments.`);
         assessments.forEach(a => {
-            console.log(`- ID: ${a.id}, Kantor: ${a.kantor.nama}, Status: ${a.status}, Anggota: ${a.anggota ? a.anggota.nama : 'N/A'}`);
+            console.log(`\nAssessment ID: ${a.id}, Kantor: ${a.kantor.nama}, Penilai: ${a.anggota ? a.anggota.nama : 'N/A'}`);
+            console.log('Details (kunciKriteria -> nilai):');
+            a.detail.forEach(d => {
+                console.log(` - "${d.kunciKriteria}": ${d.nilai}`);
+            });
         });
 
         console.log('--- DEBUG END ---');

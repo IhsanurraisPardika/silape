@@ -36,9 +36,10 @@
                   </a>
                 </div>
 
-                <button class="bg-green-600 text-white px-4 py-2 rounded">
+                <a href="/dashboardAdmin/downloadRekapKantor?kantorId=<%= selectedKantorId %>"
+                  class="bg-green-600 text-white px-4 py-2 rounded">
                   Download Rekap
-                </button>
+                </a>
               </div>
 
               <div class="mb-4">
@@ -87,8 +88,9 @@
                           </tr>
 
                           <% rows.forEach(function(row) { %>
+                            <!-- Row 1: Nilai -->
                             <tr>
-                              <td class="border p-2">
+                              <td class="border p-2" rowspan="2">
                                 <%= row.kunci %>
                               </td>
                               <td class="border p-2">Nilai</td>
@@ -97,12 +99,21 @@
                                   <%= row.nilaiPerPenilai[nama] || '-' %>
                                 </td>
                                 <% }); %>
-                                  <td class="border p-2 bg-cyan-200">
+                                  <td class="border p-2 bg-cyan-200" rowspan="2">
                                     <%= row.rataRata %>
                                   </td>
-                                  <td class="border p-2 bg-green-200">
+                                  <td class="border p-2 bg-green-200" rowspan="2">
                                     <%= row.bobot %>
                                   </td>
+                            </tr>
+                            <!-- Row 2: Catatan -->
+                            <tr>
+                              <td class="border p-2 font-semibold">Catatan</td>
+                              <% headerColumns.forEach(function(nama) { %>
+                                <td class="border p-2 text-xs italic text-gray-600">
+                                  <%= row.catatanPerPenilai[nama] || '-' %>
+                                </td>
+                                <% }); %>
                             </tr>
                             <% }); %>
 
@@ -114,12 +125,23 @@
                                 <td class="border p-2 font-bold">
                                   <%= rekapData.pAverages[pKey] %>
                                 </td>
-                                <td class="border p-2"></td>
+                                <td class="border p-2 font-bold bg-green-200">
+                                  <%= rekapData.pTotalBobot[pKey] %>
+                                </td>
                               </tr>
                         </tbody>
                         <% }); %>
 
                   </table>
+
+                  <div class="mt-6 flex justify-end">
+                    <div class="bg-gray-800 text-white p-4 rounded-lg shadow-lg flex items-center gap-4">
+                      <span class="text-lg font-medium">Nilai Akhir (Total Bobot):</span>
+                      <span class="text-3xl font-bold text-green-400">
+                        <%= rekapData.totalSkorAkhir %>
+                      </span>
+                    </div>
+                  </div>
 
                   <% } else { %>
                     <div class="p-4 text-center text-gray-500">
