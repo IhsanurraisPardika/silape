@@ -162,23 +162,91 @@
         });
     }
 
-    // 2. Logic Hamburger Menu & Sidebar
+    // 2. Logic Hamburger Menu & Sidebar (off-canvas mobile)
     const hamburgerBtn = document.getElementById('hamburgerBtn');
-    // Pastikan ID 'main-sidebar' ada di file sidebar.ejs
     const sidebar = document.getElementById('main-sidebar');
+    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+    function isMobileView() {
+        return window.innerWidth < 768;
+    }
+
+    function isSidebarOpen() {
+        return sidebar ? !sidebar.classList.contains('-translate-x-full') : false;
+    }
+
+    function openSidebar() {
+        if (!sidebar) return;
+        sidebar.classList.remove('-translate-x-full');
+        sidebar.classList.add('translate-x-0');
+        if (sidebarBackdrop) sidebarBackdrop.classList.remove('hidden');
+        if (isMobileView()) document.body.classList.add('overflow-hidden');
+        if (hamburgerBtn) hamburgerBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeSidebar() {
+        if (!sidebar) return;
+        if (!isMobileView()) return;
+        sidebar.classList.add('-translate-x-full');
+        sidebar.classList.remove('translate-x-0');
+        if (sidebarBackdrop) sidebarBackdrop.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+        if (hamburgerBtn) hamburgerBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleSidebar() {
+        if (!sidebar) return;
+        if (!isMobileView()) return;
+        if (isSidebarOpen()) closeSidebar();
+        else openSidebar();
+    }
 
     if (hamburgerBtn && sidebar) {
+        hamburgerBtn.setAttribute('aria-controls', 'main-sidebar');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+
         hamburgerBtn.addEventListener('click', function (e) {
+            e.preventDefault();
             e.stopPropagation();
-            sidebar.classList.toggle('hidden');
+            toggleSidebar();
         });
 
-        // Menutup sidebar jika klik di luar area sidebar (saat mode mobile)
+        if (sidebarBackdrop) {
+            sidebarBackdrop.addEventListener('click', function () {
+                closeSidebar();
+            });
+        }
+
+        // Close when clicking outside sidebar (mobile only)
         document.addEventListener('click', function (e) {
-            // Jika sidebar terbuka DAN layar kecil
-            if (!sidebar.classList.contains('hidden') && window.innerWidth < 768) {
-                if (!sidebar.contains(e.target) && !hamburgerBtn.contains(e.target)) {
-                    sidebar.classList.add('hidden');
+            if (!isMobileView()) return;
+            if (!isSidebarOpen()) return;
+            if (sidebar.contains(e.target) || hamburgerBtn.contains(e.target)) return;
+            closeSidebar();
+        });
+
+        // Close on ESC
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeSidebar();
+        });
+
+        // Keep state sane when resizing to desktop
+        window.addEventListener('resize', function () {
+            if (!sidebar) return;
+            if (!isMobileView()) {
+                if (sidebarBackdrop) sidebarBackdrop.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                if (hamburgerBtn) hamburgerBtn.setAttribute('aria-expanded', 'false');
+            } else {
+                // On entering mobile, default to closed (unless already open)
+                if (!isSidebarOpen()) {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('translate-x-0');
+                    if (sidebarBackdrop) sidebarBackdrop.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
+                    if (hamburgerBtn) hamburgerBtn.setAttribute('aria-expanded', 'false');
                 }
             }
         });

@@ -420,10 +420,13 @@
               <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Nilai (0-100)</label>
               <input 
                 type="number" 
+                inputmode="numeric"
+                pattern="[0-9]*"
+                step="1"
                 name="nilai_${item.id}" 
                 value="${valNilai}"
                 placeholder="0" min="0" max="100" 
-                class="w-full border-b-2 border-gray-200 py-2 focus:border-red-600 outline-none transition text-2xl font-bold text-red-600 bg-transparent"
+                class="w-full border-b-2 border-gray-200 py-1.5 focus:border-red-600 outline-none transition text-xl sm:text-2xl font-bold text-red-600 bg-transparent"
               >
             </div>
             <div class="md:col-span-3 pb-2">
@@ -438,7 +441,7 @@
             <textarea 
               name="catatan_${item.id}" 
               placeholder="Berikan catatan penilaian (opsional)..." 
-              class="w-full border border-gray-200 rounded-lg p-3 h-24 bg-gray-50 focus:bg-white transition text-sm outline-none shadow-inner"
+              class="w-full border border-gray-200 rounded-lg p-3 h-24 bg-gray-50 focus:bg-white transition text-base md:text-sm outline-none shadow-inner"
             >${valCatatan}</textarea>
           </div>
 

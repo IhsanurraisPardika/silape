@@ -196,6 +196,8 @@ exports.index = async (req, res) => {
         rata: hasNilai ? rata.toFixed(1) : '-',
         status: status, // Belum Dinilai / Process / Selesai / Approval
         isSelesai: allComplete && !approvedAt, // Button approve hanya saat semua selesai
+        isApproved: !!approvedAt,
+        canEdit: !approvedAt,
         detailUrl: `/formPenilaian?kantor=${p.kantorId}&periode=${p.periodeId}`, // Redirect ke form edit
         kantorId: p.kantorId,
         periodeId: p.periodeId
