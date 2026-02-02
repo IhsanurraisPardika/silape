@@ -23,7 +23,7 @@ router.get("/", harusAdmin, async (req, res) => {
     let sedangProses = 0;
     let riwayatPenilaian = [];
     let chartDataTim = [];
-    let totalKriteriaDiharapkan = 16; // Default fallback
+    let totalKriteriaDiharapkan = 16; // Fallback
 
     if (periodeAktif) {
       // 3. Ambil Konfigurasi Bobot (untuk tahu target kriteria)
@@ -31,7 +31,9 @@ router.get("/", harusAdmin, async (req, res) => {
         where: { periodeId: periodeAktif.id, statusAktif: true },
         include: { _count: { select: { bobotKriteria: true } } }
       });
-      totalKriteriaDiharapkan = konfigurasi ? konfigurasi._count.bobotKriteria : 16;
+      if (konfigurasi && konfigurasi._count) {
+        totalKriteriaDiharapkan = konfigurasi._count.bobotKriteria;
+      }
 
       // 4. Ambil Data Penugasan & Anggota Tim per Akun
       const penugasanList = await prisma.penugasanKantorAkun.findMany({
@@ -70,13 +72,13 @@ router.get("/", harusAdmin, async (req, res) => {
         let adaAktivitas = penilaianKantorIni.length > 0;
 
         penilaianKantorIni.forEach(p => {
-          const isLengkap = p.detail.length >= totalKriteriaDiharapkan;
+          const isLengkap = p.detail ? p.detail.length >= totalKriteriaDiharapkan : false;
           const adaRekomendasi = p.catatanRekomendasi && p.catatanRekomendasi.trim() !== "";
           const isSelesai = p.status === "SUBMIT" && isLengkap && adaRekomendasi;
 
           if (isSelesai) {
             anggotaSelesaiCount++;
-            // Hitung satu kantor selesai jika semua anggota selesai
+            // Hitung kontribusi kantor selesai pro-rata terhadap jumlah anggota tim
             perTim[timKey].selesai += (1 / Math.max(1, totalAnggota));
           }
 
@@ -95,7 +97,7 @@ router.get("/", harusAdmin, async (req, res) => {
 
       // Bulatkan jumlah selesai per tim
       Object.keys(perTim).forEach(key => {
-        perTim[key].selesai = Math.floor(perTim[key].selesai + 0.001); // Handle floating point
+        perTim[key].selesai = Math.floor(perTim[key].selesai + 0.001);
       });
 
       // 5. Ambil 10 aktivitas terbaru untuk "Riwayat Penilaian"
@@ -116,7 +118,7 @@ router.get("/", harusAdmin, async (req, res) => {
       });
 
       riwayatPenilaian = dataRiwayat.map(item => {
-        const isLengkap = item.detail.length >= totalKriteriaDiharapkan;
+        const isLengkap = item.detail ? item.detail.length >= totalKriteriaDiharapkan : false;
         const adaRekomendasi = item.catatanRekomendasi && item.catatanRekomendasi.trim() !== "";
         const isSubmitted = item.status === "SUBMIT";
 
