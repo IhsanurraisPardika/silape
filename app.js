@@ -69,7 +69,6 @@ app.use("/kelolaKantor", kelolaKantorRoutes);
 app.use("/daftarPenilaian", daftarPenilaianRoutes);
 app.use("/dashboardAdmin", dashboardAdminRoutes);
 app.use("/pengaturanBobot", pengaturanBobotRoutes);
-app.use("/pengaturanBobot", pengaturanBobotRoutes);
 app.use("/", kelolaTimRoutes);
 
 app.use("/tentang", tentangRoutes);

@@ -213,13 +213,14 @@
   </div>
 
   <!-- BUTTON TOGGLE LOGIC & CONFIRMATION -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     const btnSimpan = document.getElementById('btnSimpan');
     const btnUpdate = document.getElementById('btnUpdate');
     const inputs = document.querySelectorAll('input[type="number"]');
 
     // Initial State: Disable inputs if Update button is visible (meaning data exists)
-    if (!btnUpdate.classList.contains('hidden')) {
+    if (btnUpdate && !btnUpdate.classList.contains('hidden')) {
       inputs.forEach(input => input.disabled = true);
     }
 
@@ -237,12 +238,38 @@
       });
     }
 
-    // Konfirmasi Simpan
+    // Konfirmasi Simpan dengan SweetAlert
     document.querySelector('form').addEventListener('submit', function (e) {
-      if (!confirm('Apakah Anda yakin ingin menyimpan pengaturan bobot ini?')) {
-        e.preventDefault();
-      }
+      e.preventDefault();
+      const form = this;
+
+      Swal.fire({
+        title: 'Konfirmasi Simpan',
+        text: "Apakah Anda yakin ingin menyimpan pengaturan bobot ini?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Simpan!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          form.submit();
+        }
+      });
     });
+
+    // Alert Berhasil (jika success dari backend bernilai true)
+    const isSuccess = '<%= success %>';
+    if (isSuccess === 'true') {
+      Swal.fire({
+        title: 'Berhasil!',
+        text: 'Pengaturan bobot berhasil disimpan',
+        icon: 'success',
+        confirmButtonColor: '#dc2626'
+      });
+    }
   </script>
 
 </body>
