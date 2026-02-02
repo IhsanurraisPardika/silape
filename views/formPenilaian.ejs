@@ -13,6 +13,11 @@
     <link rel="icon" href="/images/sp.png" type="image/sp.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
         .active-menu {
             background: rgba(0, 0, 0, 0.2);
             border-left: 4px solid white;
@@ -69,7 +74,7 @@
     </style>
 </head>
 
-<body class="antialiased bg-gray-50">
+<body class="antialiased bg-gray-50 overflow-x-hidden">
     <div class="flex min-h-screen">
         <!-- Sidebar is now self-contained with fixed positioning on mobile/desktop as needed -->
         <%- include('partials/sidebar') %>
