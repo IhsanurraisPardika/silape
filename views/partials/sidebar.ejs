@@ -1,4 +1,5 @@
-<div class="w-56 bg-red-600 text-white flex flex-col shadow-lg h-screen sticky top-0">
+<div id="main-sidebar"
+    class="hidden md:flex flex-col w-56 bg-red-600 text-white shadow-lg h-screen sticky top-0 fixed md:sticky left-0 z-50 md:z-auto transition-transform duration-300 overflow-y-auto">
     <div class="p-6 border-b border-red-700">
         <div class="flex items-center gap-3">
             <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
@@ -11,26 +12,25 @@
     </div>
 
     <nav class="flex flex-col p-4 space-y-3">
-        <a href="/home" 
-           class="nav-link block px-4 py-3 font-medium text-white hover:bg-red-800 transition rounded-xl flex items-center gap-3"
-           data-path="/home">
+        <a href="/home"
+            class="nav-link block px-4 py-3 font-medium text-white hover:bg-red-800 transition rounded-xl flex items-center gap-3"
+            data-path="/home">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
             </svg>
             Beranda
         </a>
-        <a href="/penilaian" 
-           class="nav-link block px-4 py-3 font-medium text-white hover:bg-red-800 transition rounded-xl flex items-center gap-3"
-           data-path="/penilaian">
+        <a href="/penilaian"
+            class="nav-link block px-4 py-3 font-medium text-white hover:bg-red-800 transition rounded-xl flex items-center gap-3"
+            data-path="/penilaian">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M21 3H3v18h18V3zm-2 16H5V5h14v14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h6v2H7v-2z"
-                    fill="white" />>
+                <path d="M21 3H3v18h18V3zm-2 16H5V5h14v14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h6v2H7v-2z" fill="white" />>
             </svg>
             Input Penilaian
         </a>
-        <a href="/daftarPenilaian" 
-           class="nav-link block px-4 py-3 font-medium text-white hover:bg-red-800 transition rounded-xl flex items-center gap-3"
-           data-path="/daftarPenilaian">
+        <a href="/daftarPenilaian"
+            class="nav-link block px-4 py-3 font-medium text-white hover:bg-red-800 transition rounded-xl flex items-center gap-3"
+            data-path="/daftarPenilaian">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-8h14V7H7v2z" />
             </svg>
@@ -52,9 +52,9 @@
 
         navLinks.forEach(link => {
             const linkPath = link.getAttribute('data-path');
-            
+
             // Hapus kelas aktif default jika ada (opsional, disini kita biarkan bersih)
-            link.classList.remove('bg-red-700'); 
+            link.classList.remove('bg-red-700');
 
             if (!linkPath) return;
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,70 +8,93 @@
 	<link rel="icon" href="/images/sp.png" type="image/sp.png">
 	<script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="antialiased bg-gray-50">
 	<div class="flex min-h-screen">
-		<!-- Sidebar -->
 		<%- include('partials/sidebar') %>
 
-		<!-- Main -->
-		<div class="flex-1 flex flex-col">
-			<%- include('partials/header') %>
+			<!-- Main -->
+			<div class="flex-1 flex flex-col transition-all duration-300">
+				<%- include('partials/header') %>
 
+					<main class="p-4 md:p-8 pb-24">
+						<h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Input Penilaian 5P</h1>
 
-			<main class="p-8">
-				<h1 class="text-3xl font-bold text-gray-900 mb-6">Input Penilaian 5P</h1>
+						<div class="bg-white rounded-2xl shadow-lg p-5 md:p-6">
+							<h2 class="text-lg md:text-xl font-semibold text-gray-800 mb-4">Pilih Kantor yang akan
+								Dinilai
+							</h2>
 
-				<div class="bg-white rounded-2xl shadow-lg p-6">
-					<h2 class="text-xl font-semibold text-gray-800 mb-4">Pilih Kantor yang akan Dinilai</h2>
-
-					<div class="space-y-4">
-						<% if (kantor && kantor.length > 0) { %>
-							<% kantor.forEach((k) => { %>
-								<a href="/formPenilaian?kantor=<%= k.id %>" class="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md hover:border-red-300 transition cursor-pointer">
-									<div class="flex items-center gap-4">
-										<div class="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
-											<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-											</svg>
-										</div>
-										<div class="flex-1">
-											<div class="text-sm font-semibold text-gray-800"><%= (k.nama || '').toUpperCase() %></div>
-											<div class="flex items-center gap-2 mt-1">
-												<% if (k.kode) { %>
-													<span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Kode: <%= k.kode %></span>
-												<% } %>
-												<% if (k.timNama) { %>
-													<span class="text-xs text-gray-400">Tim: <%= k.timNama %></span>
-												<% } %>
+							<div class="space-y-3 md:space-y-4">
+								<% if (kantor && kantor.length> 0) { %>
+									<% kantor.forEach((k)=> { %>
+										<a href="/formPenilaian?kantor=<%= k.id %>"
+											class="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md hover:border-red-300 transition cursor-pointer group">
+											<div class="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+												<div
+													class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0 group-hover:bg-red-100 transition">
+													<svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor"
+														viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round"
+															stroke-width="2"
+															d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+													</svg>
+												</div>
+												<div class="flex-1 min-w-0">
+													<div
+														class="text-sm md:text-base font-semibold text-gray-800 truncate">
+														<%= (k.nama || '' ).toUpperCase() %>
+													</div>
+													<div class="flex flex-wrap items-center gap-2 mt-1">
+														<% if (k.kode) { %>
+															<span
+																class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Kode:
+																<%= k.kode %>
+															</span>
+															<% } %>
+																<% if (k.timNama) { %>
+																	<span class="text-xs text-gray-400">Tim: <%=
+																			k.timNama %></span>
+																	<% } %>
+													</div>
+												</div>
 											</div>
-										</div>
-									</div>
-									<div class="text-gray-300 hover:text-red-600 transition">
-										<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-										</svg>
-									</div>
-								</a>
-							<% }) %>
-						<% } else { %>
-							<div class="p-6 rounded-xl border border-dashed border-gray-300 bg-gray-50 text-center">
-								<svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-								</svg>
-								<p class="text-sm text-gray-600 font-medium mb-1">Tidak ada kantor yang tersedia</p>
-								<p class="text-xs text-gray-500">
-									<% if (user && user.timId) { %>
-										Tidak ada kantor yang ditugaskan untuk tim Anda saat ini.
-									<% } else { %>
-										Data kantor belum tersedia atau belum ada kantor aktif.
-									<% } %>
-								</p>
+											<div
+												class="text-gray-300 group-hover:text-red-600 transition flex-shrink-0 ml-2">
+												<svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor"
+													viewBox="0 0 24 24">
+													<path stroke-linecap="round" stroke-linejoin="round"
+														stroke-width="2" d="M9 5l7 7-7 7" />
+												</svg>
+											</div>
+										</a>
+										<% }) %>
+											<% } else { %>
+												<div
+													class="p-6 md:p-8 rounded-xl border border-dashed border-gray-300 bg-gray-50 text-center">
+													<svg class="w-12 h-12 md:w-16 md:h-16 mx-auto text-gray-400 mb-3"
+														fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round"
+															stroke-width="2"
+															d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+													</svg>
+													<p class="text-sm md:text-base text-gray-600 font-medium mb-1">Tidak
+														ada
+														kantor yang tersedia</p>
+													<p class="text-xs md:text-sm text-gray-500">
+														<% if (user && user.timId) { %>
+															Tidak ada kantor yang ditugaskan untuk tim Anda saat ini.
+															<% } else { %>
+																Data kantor belum tersedia atau belum ada kantor aktif.
+																<% } %>
+													</p>
+												</div>
+												<% } %>
 							</div>
-						<% } %>
-					</div>
-				</div>
-			</main>
-		</div>
+						</div>
+					</main>
+			</div>
 	</div>
 </body>
+
 </html>
