@@ -1,5 +1,52 @@
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, Prisma } = require("@prisma/client");
 const prisma = new PrismaClient();
+
+function toInt(value) {
+    const n = Number.parseInt(String(value ?? ""), 10);
+    return Number.isFinite(n) ? n : null;
+}
+
+function parseAssessmentsPayload(raw) {
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string' && raw.trim() !== '') {
+        try {
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+    return [];
+}
+
+function normalizeAssessmentItem(item) {
+    if (!item || typeof item !== 'object') return null;
+
+    const kriteriaId = toInt(item.kriteriaId);
+    const pKodeRaw = typeof item.pKode === 'string' ? item.pKode.trim() : '';
+    const kriteriaKeyRaw = typeof item.kriteriaKey === 'string' ? item.kriteriaKey.trim() : '';
+
+    // Derive pKode/key if one of them is missing.
+    const derivedPKode = (kriteriaKeyRaw.includes('-') ? kriteriaKeyRaw.split('-')[0] : '') || pKodeRaw;
+    const derivedKey = kriteriaKeyRaw || (derivedPKode && kriteriaId ? `${derivedPKode}-${kriteriaId}` : '');
+
+    // Normalize catatan/namaAnggota to strings/null
+    const catatan = (typeof item.catatan === 'string') ? item.catatan : (item.catatan == null ? null : String(item.catatan));
+    const namaAnggota = (typeof item.namaAnggota === 'string') ? item.namaAnggota : (item.namaAnggota == null ? null : String(item.namaAnggota));
+
+    // Normalize nilai: allow numbers or numeric strings
+    const nilaiNum = (typeof item.nilai === 'number') ? item.nilai : Number(item.nilai);
+
+    return {
+        kriteriaId: kriteriaId != null ? String(kriteriaId) : (typeof item.kriteriaId === 'string' ? item.kriteriaId : null),
+        kriteriaKey: derivedKey,
+        pKode: derivedPKode,
+        nilaiNum,
+        catatan,
+        namaAnggota,
+        namaKriteria: (typeof item.namaKriteria === 'string') ? item.namaKriteria : null,
+    };
+}
 
 // Menampilkan Form Penilaian
 exports.getFormPenilaian = async (req, res) => {
@@ -112,13 +159,21 @@ exports.getFormPenilaian = async (req, res) => {
 exports.postFormPenilaian = async (req, res) => {
     try {
         const { kantor_id, action } = req.body;
-        let assessments = JSON.parse(req.body.assessments || "[]");
         const user = req.session.user;
+        if (!user) return res.status(401).json({ success: false, message: "Sesi login berakhir. Silakan login ulang." });
+
+        const kantorIdInt = toInt(kantor_id);
+        const rawAssessments = parseAssessmentsPayload(req.body.assessments);
+
+        // Normalize and drop invalid objects early.
+        let assessments = rawAssessments
+            .map(normalizeAssessmentItem)
+            .filter(Boolean);
 
         // 1. Sort Assessments by ID (1-16) to ensure DB insertion order
         assessments.sort((a, b) => {
-            const idA = parseInt(a.kriteriaId) || 0;
-            const idB = parseInt(b.kriteriaId) || 0;
+            const idA = toInt(a.kriteriaId) || 0;
+            const idB = toInt(b.kriteriaId) || 0;
             return idA - idB;
         });
 
@@ -143,7 +198,7 @@ exports.postFormPenilaian = async (req, res) => {
         });
 
         if (!periode) return res.status(400).json({ success: false, message: "Periode aktif tidak ditemukan" });
-        if (!kantor_id) return res.status(400).json({ success: false, message: "Kantor ID wajib diisi" });
+        if (!kantorIdInt) return res.status(400).json({ success: false, message: "Kantor ID wajib diisi" });
 
 
         // Fetch Active Weights Configuration
@@ -177,13 +232,22 @@ exports.postFormPenilaian = async (req, res) => {
             }
 
             // Lookup logic: Try direct match first, then mapped match (Only if item exists)
-            let bobot = 0;
+            let bobot = new Prisma.Decimal(0);
             let keyToSave = "";
             if (item) {
                 const originalKey = item.kriteriaKey; // e.g. P2-4
+                if (!originalKey || typeof originalKey !== 'string') {
+                    return res.status(422).json({ success: false, message: "Kriteria tidak valid (kunci kriteria kosong)." });
+                }
+
                 keyToSave = originalKey;
                 if (criteriaMapping[originalKey]) {
                     keyToSave = criteriaMapping[originalKey];
+                }
+
+                // Validate nilai
+                if (!Number.isFinite(item.nilaiNum)) {
+                    return res.status(422).json({ success: false, message: `Nilai tidak valid untuk ${originalKey}.` });
                 }
 
                 const directKey = `${item.pKode}-${originalKey}`;
@@ -202,7 +266,7 @@ exports.postFormPenilaian = async (req, res) => {
                 let penilaianHeader = await tx.penilaian.findFirst({
                     where: {
                         periodeId: periode.id,
-                        kantorId: parseInt(kantor_id), // Pastikan tersimpan sesuai kantor yang dipilih
+                        kantorId: kantorIdInt, // Pastikan tersimpan sesuai kantor yang dipilih
                         akunEmail: user.email,
                         anggotaId: currentAnggotaId // Cek berdasarkan anggota spesifik
                     }
@@ -227,7 +291,7 @@ exports.postFormPenilaian = async (req, res) => {
                     penilaianHeader = await tx.penilaian.create({
                         data: {
                             periodeId: periode.id,
-                            kantorId: parseInt(kantor_id),
+                            kantorId: kantorIdInt,
                             akunEmail: user.email,
                             anggotaId: currentAnggotaId,
                             status: 'DRAFT',
@@ -241,26 +305,31 @@ exports.postFormPenilaian = async (req, res) => {
                     // Determine effective author for this item
                     const effectiveAuthor = item.namaAnggota || anggotaAktif?.nama || user.nama || user.email;
 
+                    const kategoriEnum = item.pKode;
+                    if (!kategoriEnum || !['P1', 'P2', 'P3', 'P4', 'P5'].includes(kategoriEnum)) {
+                        throw new Error(`Kategori tidak valid: ${String(kategoriEnum)}`);
+                    }
+
                     await tx.detailPenilaian.upsert({
                         where: {
                             penilaianId_kategori_kunciKriteria: {
                                 penilaianId: penilaianHeader.id,
-                                kategori: item.pKode,
+                                kategori: kategoriEnum,
                                 kunciKriteria: keyToSave
                             }
                         },
                         update: {
-                            nilai: parseFloat(item.nilai),
-                            catatan: item.catatan || null,
+                            nilai: item.nilaiNum,
+                            catatan: item.catatan ? String(item.catatan) : null,
                             bobotSaatDinilai: bobot,
                             namaAnggota: effectiveAuthor
                         },
                         create: {
                             penilaianId: penilaianHeader.id,
-                            kategori: item.pKode,
+                            kategori: kategoriEnum,
                             kunciKriteria: keyToSave,
-                            nilai: parseFloat(item.nilai),
-                            catatan: item.catatan || null,
+                            nilai: item.nilaiNum,
+                            catatan: item.catatan ? String(item.catatan) : null,
                             bobotSaatDinilai: bobot,
                             namaAnggota: effectiveAuthor
                         },
@@ -278,7 +347,7 @@ exports.postFormPenilaian = async (req, res) => {
             let penilaianHeader = await tx.penilaian.findFirst({
                 where: {
                     periodeId: periode.id,
-                    kantorId: parseInt(kantor_id),
+                    kantorId: kantorIdInt,
                     akunEmail: user.email,
                     anggotaId: currentAnggotaId
                 }
@@ -304,7 +373,7 @@ exports.postFormPenilaian = async (req, res) => {
                 penilaianHeader = await tx.penilaian.create({
                     data: {
                         periodeId: periode.id,
-                        kantorId: parseInt(kantor_id),
+                        kantorId: kantorIdInt,
                         akunEmail: user.email,
                         anggotaId: currentAnggotaId,
                         status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
@@ -329,9 +398,20 @@ exports.postFormPenilaian = async (req, res) => {
             const namaPenginput = anggotaAktif ? anggotaAktif.nama : (user.nama || user.email);
 
             for (const item of assessments) {
+                if (!item.kriteriaKey || typeof item.kriteriaKey !== 'string') {
+                    throw new Error('Kriteria tidak valid (kunci kriteria kosong).');
+                }
+
+                if (!item.pKode || !['P1', 'P2', 'P3', 'P4', 'P5'].includes(item.pKode)) {
+                    throw new Error(`Kategori tidak valid: ${String(item.pKode)}`);
+                }
+
+                if (!Number.isFinite(item.nilaiNum)) {
+                    throw new Error(`Nilai tidak valid untuk ${item.kriteriaKey}.`);
+                }
 
                 // Lookup logic: Try direct match first, then mapped match
-                let bobot = 0;
+                let bobot = new Prisma.Decimal(0);
                 const originalKey = item.kriteriaKey;
                 let keyToSave = originalKey;
                 if (criteriaMapping[originalKey]) {
@@ -361,8 +441,8 @@ exports.postFormPenilaian = async (req, res) => {
                         }
                     },
                     update: {
-                        nilai: parseFloat(item.nilai),
-                        catatan: item.catatan,
+                        nilai: item.nilaiNum,
+                        catatan: item.catatan ? String(item.catatan) : null,
                         bobotSaatDinilai: bobot,
                         namaAnggota: effectiveAuthor
                     },
@@ -370,8 +450,8 @@ exports.postFormPenilaian = async (req, res) => {
                         penilaianId: penilaianHeader.id,
                         kategori: item.pKode,
                         kunciKriteria: keyToSave,
-                        nilai: parseFloat(item.nilai),
-                        catatan: item.catatan,
+                        nilai: item.nilaiNum,
+                        catatan: item.catatan ? String(item.catatan) : null,
                         bobotSaatDinilai: bobot,
                         namaAnggota: effectiveAuthor
                     },
