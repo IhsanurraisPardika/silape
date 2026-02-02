@@ -23,25 +23,25 @@
         <div class="absolute inset-0 bg-black/50"></div>
 
         <!-- centered card -->
-        <div class="relative z-10 flex items-center justify-center min-h-screen px-4">
-            <div class="w-full max-w-md bg-white rounded-lg shadow-xl p-8">
+        <div class="relative z-10 flex items-center justify-center min-h-screen px-4 py-8">
+            <div class="w-full max-w-md bg-white rounded-xl shadow-2xl p-6 md:p-8">
 
                 <!-- Header dengan Logo dan Seal -->
-                <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center justify-between mb-6 md:mb-8">
                     <!-- Logo SIG -->
                     <div class="flex-shrink-0">
-                        <img src="/images/SIG.jpg" alt="Logo SIG" class="w-16 h-16 object-contain">
+                        <img src="/images/SIG.jpg" alt="Logo SIG" class="w-12 h-12 md:w-16 md:h-16 object-contain">
                     </div>
 
                     <!-- LOGO SP -->
                     <div class="flex-shrink-0">
-                        <img src="/images/sp_full.png" alt="Logo SP" class="w-16 h-16 object-contain">
+                        <img src="/images/sp_full.png" alt="Logo SP" class="w-12 h-12 md:w-16 md:h-16 object-contain">
                     </div>
                 </div>
 
                 <!-- Title dan Subtitle -->
-                <div class="text-center mb-6">
-                    <h1 class="text-4xl font-bold text-red-600 mb-1">Login</h1>
+                <div class="text-center mb-6 md:mb-8">
+                    <h1 class="text-3xl md:text-4xl font-bold text-red-600 mb-2">Login</h1>
                     <p class="text-gray-600 text-sm">Silahkan masuk untuk melanjutkan</p>
                 </div>
 
@@ -50,7 +50,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
                         <input type="email" name="email" required readonly onfocus="this.removeAttribute('readonly');"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
+                            class="w-full px-4 py-3 md:py-3.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
                             placeholder="Email terdaftar" autocomplete="off">
                     </div>
 
@@ -59,10 +59,10 @@
                         <div class="relative">
                             <input type="password" name="password" id="password" required readonly
                                 onfocus="this.removeAttribute('readonly');"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
+                                class="w-full px-4 py-3 md:py-3.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition pr-12"
                                 placeholder="Kata sandi" autocomplete="new-password">
                             <button type="button" onclick="togglePassword()"
-                                class="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
                                 <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -75,7 +75,7 @@
                     </div>
 
                     <button type="submit"
-                        class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition duration-200">
+                        class="w-full py-3 md:py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition duration-200 shadow-md hover:shadow-lg">
                         Login
                     </button>
                 </form>
