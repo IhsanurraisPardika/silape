@@ -84,6 +84,7 @@ app.get("/admin/dashboard", harusSuperadmin, (req, res) => {
 
 // admin
 app.use("/admin", adminRoutes);
+app.use("/admin", require("./routes/kelolaFoto"));
 
 
 // ===== ERROR HANDLER =====

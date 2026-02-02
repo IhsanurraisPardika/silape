@@ -11,6 +11,7 @@
     "express-session": "^1.18.2",
     "multer": "^2.0.2",
     "node.js": "^0.0.1-security",
+    "pdfkit": "^0.17.2",
     "sweet": "^0.1.1",
     "sweetalert2": "^11.26.17",
     "tailwindcss": "^4.1.18"
