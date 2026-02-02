@@ -1,5 +1,7 @@
 <!-- Sidebar -->
-<aside class="w-56 shrink-0 bg-red-600 text-white flex flex-col shadow-lg h-screen sticky top-0">
+<!-- Sidebar -->
+<aside id="main-sidebar"
+  class="w-64 bg-red-600 text-white flex flex-col shadow-lg h-screen fixed md:sticky top-0 z-50 hidden md:flex transition-all duration-300">
   <!-- Logo dan Judul Sidebar -->
   <div class="p-6 border-b border-red-700">
     <div class="flex items-center gap-3">
@@ -22,24 +24,6 @@
       <span>Dashboard</span>
     </a>
 
-    <a href="/dashboardAdmin/rekapKantorAdmin"
-      class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-800 transition"
-      data-path="/dashboardAdmin/rekapKantorAdmin">
-      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path
-          d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14H9v-2h6v2zm0-4H9v-2h6v2zm0-4H9V7h6v2z" />
-      </svg>
-      <span>Rekap Penilaian</span>
-    </a>
-
-    <a href="/pengaturanBobot" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-800 transition"
-      data-path="/pengaturanBobot">
-      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M3 13h2v8H3zm4-8h2v16H7zm4-2h2v18h-2zm4-2h2v20h-2zm4 4h2v16h-2z" />
-      </svg>
-      <span>Pengaturan Bobot</span>
-    </a>
-
     <a href="/kelola-tim-penilai"
       class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-800 transition"
       data-path="/kelola-tim-penilai">
@@ -50,13 +34,31 @@
       <span>Kelola Tim</span>
     </a>
 
-    <a href="/dashboardAdmin/unduhLaporan"
-      class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-800 transition"
-      data-path="/dashboardAdmin/unduhLaporan">
+    <a href="/kelola-periode" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-800 transition"
+      data-path="/kelola-periode">
       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M19 9h-4V3H9v6H5v7h4v7h10v-7h4V9zm-4 0V5h-6v4H5v5h4v5h6v-5h4V9h-4z" />
+        <path
+          d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
       </svg>
-      <span>Unduh Laporan</span>
+      <span>Kelola Periode</span>
+    </a>
+
+    <a href="/pengaturanBobot" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-800 transition"
+      data-path="/pengaturanBobot">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M3 13h2v8H3zm4-8h2v16H7zm4-2h2v18h-2zm4-2h2v20h-2zm4 4h2v16h-2z" />
+      </svg>
+      <span>Pengaturan Bobot</span>
+    </a>
+
+    <a href="/dashboardAdmin/rekapKantorAdmin"
+      class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-800 transition"
+      data-path="/dashboardAdmin/rekapKantorAdmin">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path
+          d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14H9v-2h6v2zm0-4H9v-2h6v2zm0-4H9V7h6v2z" />
+      </svg>
+      <span>Rekap Penilaian</span>
     </a>
 
     <a href="/admin/kelola-foto"
@@ -68,13 +70,14 @@
       </svg>
       <span>Kelola Foto</span>
     </a>
-    <a href="/kelola-periode" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-800 transition"
-      data-path="/kelola-periode">
+
+    <a href="/dashboardAdmin/unduhLaporan"
+      class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-800 transition"
+      data-path="/dashboardAdmin/unduhLaporan">
       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path
-          d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
+        <path d="M19 9h-4V3H9v6H5v7h4v7h10v-7h4V9zm-4 0V5h-6v4H5v5h4v5h6v-5h4V9h-4z" />
       </svg>
-      <span>Kelola Periode</span>
+      <span>Unduh Laporan</span>
     </a>
   </nav>
 

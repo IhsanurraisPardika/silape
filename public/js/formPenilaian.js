@@ -415,8 +415,8 @@
 
           <h3 class="font-bold text-gray-800 text-lg">${idx + 1}. ${item.name}</h3>
 
-          <div class="grid grid-cols-4 gap-6 items-end">
-            <div class="col-span-1">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+            <div class="md:col-span-1">
               <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Nilai (0-100)</label>
               <input 
                 type="number" 
@@ -426,7 +426,7 @@
                 class="w-full border-b-2 border-gray-200 py-2 focus:border-red-600 outline-none transition text-2xl font-bold text-red-600 bg-transparent"
               >
             </div>
-            <div class="col-span-3 pb-2">
+            <div class="md:col-span-3 pb-2">
               <button type="button" onclick="showCriteria('${item.id}')" class="text-red-600 text-xs font-bold flex items-center hover:underline transition">
                 <i class="fas fa-chevron-down mr-2"></i> LIHAT KRITERIA
               </button>
@@ -497,9 +497,9 @@
     if (currentStep === steps.length) {
       container.innerHTML += `
         <div class="mt-8 mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 section-fade-in">
-            <label class="flex items-center cursor-pointer">
-            <input type="checkbox" id="step_valid_checkbox" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300" onchange="toggleNextButton(this)">
-            <span class="ml-3 text-sm font-medium text-gray-700">
+            <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" id="step_valid_checkbox" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300 mt-0.5" onchange="toggleNextButton(this)">
+            <span class="text-sm font-medium text-gray-700">
                 Saya menyatakan bahwa seluruh penilaian di semua step (P1-P5) sudah benar dan siap disubmit.
             </span>
             </label>
