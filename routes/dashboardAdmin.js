@@ -20,33 +20,83 @@ router.get("/", harusAdmin, async (req, res) => {
     });
 
     let sudahDinilai = 0;
+    let sedangProses = 0;
     let riwayatPenilaian = [];
+    let chartDataTim = [];
+    let totalKriteriaDiharapkan = 16; // Default fallback
 
     if (periodeAktif) {
-      // 3. Ambil Konfigurasi Bobot untuk periode ini (untuk tahu jumlah kriteria)
+      // 3. Ambil Konfigurasi Bobot (untuk tahu target kriteria)
       const konfigurasi = await prisma.konfigurasiBobot.findFirst({
         where: { periodeId: periodeAktif.id, statusAktif: true },
         include: { _count: { select: { bobotKriteria: true } } }
       });
-      const totalKriteriaDiharapkan = konfigurasi ? konfigurasi._count.bobotKriteria : 16;
+      totalKriteriaDiharapkan = konfigurasi ? konfigurasi._count.bobotKriteria : 16;
 
-      // 4. Hitung Kontor yang "Selesai" untuk ringkasan (Summary Cards)
-      // Kita ambil semua penilaian SUBMIT di periode ini untuk dianalisis
-      const semuaPenilaian = await prisma.penilaian.findMany({
-        where: { periodeId: periodeAktif.id, status: "SUBMIT" },
-        include: { detail: true }
-      });
-
-      const kantorSelesaiSet = new Set();
-      semuaPenilaian.forEach(p => {
-        const isLengkap = p.detail.length >= totalKriteriaDiharapkan;
-        const adaRekomendasi = p.catatanRekomendasi && p.catatanRekomendasi.trim() !== "";
-        // Hanya hitung yang benar-benar Selesai (Submit + Lengkap + Rekomendasi)
-        if (p.status === "SUBMIT" && isLengkap && adaRekomendasi) {
-          kantorSelesaiSet.add(p.kantorId);
+      // 4. Ambil Data Penugasan & Anggota Tim per Akun
+      const penugasanList = await prisma.penugasanKantorAkun.findMany({
+        where: { periodeId: periodeAktif.id, statusAktif: true },
+        include: {
+          akun: {
+            include: {
+              anggotaTim: { where: { statusAktif: true } }
+            }
+          }
         }
       });
-      sudahDinilai = kantorSelesaiSet.size;
+
+      // 5. Ambil Semua Penilaian untuk periode ini
+      const semuaPenilaian = await prisma.penilaian.findMany({
+        where: { periodeId: periodeAktif.id },
+        include: { detail: true, akun: true }
+      });
+
+      const perTim = {};
+
+      // Analisis status per Penugasan (Per Kantor & Per Akun Tim)
+      penugasanList.forEach(tug => {
+        const totalAnggota = tug.akun.anggotaTim.length;
+        const timKey = tug.akun.timKode || 'TIM';
+        if (!perTim[timKey]) {
+          perTim[timKey] = { selesai: 0, totalNilai: 0, countNilai: 0 };
+        }
+
+        // Cari penilaian untuk kantor ini dari akun ini
+        const penilaianKantorIni = semuaPenilaian.filter(p =>
+          p.kantorId === tug.kantorId && p.akunEmail === tug.akunEmail
+        );
+
+        let anggotaSelesaiCount = 0;
+        let adaAktivitas = penilaianKantorIni.length > 0;
+
+        penilaianKantorIni.forEach(p => {
+          const isLengkap = p.detail.length >= totalKriteriaDiharapkan;
+          const adaRekomendasi = p.catatanRekomendasi && p.catatanRekomendasi.trim() !== "";
+          const isSelesai = p.status === "SUBMIT" && isLengkap && adaRekomendasi;
+
+          if (isSelesai) {
+            anggotaSelesaiCount++;
+            // Hitung satu kantor selesai jika semua anggota selesai
+            perTim[timKey].selesai += (1 / Math.max(1, totalAnggota));
+          }
+
+          if (p.nilaiTotal) {
+            perTim[timKey].totalNilai += Number(p.nilaiTotal);
+            perTim[timKey].countNilai += 1;
+          }
+        });
+
+        if (totalAnggota > 0 && anggotaSelesaiCount === totalAnggota) {
+          sudahDinilai++;
+        } else if (adaAktivitas) {
+          sedangProses++;
+        }
+      });
+
+      // Bulatkan jumlah selesai per tim
+      Object.keys(perTim).forEach(key => {
+        perTim[key].selesai = Math.floor(perTim[key].selesai + 0.001); // Handle floating point
+      });
 
       // 5. Ambil 10 aktivitas terbaru untuk "Riwayat Penilaian"
       const dataRiwayat = await prisma.penilaian.findMany({
@@ -65,7 +115,6 @@ router.get("/", harusAdmin, async (req, res) => {
         take: 10,
       });
 
-      // 6. Map riwayat dengan status computed isSelesai
       riwayatPenilaian = dataRiwayat.map(item => {
         const isLengkap = item.detail.length >= totalKriteriaDiharapkan;
         const adaRekomendasi = item.catatanRekomendasi && item.catatanRekomendasi.trim() !== "";
@@ -76,17 +125,32 @@ router.get("/", harusAdmin, async (req, res) => {
           isSelesai: isSubmitted && isLengkap && adaRekomendasi
         };
       });
+
+      // 7. Format data tim untuk chart
+      chartDataTim = Object.keys(perTim).map(key => ({
+        tim: key,
+        selesai: perTim[key].selesai,
+        rataRata: perTim[key].countNilai > 0 ? (perTim[key].totalNilai / perTim[key].countNilai).toFixed(2) : 0
+      }));
     }
 
-    const belumDiinput = Math.max(0, totalKantor - sudahDinilai);
+    const belumDiinput = Math.max(0, totalKantor - sudahDinilai - sedangProses);
 
     res.render("admin/DashboardAdmin", {
       title: "Dashboard Admin",
       user: req.session.user,
       totalKantor,
       sudahDinilai,
+      sedangProses,
       belumDiinput,
       riwayatPenilaian,
+      chartData: {
+        totalKantor,
+        sudahDinilai,
+        sedangProses,
+        belumDiinput,
+        dataTim: chartDataTim
+      }
     });
   } catch (error) {
     console.error("Dashboard Error:", error);

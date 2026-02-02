@@ -25,7 +25,7 @@
               <h1 class="text-3xl font-bold text-gray-800 mb-6">Dashboard Admin</h1>
 
               <!-- Summary Cards -->
-              <div class="grid grid-cols-3 gap-6 mb-8">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white rounded-lg shadow p-6 border-t-4 border-red-600 text-center">
                   <p class="text-xl font-bold text-black-500 mb-2">Total Kantor</p>
                   <p class="text-5xl font-bold text-red-600 mb-4 font-mono">
@@ -39,7 +39,15 @@
                   <p class="text-5xl font-bold text-green-600 mb-4 font-mono">
                     <%= sudahDinilai %>
                   </p>
-                  <p class="text-xs text-gray-400">Jumlah Penilaian yang telah diselesaikan</p>
+                  <p class="text-xs text-gray-400">Total Kantor yang telah Selesai</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6 border-t-4 border-blue-500 text-center">
+                  <p class="text-xl font-bold text-black-500 mb-2">Sedang Proses</p>
+                  <p class="text-5xl font-bold text-blue-500 mb-4 font-mono">
+                    <%= sedangProses %>
+                  </p>
+                  <p class="text-xs text-gray-400">Total Kantor dalam status Draft/Proses</p>
                 </div>
 
                 <div class="bg-white rounded-lg shadow p-6 border-t-4 border-orange-500 text-center">
@@ -47,7 +55,26 @@
                   <p class="text-5xl font-bold text-orange-500 mb-4 font-mono">
                     <%= belumDiinput %>
                   </p>
-                  <p class="text-xs text-gray-400">Jumlah Kantor yang Belum dinilai</p>
+                  <p class="text-xs text-gray-400">Jumlah Kantor yang Belum ada data</p>
+                </div>
+              </div>
+
+              <!-- Visualisasi Data -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Progress Chart -->
+                <div class="bg-white rounded-lg shadow p-6">
+                  <h2 class="text-xl font-semibold text-gray-800 mb-4">Progress Penilaian (%)</h2>
+                  <div class="h-64 flex items-center justify-center">
+                    <canvas id="progressChart"></canvas>
+                  </div>
+                </div>
+
+                <!-- Team Performance Chart -->
+                <div class="bg-white rounded-lg shadow p-6">
+                  <h2 class="text-xl font-semibold text-gray-800 mb-4">Penyelesaian per Tim</h2>
+                  <div class="h-64 flex items-center justify-center">
+                    <canvas id="teamChart"></canvas>
+                  </div>
                 </div>
               </div>
 
@@ -100,6 +127,105 @@
           </main>
       </div>
   </div>
+
+  <!-- Hidden element to pass backend data to client-side scripts -->
+  <div id="chartDataContainer" style="display: none;" data-source='<%- JSON.stringify(chartData) %>'></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const chartData = JSON.parse(document.getElementById('chartDataContainer').getAttribute('data-source'));
+    console.log("Dashboard Chart Data:", chartData);
+
+    // Progress Chart
+    const ctxProgress = document.getElementById('progressChart').getContext('2d');
+    new Chart(ctxProgress, {
+      type: 'doughnut',
+      data: {
+        labels: ['Selesai', 'Sedang Proses', 'Belum Diinput'],
+        datasets: [{
+          data: [chartData.sudahDinilai, chartData.sedangProses, chartData.belumDiinput],
+          backgroundColor: ['#16a34a', '#3b82f6', '#f97316'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+
+    // Team Chart
+    const labelsTim = chartData.dataTim.map(d => d.tim);
+    const dataSelesai = chartData.dataTim.map(d => d.selesai);
+    const dataRataRata = chartData.dataTim.map(d => d.rataRata);
+
+    const ctxTeam = document.getElementById('teamChart').getContext('2d');
+    new Chart(ctxTeam, {
+      type: 'bar',
+      data: {
+        labels: labelsTim,
+        datasets: [
+          {
+            label: 'Kantor Selesai',
+            data: dataSelesai,
+            backgroundColor: '#dc2626',
+            borderRadius: 5,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Rata-rata Skor',
+            data: dataRataRata,
+            backgroundColor: '#3b82f6',
+            borderRadius: 5,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Jumlah Kantor'
+            },
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1
+            }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Rata-rata Skor'
+            },
+            grid: {
+              drawOnChartArea: false
+            },
+            beginAtZero: true,
+            max: 100
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+  </script>
 </body>
 
 </html>
