@@ -10,13 +10,16 @@ exports.index = async (req, res) => {
     const user = req.session.user;
     if (!user) return res.redirect("/login");
 
+    const anggotaAktif = req.session.anggotaAktif || null;
+    const isKetua = !!(anggotaAktif && Number(anggotaAktif.urutan) === 1);
+
     const formatTanggal = (dateObj) => {
       if (!dateObj) return "-";
       const options = { day: "numeric", month: "long", year: "numeric" };
       return dateObj.toLocaleDateString("id-ID", options);
     };
 
-    // 1. Ambil data user lengkap untuk tahu timKode dan posisi (Ketua/Anggota)
+    // 1. Ambil data user lengkap
     const pengguna = await prisma.pengguna.findUnique({
       where: { email: user.email },
       include: {
@@ -27,6 +30,13 @@ exports.index = async (req, res) => {
     if (!pengguna || pengguna.peran !== 'TIMPENILAI' || !pengguna.timKode) {
       // Jika bukan tim penilai, tampilkan kosong atau handle sesuai kebutuhan
       return res.render('daftarPenilaian', { data: [], isKetua: false });
+    }
+
+    // Jika belum memilih anggota aktif, jangan anggap ketua
+    // (tanpa ini, siapa pun yang login bisa dianggap ketua dari sisi UI)
+    if (!anggotaAktif) {
+      // Tetap render list, tapi tombol approve akan non-aktif
+      // (status completeness tetap dihitung berdasarkan seluruh anggota aktif)
     }
 
     // Cek apakah ketua (urutan 1 di anggotaTim)
@@ -50,46 +60,46 @@ exports.index = async (req, res) => {
       }
     });
 
-    // 3. Ambil anggota tim di tim yang sama
-    const anggotaTim = await prisma.pengguna.findMany({
-      where: {
-        timKode: pengguna.timKode,
-        statusAktif: true,
-        peran: 'TIMPENILAI'
-      },
-      select: { email: true }
-    });
-    const teamEmails = anggotaTim.map((a) => a.email);
-    const totalAnggotaTim = teamEmails.length;
+    // 3. Ambil anggota tim (orang-orang) yang aktif untuk akun tim ini
+    // Catatan: Anggota tim bukan Pengguna lain; mereka disimpan di tabel AnggotaTim.
+    const anggotaTimAktif = (pengguna.anggotaTim || [])
+      .filter((a) => a.statusAktif)
+      .sort((a, b) => a.urutan - b.urutan);
 
-    // Strict check for isKetua based on the logged in user's attributes
-    // Ensure we are checking the user's membership in the CURRENT team context
-    const currentUserAnggota = pengguna.anggotaTim.find(a =>
-      a.statusAktif &&
-      a.urutan === 1
-      // Note: If user has multiple rows, we should assume the one matching their current roles is relevant. 
-      // But since we rely on `pengguna` which is `findUnique` by email, `anggotaTim` are the roles for THIS user.
-      // So if ANY of them is urutan 1, they are a leader. 
-      // However, to be safe, we might ideally want to check against `timKode` context if 'AnggotaTim' had it.
-      // Given schema limitations, `anggotaTim` doesn't strictly have `timKode`.
-      // We assume `pengguna.timKode` defines the active team.
-    );
-    const isKetua = !!currentUserAnggota;
+    const anggotaIdsAktif = anggotaTimAktif.map((a) => a.id);
+    const totalAnggotaTim = anggotaIdsAktif.length;
+
+    // Cache expectedCount per periode agar konsisten dan efisien
+    const expectedCountByPeriode = new Map();
+    const getExpectedCount = async (periodeId) => {
+      const key = Number(periodeId);
+      if (expectedCountByPeriode.has(key)) return expectedCountByPeriode.get(key);
+
+      const configBobot = await prisma.konfigurasiBobot.findFirst({
+        where: { periodeId: key, statusAktif: true },
+        include: { _count: { select: { bobotKriteria: true } } }
+      });
+
+      const expected = configBobot?._count?.bobotKriteria || 16;
+      expectedCountByPeriode.set(key, expected);
+      return expected;
+    };
 
     const data = [];
 
     // 4. Loop setiap kantor yang ditugaskan -> Cek status tim
     for (const p of penugasan) {
-      // Ambil semua penilaian tim untuk kantor & periode ini
+      // Ambil semua penilaian untuk kantor & periode ini untuk seluruh anggota aktif
       const penilaianTim = await prisma.penilaian.findMany({
         where: {
           periodeId: p.periodeId,
           kantorId: p.kantorId,
-          akunEmail: { in: teamEmails }
+          akunEmail: user.email,
+          anggotaId: { in: anggotaIdsAktif }
         },
         select: {
           id: true,
-          akunEmail: true,
+          anggotaId: true,
           status: true,
           tanggalMulaiInput: true,
           tanggalSubmit: true,
@@ -112,24 +122,7 @@ exports.index = async (req, res) => {
         return !minDate || d < minDate ? d : minDate;
       }, null);
 
-      const approvedAt = penilaianTim
-        .filter((item) => item.status === 'APPROVED')
-        .reduce((maxDate, item) => {
-          const d = item.diubahPada || item.tanggalSubmit || item.tanggalMulaiInput || item.dibuatPada;
-          if (!d) return maxDate;
-          return !maxDate || d > maxDate ? d : maxDate;
-        }, null);
-
-      // Hitung expected count berdasarkan jumlah kriteria di periode ini
-      // Kita perlu tahu berapa banyak pertanyaan yang seharusnya ada.
-      // Idealnya diambil dari konfigurasi bobot aktif untuk periode ini.
-      // Untuk efisiensi, kita bisa ambil sekali di luar loop per periode, tapi di sini per loop aman.
-
-      const configBobot = await prisma.konfigurasiBobot.findFirst({
-        where: { periodeId: p.periodeId, statusAktif: true },
-        include: { _count: { select: { bobotKriteria: true } } }
-      });
-      const expectedCount = configBobot?._count?.bobotKriteria || 16; // Fallback 16
+      const expectedCount = await getExpectedCount(p.periodeId);
 
       const isPenilaianComplete = (penilaian) => {
         if (!penilaian) return false;
@@ -137,20 +130,35 @@ exports.index = async (req, res) => {
         return true;
       };
 
-      const completedByEmail = new Map();
-      for (const email of teamEmails) {
-        const list = penilaianTim.filter((pTim) => pTim.akunEmail === email);
+      const completedByAnggotaId = new Map();
+      for (const anggotaId of anggotaIdsAktif) {
+        const list = penilaianTim.filter((pTim) => Number(pTim.anggotaId) === Number(anggotaId));
         const completed = list.some(isPenilaianComplete);
-        completedByEmail.set(email, completed);
+        completedByAnggotaId.set(Number(anggotaId), completed);
       }
 
-      const completedCount = Array.from(completedByEmail.values()).filter(Boolean).length;
+      const completedCount = Array.from(completedByAnggotaId.values()).filter(Boolean).length;
       const allComplete = totalAnggotaTim > 0 && completedCount >= totalAnggotaTim;
+
+      const approvedAllRequired = anggotaIdsAktif.length > 0 && anggotaIdsAktif.every((anggotaId) => {
+        const pRow = penilaianTim.find((x) => Number(x.anggotaId) === Number(anggotaId));
+        return pRow && pRow.status === 'APPROVED';
+      });
+
+      const approvedAt = approvedAllRequired
+        ? penilaianTim
+            .filter((item) => item.status === 'APPROVED')
+            .reduce((maxDate, item) => {
+              const d = item.diubahPada || item.tanggalSubmit || item.tanggalMulaiInput || item.dibuatPada;
+              if (!d) return maxDate;
+              return !maxDate || d > maxDate ? d : maxDate;
+            }, null)
+        : null;
 
       let status;
       if (approvedAt) status = 'Approval';
       else if (allComplete) status = 'Selesai';
-      else if (completedCount > 0) status = 'Process';
+      else if (hasStarted) status = 'Process';
       else status = 'Belum Dinilai';
 
       // Hitung rata-rata tim hanya jika semua anggota selesai input nilai
@@ -158,20 +166,20 @@ exports.index = async (req, res) => {
       let hasNilai = false;
       let completedAt = null;
       if (allComplete) {
-        const completedPerEmail = new Map();
-        for (const email of teamEmails) {
+        const completedPerAnggota = new Map();
+        for (const anggotaId of anggotaIdsAktif) {
           const list = penilaianTim
-            .filter((pTim) => pTim.akunEmail === email)
+            .filter((pTim) => Number(pTim.anggotaId) === Number(anggotaId))
             .filter(isPenilaianComplete)
             .sort((a, b) => {
               const da = a.diubahPada || a.tanggalSubmit || a.tanggalMulaiInput || a.dibuatPada || new Date(0);
               const db = b.diubahPada || b.tanggalSubmit || b.tanggalMulaiInput || b.dibuatPada || new Date(0);
               return db - da;
             });
-          if (list.length > 0) completedPerEmail.set(email, list[0]);
+          if (list.length > 0) completedPerAnggota.set(Number(anggotaId), list[0]);
         }
 
-        const completedList = Array.from(completedPerEmail.values());
+        const completedList = Array.from(completedPerAnggota.values());
         const allDetails = completedList.flatMap((pTim) => pTim.detail || []);
         if (allDetails.length > 0) {
           const total = allDetails.reduce((sum, d) => sum + Number(d.nilai), 0);
@@ -206,7 +214,7 @@ exports.index = async (req, res) => {
 
     res.render('daftarPenilaian', {
       data,
-      isKetua // Kirim status ketua ke view
+      isKetua // Ketua ditentukan dari anggota yang dipilih di session (urutan=1)
     });
 
   } catch (error) {
@@ -220,6 +228,9 @@ exports.approve = async (req, res) => {
     const user = req.session.user;
     if (!user) return res.status(401).json({ success: false, message: "Unauthorized" });
 
+    const anggotaAktif = req.session.anggotaAktif || null;
+    const isKetuaSession = !!(anggotaAktif && Number(anggotaAktif.urutan) === 1);
+
     const { kantorId, periodeId } = req.body || {};
     if (!kantorId || !periodeId) {
       return res.status(400).json({ success: false, message: "Parameter tidak lengkap" });
@@ -230,29 +241,33 @@ exports.approve = async (req, res) => {
       include: { anggotaTim: true }
     });
 
-    const isKetua = pengguna && pengguna.anggotaTim.some(a => a.statusAktif && a.urutan === 1);
-    if (!pengguna || pengguna.peran !== 'TIMPENILAI' || !pengguna.timKode || !isKetua) {
+    // Approve hanya boleh oleh ketua yang sedang dipilih di session
+    // (mencegah semua anggota bisa approve hanya karena data anggotaTim ada urutan 1)
+    if (!pengguna || pengguna.peran !== 'TIMPENILAI' || !pengguna.timKode || !isKetuaSession) {
       return res.status(403).json({ success: false, message: "Akses ditolak" });
     }
 
-    const anggotaTim = await prisma.pengguna.findMany({
-      where: {
-        timKode: pengguna.timKode,
-        statusAktif: true,
-        peran: 'TIMPENILAI'
-      },
-      select: { email: true }
-    });
-    const teamEmails = anggotaTim.map((a) => a.email);
+    // Pastikan anggotaAktif benar-benar milik akun ini & masih aktif
+    const anggotaAktifDb = (pengguna.anggotaTim || []).find(
+      (a) => a.statusAktif && Number(a.id) === Number(anggotaAktif.id) && Number(a.urutan) === 1
+    );
+    if (!anggotaAktifDb) {
+      return res.status(403).json({ success: false, message: "Akses ditolak" });
+    }
+
+    const anggotaIdsAktif = (pengguna.anggotaTim || [])
+      .filter((a) => a.statusAktif)
+      .map((a) => a.id);
 
     const penilaianTim = await prisma.penilaian.findMany({
       where: {
         periodeId: parseInt(periodeId),
         kantorId: parseInt(kantorId),
-        akunEmail: { in: teamEmails }
+        akunEmail: user.email,
+        anggotaId: { in: anggotaIdsAktif }
       },
       select: {
-        akunEmail: true,
+        anggotaId: true,
         detail: { select: { id: true } }
       }
     });
@@ -270,15 +285,15 @@ exports.approve = async (req, res) => {
       return true;
     };
 
-    const completedByEmail = new Map();
-    for (const email of teamEmails) {
-      const list = penilaianTim.filter((pTim) => pTim.akunEmail === email);
+    const completedByAnggotaId = new Map();
+    for (const anggotaId of anggotaIdsAktif) {
+      const list = penilaianTim.filter((pTim) => Number(pTim.anggotaId) === Number(anggotaId));
       const completed = list.some(isPenilaianComplete);
-      completedByEmail.set(email, completed);
+      completedByAnggotaId.set(Number(anggotaId), completed);
     }
 
-    const completedCount = Array.from(completedByEmail.values()).filter(Boolean).length;
-    const allComplete = teamEmails.length > 0 && completedCount >= teamEmails.length;
+    const completedCount = Array.from(completedByAnggotaId.values()).filter(Boolean).length;
+    const allComplete = anggotaIdsAktif.length > 0 && completedCount >= anggotaIdsAktif.length;
 
     if (!allComplete) {
       return res.status(400).json({ success: false, message: "Semua anggota tim harus menyelesaikan penilaian." });
@@ -288,7 +303,8 @@ exports.approve = async (req, res) => {
       where: {
         periodeId: parseInt(periodeId),
         kantorId: parseInt(kantorId),
-        akunEmail: { in: teamEmails }
+        akunEmail: user.email,
+        anggotaId: { in: anggotaIdsAktif }
       },
       data: {
         status: 'APPROVED',
