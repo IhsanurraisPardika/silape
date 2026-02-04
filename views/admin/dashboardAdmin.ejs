@@ -135,7 +135,11 @@
   <div id="chartDataContainer" style="display: none;" data-source='<%- JSON.stringify(chartData) %>'></div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   <script>
+    // Register the plugin globally
+    Chart.register(ChartDataLabels);
+
     const chartData = JSON.parse(document.getElementById('chartDataContainer').getAttribute('data-source'));
     console.log("Dashboard Chart Data:", chartData);
 
@@ -155,6 +159,28 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+          datalabels: {
+            color: '#fff',
+            font: {
+              weight: 'bold',
+              size: 11
+            },
+            formatter: (value, ctx) => {
+              const total = chartData.totalKantor || 1;
+              const percentage = (value * 100 / total).toFixed(1) + "%";
+              return value > 0 ? percentage : '';
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                let label = context.label || '';
+                const total = chartData.totalKantor || 1;
+                const percentage = (context.parsed * 100 / total).toFixed(1);
+                return ` ${label}: ${context.parsed} (${percentage}%)`;
+              }
+            }
+          },
           legend: {
             position: 'bottom'
           }
@@ -222,6 +248,38 @@
           }
         },
         plugins: {
+          datalabels: {
+            anchor: 'end',
+            align: 'top',
+            color: '#444',
+            font: {
+              size: 10
+            },
+            formatter: (value, ctx) => {
+              if (ctx.datasetIndex === 0) { // Only for 'Kantor Selesai'
+                const totalTugas = chartData.dataTim[ctx.dataIndex].totalTugas || 0;
+                if (totalTugas > 0) {
+                  const pct = (value * 100 / totalTugas).toFixed(0);
+                  return pct + '%';
+                }
+              }
+              return '';
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                let label = context.dataset.label || '';
+                const value = context.parsed.y;
+                if (context.datasetIndex === 0) { // Kantor Selesai
+                  const totalTugas = chartData.dataTim[context.dataIndex].totalTugas || 0;
+                  const percentage = totalTugas > 0 ? (value * 100 / totalTugas).toFixed(1) : 0;
+                  return ` ${label}: ${value} (${percentage}%) dari ${totalTugas} tugas`;
+                }
+                return ` ${label}: ${value}`;
+              }
+            }
+          },
           legend: {
             position: 'bottom'
           }
