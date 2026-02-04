@@ -60,8 +60,9 @@ router.get("/", harusAdmin, async (req, res) => {
         const totalAnggota = tug.akun.anggotaTim.length;
         const timKey = tug.akun.timKode || 'TIM';
         if (!perTim[timKey]) {
-          perTim[timKey] = { selesai: 0, totalNilai: 0, countNilai: 0 };
+          perTim[timKey] = { selesai: 0, totalNilai: 0, countNilai: 0, totalTugas: 0 };
         }
+        perTim[timKey].totalTugas += 1;
 
         // Cari penilaian untuk kantor ini dari akun ini
         const penilaianKantorIni = semuaPenilaian.filter(p =>
@@ -132,6 +133,7 @@ router.get("/", harusAdmin, async (req, res) => {
       chartDataTim = Object.keys(perTim).map(key => ({
         tim: key,
         selesai: perTim[key].selesai,
+        totalTugas: perTim[key].totalTugas,
         rataRata: perTim[key].countNilai > 0 ? (perTim[key].totalNilai / perTim[key].countNilai).toFixed(2) : 0
       }));
     }
