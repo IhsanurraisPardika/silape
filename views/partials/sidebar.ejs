@@ -1,7 +1,7 @@
 <div id="sidebar-backdrop" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden"></div>
 
 <aside id="main-sidebar"
-    class="fixed md:sticky top-0 left-0 z-50 flex flex-col w-[84vw] max-w-[18rem] md:w-64 bg-red-600 text-white shadow-lg h-screen transition-transform duration-300 overflow-y-auto overscroll-contain transform-gpu -translate-x-full md:translate-x-0">
+    class="w-[84vw] max-w-[18rem] md:w-64 bg-red-600 text-white flex flex-col shadow-lg h-screen fixed md:sticky top-0 left-0 z-50 transition-transform duration-300 overscroll-contain transform-gpu -translate-x-full md:translate-x-0">
     <div class="p-6 border-b border-red-700">
         <div class="flex items-center gap-3">
             <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
@@ -13,7 +13,7 @@
         </div>
     </div>
 
-    <nav class="flex flex-col p-4 space-y-3">
+    <nav class="flex-1 min-h-0 p-4 space-y-2 overflow-y-auto">
         <a href="/home"
             class="nav-link block px-4 py-3 font-medium text-white hover:bg-red-800 transition rounded-xl flex items-center gap-3"
             data-path="/home">
@@ -40,7 +40,7 @@
         </a>
     </nav>
 
-    <div class="mt-auto p-2 text-left flex flex-col">
+    <div class="p-4 text-xs opacity-80 border-t border-red-700 flex flex-col">
         <p class="text-[10px] text-white opacity-80 tracking-widest uppercase font-medium">
             © 2026 SILAPE
         </p>

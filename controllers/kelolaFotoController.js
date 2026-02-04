@@ -204,8 +204,9 @@ exports.downloadPdf = async (req, res) => {
                         // Pastikan file exist secara fisik jika ingin di-embed ke PDF
                         // Path public/uploads/...
                         // urlFile biasanya "/uploads/penilaian/..."
-                        const relativePath = f.urlFile;
-                        const fullPath = path.join(process.cwd(), "public", relativePath);
+                        const relativePath = String(f.urlFile || "");
+                        const safeRelativePath = relativePath.replace(/^[/\\]+/, "");
+                        const fullPath = path.join(process.cwd(), "public", safeRelativePath);
 
                         if (fs.existsSync(fullPath)) {
                             photos.push({
@@ -239,28 +240,94 @@ exports.downloadPdf = async (req, res) => {
         if (photos.length === 0) {
             doc.text("Tidak ada foto yang tersedia.");
         } else {
-            let y = doc.y;
-
             photos.forEach((photo, index) => {
-                // Cek sisa space page, image tinggi misal 200-300
-                if (doc.y > 650) doc.addPage();
+                const pageMargin = doc.page.margins.left;
+                const contentWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
 
-                doc.fontSize(10).text(`Penginput: ${photo.penilai}`, { continued: true });
-                doc.text(`  |  Kategori: ${photo.kategori}`, { align: 'right' });
+                const padding = 10; // margin seragam di dalam blok foto
+                const lineGap = 6;
 
+                const metaLineHeight = 12; // approx for fontSize(10)
+                const dateLineHeight = 10; // approx for fontSize(8)
+                const blockBottomGap = 18;
+
+                // Baca ukuran gambar untuk kalkulasi scaling agar margin kiri/kanan sama
+                let imgW = 0;
+                let imgH = 0;
                 try {
-                    doc.image(photo.path, {
-                        fit: [500, 300],
-                        align: 'center',
-                        valign: 'center'
-                    });
-                } catch (err) {
-                    doc.text("[Gagal memuat gamabar]");
+                    const img = doc.openImage(photo.path);
+                    imgW = img.width;
+                    imgH = img.height;
+                } catch (e) {
+                    imgW = 0;
+                    imgH = 0;
                 }
 
-                doc.moveDown(0.5);
-                doc.fontSize(8).text(`Tgl: ${new Date(photo.tanggal).toLocaleString()}`, { align: 'center' });
-                doc.moveDown(2);
+                // Target area gambar: lebar mengikuti contentWidth dikurangi padding kiri/kanan
+                const maxW = Math.max(1, contentWidth - padding * 2);
+                const maxH = 320; // jaga agar timestamp selalu muat di bawah
+                let drawW = maxW;
+                let drawH = maxH;
+
+                if (imgW > 0 && imgH > 0) {
+                    const scale = Math.min(maxW / imgW, maxH / imgH);
+                    drawW = Math.max(1, imgW * scale);
+                    drawH = Math.max(1, imgH * scale);
+                }
+
+                // Hitung kebutuhan tinggi blok agar tidak menimpa gambar/teks
+                const neededHeight =
+                    padding +
+                    metaLineHeight +
+                    lineGap +
+                    metaLineHeight +
+                    padding +
+                    drawH +
+                    padding +
+                    dateLineHeight +
+                    blockBottomGap;
+
+                const bottomLimit = doc.page.height - doc.page.margins.bottom;
+                const currentY = doc.y;
+                if (currentY + neededHeight > bottomLimit) {
+                    doc.addPage();
+                }
+
+                // Meta informasi (2 baris agar aman dan tidak bertabrakan)
+                doc.fontSize(10).text(`Penginput: ${photo.penilai}`, pageMargin, doc.y, {
+                    width: contentWidth
+                });
+                doc.moveDown(0.2);
+                doc.fontSize(10).text(`Kategori: ${photo.kategori}`, pageMargin, doc.y, {
+                    width: contentWidth
+                });
+
+                // Gambar dengan margin seragam
+                const imgX = pageMargin + padding + (maxW - drawW) / 2;
+                const imgY = doc.y + padding;
+
+                try {
+                    doc.image(photo.path, imgX, imgY, {
+                        width: drawW,
+                        height: drawH
+                    });
+                } catch (err) {
+                    doc.fontSize(10).text("[Gagal memuat gambar]", pageMargin, imgY, {
+                        width: contentWidth,
+                        align: 'center'
+                    });
+                }
+
+                // Pastikan tanggal/waktu selalu di bawah foto dan tidak menimpa
+                const dateY = imgY + drawH + padding;
+                const tanggalStr = photo.tanggal ? new Date(photo.tanggal).toLocaleString('id-ID') : '-';
+                doc.fontSize(8).text(`Tgl: ${tanggalStr}`, pageMargin, dateY, {
+                    width: contentWidth,
+                    align: 'center'
+                });
+
+                // Geser cursor ke bawah blok
+                doc.y = dateY + dateLineHeight + blockBottomGap;
             });
         }
 

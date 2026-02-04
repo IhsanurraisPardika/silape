@@ -13,6 +13,12 @@
         body {
             min-height: 100vh;
         }
+
+        /* Hide built-in password reveal icon (Edge/IE) to avoid double eye buttons */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
     </style>
 </head>
 

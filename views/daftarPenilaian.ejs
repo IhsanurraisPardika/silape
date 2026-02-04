@@ -36,9 +36,9 @@
                 <!-- Desktop Table Head -->
                 <div class="hidden md:grid grid-cols-6 px-6 py-4 font-semibold text-white bg-red-600">
                   <div>Tanggal</div>
-                  <div>Kantor</div>
-                  <div>Rata-rata</div>
-                  <div>Status</div>
+                  <div class="text-center">Kantor</div>
+                  <div class="text-center">Rata-rata</div>
+                  <div class="text-center">Status</div>
                   <div class="text-center">Aksi</div>
                   <div class="text-center">Approve</div>
                 </div>
@@ -57,15 +57,15 @@
                             <%= item.tanggal %>
                           </div>
 
-                          <div class="text-sm text-gray-700 font-medium truncate">
+                          <div class="text-sm text-gray-700 font-medium">
                             <%- item.kantor %>
                           </div>
 
-                          <div class="font-bold text-green-600 text-lg">
+                          <div class="font-bold text-green-600 text-center">
                             <%= item.rata %>
                           </div>
 
-                          <div>
+                          <div class="text-center">
                             <% if (item.status==='Selesai' ) { %>
                               <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
                                 <%= item.status %>

@@ -18,25 +18,8 @@
   // Format Key: "P1-1" (Kriteria Key), Value: { nilai, catatan, namaPenginput, files }
   const formState = {};
 
-  // Load Existing Data
-  if (fpData.existingDetails && Array.isArray(fpData.existingDetails)) {
-    fpData.existingDetails.forEach(det => {
-      const key = det.kunciKriteria; // Asumsi di DB disimpan "P1-1"
-      // Parse ID dari key
-      const parts = key.split('-');
-      const kId = parts[1] || "";
-
-      formState[key] = {
-        kriteriaId: kId,
-        pKode: det.kategori,
-        namaKriteria: "", // Akan diisi saat render atau mapping
-        nilai: det.nilai,
-        catatan: det.catatan || "",
-        namaAnggota: det.namaAnggota || "",
-        files: []
-      };
-    });
-  }
+  // Existing details dari DB (akan dinormalisasi setelah struktur kriteria terdefinisi)
+  const existingDetailsRaw = Array.isArray(fpData.existingDetails) ? fpData.existingDetails : [];
 
   // Load Recommendation
   if (fpData.catatanRekomendasi) {
@@ -252,6 +235,96 @@
       ]
     }
   ];
+
+  // ============================================================
+  // 3a. NORMALIZE EXISTING DETAILS (DB KEY -> FRONTEND ABSOLUTE ID)
+  // ============================================================
+  // Catatan:
+  // - Frontend menggunakan ID absolut 1..16 (P2 dimulai dari 4, dst)
+  // - Backend saat simpan bisa menyimpan kunci relatif per kategori (contoh: P2-1 untuk kriteria id 4)
+  // - Saat edit, kita harus konversi kunci DB ke kunci absolut agar value muncul di form dan submit tetap benar.
+
+  const kategoriIndex = new Map(
+    kategori5P.map((kat) => [
+      kat.kode,
+      {
+        kode: kat.kode,
+        absIdsByOrder: kat.kriteria.map((k) => String(k.id)),
+        namesByAbsId: new Map(kat.kriteria.map((k) => [String(k.id), String(k.nama)])),
+      },
+    ])
+  );
+
+  // Deteksi format kunci yang tersimpan di DB per kategori.
+  // Jika ada kunci dengan angka > jumlah kriteria kategori tsb, kita anggap itu format ABSOLUT.
+  // Jika tidak, kita anggap RELATIF (1..N).
+  const dbKeyModeByKategori = new Map();
+  existingDetailsRaw.forEach((det) => {
+    const pKode = String(det?.kategori || '').trim();
+    const meta = kategoriIndex.get(pKode);
+    if (!meta) return;
+
+    const kunci = String(det?.kunciKriteria || '').trim();
+    const parts = kunci.split('-');
+    const n = Number.parseInt(parts[1] || '', 10);
+    if (!Number.isFinite(n)) return;
+
+    const len = meta.absIdsByOrder.length;
+    if (n > len) {
+      dbKeyModeByKategori.set(pKode, 'ABS');
+    } else if (!dbKeyModeByKategori.has(pKode)) {
+      dbKeyModeByKategori.set(pKode, 'REL');
+    }
+  });
+
+  function normalizeExistingDetail(det) {
+    const pKode = String(det?.kategori || '').trim();
+    const meta = kategoriIndex.get(pKode);
+    if (!meta) return null;
+
+    const kunci = String(det?.kunciKriteria || '').trim();
+    const parts = kunci.split('-');
+    const n = Number.parseInt(parts[1] || '', 10);
+    if (!Number.isFinite(n)) return null;
+
+    const mode = dbKeyModeByKategori.get(pKode) || 'REL';
+
+    let absId;
+    if (mode === 'ABS') {
+      absId = String(n);
+    } else {
+      // REL: 1..N -> map ke ID absolut sesuai urutan kriteria kategori
+      absId = meta.absIdsByOrder[n - 1] || String(n);
+    }
+
+    const keyAbs = `${pKode}-${absId}`;
+    return {
+      keyAbs,
+      absId,
+      pKode,
+      namaKriteria: meta.namesByAbsId.get(absId) || '',
+      nilai: det?.nilai,
+      catatan: det?.catatan,
+      namaAnggota: det?.namaAnggota,
+    };
+  }
+
+  // Terapkan existingDetails ke state menggunakan key absolut (P2-4, dst)
+  existingDetailsRaw
+    .map(normalizeExistingDetail)
+    .filter(Boolean)
+    .forEach((x) => {
+      formState[x.keyAbs] = {
+        kriteriaId: x.absId,
+        pKode: x.pKode,
+        namaKriteria: x.namaKriteria,
+        // Pastikan string agar render tidak kehilangan nilai 0
+        nilai: x.nilai == null ? '' : String(x.nilai),
+        catatan: x.catatan == null ? '' : String(x.catatan),
+        namaAnggota: x.namaAnggota == null ? '' : String(x.namaAnggota),
+        files: [],
+      };
+    });
 
   // ENSURE ALL CRITERIA EXIST IN STATE (DEFAULT 0)
   // This prevents missing items if user skips steps
