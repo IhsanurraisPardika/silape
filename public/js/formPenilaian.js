@@ -42,11 +42,11 @@
         class="w-full flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-red-50 hover:border-red-300 transition text-left
           ${String(office.id) === String(selectedOfficeId) ? "border-red-500 bg-red-50" : "border-gray-200 bg-white"}"
       >
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 min-w-0">
           <div class="bg-gray-100 text-red-600 rounded-full w-8 h-8 flex items-center justify-center">
             <i class="fas fa-building text-xs"></i>
           </div>
-          <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">${office.name}</span>
+          <span class="text-xs font-bold text-gray-700 uppercase tracking-wide block min-w-0 whitespace-normal break-words leading-tight">${office.name}</span>
         </div>
         ${String(office.id) === String(selectedOfficeId) ? '<span class="text-green-600 text-xs font-semibold">Dipilih</span>' : ""}
       </button>
