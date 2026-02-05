@@ -26,6 +26,29 @@ const upload = multer({
   limits: { fileSize: 8 * 1024 * 1024 }, // 8MB
 });
 
+function handleUploadAny(req, res, next) {
+  upload.any()(req, res, (err) => {
+    if (!err) return next();
+
+    // Multer error (size limit, invalid field, etc.)
+    if (err instanceof multer.MulterError) {
+      let message = "Upload gagal.";
+      if (err.code === "LIMIT_FILE_SIZE") {
+        message = "Ukuran file terlalu besar. Maksimal 8MB per file.";
+      } else if (err.message) {
+        message = err.message;
+      }
+      return res.status(400).json({ success: false, message });
+    }
+
+    // Generic error
+    return res.status(400).json({
+      success: false,
+      message: err?.message || "Upload gagal diproses.",
+    });
+  });
+}
+
 // GET - Tampilkan form penilaian berdasarkan kantor yang dipilih
 router.get("/formPenilaian", harusTimPenilai, formPenilaianController.getFormPenilaian);
 
@@ -33,7 +56,7 @@ router.get("/formPenilaian", harusTimPenilai, formPenilaianController.getFormPen
 router.post(
   "/formPenilaian",
   harusTimPenilai,
-  upload.any(),
+  handleUploadAny,
   formPenilaianController.postFormPenilaian
 );
 

@@ -26,9 +26,20 @@
             <div class="p-4 md:p-8 pb-24">
 
               <!-- Title -->
-              <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
-                Daftar Penilaian
-              </h1>
+              <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">
+                  Daftar Penilaian
+                </h1>
+
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-semibold text-gray-500">Periode Aktif:</span>
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-100">
+                    <%= (typeof activePeriode !== 'undefined' && activePeriode && activePeriode.namaPeriode)
+                      ? activePeriode.namaPeriode
+                      : '-' %>
+                  </span>
+                </div>
+              </div>
 
               <!-- Table Card -->
               <div class="bg-white rounded-xl shadow overflow-hidden">
@@ -40,7 +51,7 @@
                   <div class="text-center">Rata-rata</div>
                   <div class="text-center">Status</div>
                   <div class="text-center">Aksi</div>
-                  <div class="text-center">Approve</div>
+                  <div class="text-center">Approval</div>
                 </div>
 
                 <!-- Content Body -->
@@ -66,21 +77,22 @@
                           </div>
 
                           <div class="text-center">
-                            <% if (item.status==='Selesai' ) { %>
+                            <% const statusText = (item.status === 'Approval') ? 'Approve' : item.status; %>
+                            <% if (statusText === 'Selesai') { %>
                               <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
-                                <%= item.status %>
+                                <%= statusText %>
                               </span>
-                            <% } else if (item.status==='Approval' ) { %>
+                            <% } else if (statusText === 'Approve') { %>
                               <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                                <%= item.status %>
+                                <%= statusText %>
                               </span>
-                            <% } else if (item.status==='Process' ) { %>
+                            <% } else if (statusText === 'Process') { %>
                               <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">
-                                <%= item.status %>
+                                <%= statusText %>
                               </span>
                             <% } else { %>
                               <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
-                                <%= item.status %>
+                                <%= statusText %>
                               </span>
                             <% } %>
                           </div>
@@ -100,7 +112,16 @@
                           </div>
 
                           <div class="text-center">
-                            <% if (item.isSelesai) { %>
+                            <% if (item.isApproved) { %>
+                              <% if (isKetua && item.buktiUrl) { %>
+                                <a href="<%= item.buktiUrl %>"
+                                  class="inline-block px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">
+                                  Unduh Bukti
+                                </a>
+                              <% } else { %>
+                                <span class="text-sm text-gray-300 font-bold">-</span>
+                              <% } %>
+                            <% } else if (item.isSelesai) { %>
                               <% if (isKetua) { %>
                                 <button
                                   class="px-4 py-1.5 text-xs font-bold text-white transition bg-green-600 hover:bg-green-700 rounded-lg shadow-sm"
@@ -138,18 +159,24 @@
                           <div class="flex justify-between items-center py-2 border-t border-b border-gray-50">
                             <div class="text-sm text-gray-600">Status:</div>
                             <div>
-                              <% if (item.status==='Selesai' ) { %>
+                              <% const statusTextMobile = (item.status === 'Approval') ? 'Approve' : item.status; %>
+                              <% if (statusTextMobile==='Selesai' ) { %>
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
-                                  <%= item.status %>
+                                  <%= statusTextMobile %>
                                 </span>
-                                <% } else if (item.status==='Approval' ) { %>
+                                <% } else if (statusTextMobile==='Approve' ) { %>
                                   <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                                    <%= item.status %>
+                                    <%= statusTextMobile %>
                                   </span>
-                                  <% } else { %>
+                                  <% } else if (statusTextMobile==='Process' ) { %>
                                     <span
                                       class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">
-                                      <%= item.status %>
+                                      <%= statusTextMobile %>
+                                    </span>
+                                  <% } else { %>
+                                    <span
+                                      class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
+                                      <%= statusTextMobile %>
                                     </span>
                                     <% } %>
                             </div>
@@ -161,25 +188,37 @@
                               Edit
                             </a>
 
-                            <% if (item.isSelesai) { %>
+                            <% if (item.isApproved) { %>
+                              <% if (isKetua && item.buktiUrl) { %>
+                                <a href="<%= item.buktiUrl %>"
+                                  class="flex-1 text-center px-3 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">
+                                  Unduh
+                                </a>
+                              <% } else { %>
+                                <div
+                                  class="flex-1 flex items-center justify-center bg-gray-50 text-gray-300 rounded-lg text-sm font-bold">
+                                  -
+                                </div>
+                              <% } %>
+                            <% } else if (item.isSelesai) { %>
                               <% if (isKetua) { %>
                                 <button
                                   class="flex-1 px-3 py-2 text-sm font-bold text-white transition bg-green-600 hover:bg-green-700 rounded-lg shadow-sm"
                                   onclick="approvePenilaian('<%= item.kantorId %>', '<%= item.periodeId %>', this)">
                                   Approve
                                 </button>
-                                <% } else { %>
-                                  <button disabled
-                                    class="flex-1 px-3 py-2 text-sm font-bold text-white bg-gray-300 cursor-not-allowed rounded-lg">
-                                    Approve
-                                  </button>
-                                  <% } %>
-                                    <% } else { %>
-                                      <div
-                                        class="flex-1 flex items-center justify-center bg-gray-50 text-gray-300 rounded-lg text-sm font-bold">
-                                        -
-                                      </div>
-                                      <% } %>
+                              <% } else { %>
+                                <button disabled
+                                  class="flex-1 px-3 py-2 text-sm font-bold text-white bg-gray-300 cursor-not-allowed rounded-lg">
+                                  Approve
+                                </button>
+                              <% } %>
+                            <% } else { %>
+                              <div
+                                class="flex-1 flex items-center justify-center bg-gray-50 text-gray-300 rounded-lg text-sm font-bold">
+                                -
+                              </div>
+                            <% } %>
                           </div>
                         </div>
                         <% }) %>
@@ -191,7 +230,7 @@
                           async function approvePenilaian(kantorId, periodeId, buttonEl) {
                             const result = await Swal.fire({
                               title: 'Approve Penilaian?',
-                              text: 'Tindakan ini akan mengubah status menjadi Approval.',
+                              text: 'Tindakan ini akan mengubah status menjadi Approve.',
                               icon: 'question',
                               showCancelButton: true,
                               confirmButtonText: 'Ya, Approve',
@@ -232,7 +271,7 @@
                               await Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal',
-                                text: data.message || 'Approval gagal diproses.',
+                                text: data.message || 'Approve gagal diproses.',
                                 confirmButtonColor: '#dc2626'
                               });
                             } catch (e) {
