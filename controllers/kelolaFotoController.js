@@ -6,25 +6,51 @@ const fs = require("fs");
 
 exports.index = async (req, res) => {
     try {
-        const periodeAktif = await prisma.periodePenilaian.findFirst({
-            where: { statusAktif: true },
+        // 1. Ambil semua periode untuk dropdown filter
+        const listPeriode = await prisma.periodePenilaian.findMany({
+            orderBy: [
+                { tahun: 'desc' },
+                { semester: 'desc' }
+            ]
         });
 
-        if (!periodeAktif) {
+        // 2. Tentukan periode mana yang mau ditampilkan
+        // Priority: req.query.periodeId -> Status Aktif -> Periode Pertama (fallback)
+        let selectedPeriodeId = null;
+        let selectedPeriode = null;
+
+        if (req.query.periodeId) {
+            selectedPeriodeId = parseInt(req.query.periodeId);
+            selectedPeriode = listPeriode.find(p => p.id === selectedPeriodeId);
+        }
+
+        // Jika tidak ada di query atau tidak ketemu, cari yang aktif
+        if (!selectedPeriode) {
+            selectedPeriode = listPeriode.find(p => p.statusAktif);
+        }
+
+        // Jika masih null (misal semua non-aktif), ambil yang paling baru
+        if (!selectedPeriode && listPeriode.length > 0) {
+            selectedPeriode = listPeriode[0];
+        }
+
+        // Kalau database kosong melompong (belum ada periode sama sekali)
+        if (!selectedPeriode) {
             return res.render("admin/kelolaFoto/index", {
                 title: "Kelola Foto",
                 data: {},
                 periode: null,
+                listPeriode: [], // Empty list
                 user: req.session.user,
             });
         }
 
-        // Ambil semua penilaian di periode ini
-        // Kita butuh daftar kantor yang sudah dinilai (ada foto)
-        // Atau minimal sudah ada record penilaian
+        selectedPeriodeId = selectedPeriode.id;
+
+        // 3. Ambil data penilaian berdasarkan periode terpilih
         const listPenilaian = await prisma.penilaian.findMany({
             where: {
-                periodeId: periodeAktif.id,
+                periodeId: selectedPeriodeId,
             },
             include: {
                 kantor: true,
@@ -54,18 +80,17 @@ exports.index = async (req, res) => {
                 });
             }
 
-            if (jumlahFoto === 0) return; // Skip jika tidak ada foto? Atau tampilkan saja? Request: "mengelola foto-foto yang diinputkan"
+            if (jumlahFoto === 0) return;
 
             if (!kelompokTim[timKode]) {
                 kelompokTim[timKode] = [];
             }
 
-            // Cek apakah kantor sudah ada di list tim ini (karena 1 kantor bisa dinilai beberapa anggota, muncul beberapa row Penilaian)
-            // Kita perlu merge
+            // Merge logic
             const existingKantor = kelompokTim[timKode].find(k => k.id === kantorId);
             if (existingKantor) {
                 existingKantor.jumlahFoto += jumlahFoto;
-                existingKantor.penilai.push(p.akunEmail); // Just tracking accounts
+                existingKantor.penilai.push(p.akunEmail);
             } else {
                 kelompokTim[timKode].push({
                     id: kantorId,
@@ -78,7 +103,6 @@ exports.index = async (req, res) => {
 
         // Sort tim keys
         const sortedKeys = Object.keys(kelompokTim).sort((a, b) => {
-            // Extract number from TIM1, TIM10 etc
             const numA = parseInt(a.replace("TIM", "")) || 999;
             const numB = parseInt(b.replace("TIM", "")) || 999;
             return numA - numB;
@@ -90,7 +114,8 @@ exports.index = async (req, res) => {
         res.render("admin/kelolaFoto/index", {
             title: "Kelola Foto",
             data: sortedData,
-            periode: periodeAktif,
+            periode: selectedPeriode,
+            listPeriode: listPeriode, // Pass list periode
             user: req.session.user,
         });
 
@@ -103,11 +128,30 @@ exports.index = async (req, res) => {
 exports.detail = async (req, res) => {
     try {
         const { kantorId } = req.params;
-        const periodeAktif = await prisma.periodePenilaian.findFirst({
-            where: { statusAktif: true },
-        });
 
-        if (!periodeAktif) return res.redirect("/admin/kelola-foto");
+        // Logika periode sama dengan index? 
+        // Idealnya detail foto juga harusnya base on periode yang dipilih.
+        // Tapi sementara kita asumsikan admin melihat detail dari link di index 
+        // yang secara implisit adalah periode yang sedang dipilih admin.
+        // NAMUN, link detail di index: /admin/kelola-foto/:kantorId
+        // TIDAK membawa info periode.
+        // Jadi kita harus menentukan periode apa yang dimaksud.
+        // Opsi A: Ambil periode aktif. (Limitasi: kalau filter periode lama, pas klik detail malah buka yang aktif)
+        // Opsi B: Tambahkan query param ?periodeId=... di link detail.
+
+        // Mari kita cek query param.
+        let periodeId = req.query.periodeId ? parseInt(req.query.periodeId) : null;
+
+        // Jika tidak ada di query, cari yang aktif
+        if (!periodeId) {
+            const periodeAktif = await prisma.periodePenilaian.findFirst({
+                where: { statusAktif: true },
+            });
+            if (periodeAktif) periodeId = periodeAktif.id;
+        }
+
+        // Jika sampai sini masih null (misal semua nonaktif dan ga ada query), cannot proceed
+        if (!periodeId) return res.redirect("/admin/kelola-foto");
 
         const kantor = await prisma.kantor.findUnique({
             where: { id: parseInt(kantorId) }
@@ -116,7 +160,7 @@ exports.detail = async (req, res) => {
         // Ambil detail penilaian + foto
         const penilaianList = await prisma.penilaian.findMany({
             where: {
-                periodeId: periodeAktif.id,
+                periodeId: periodeId,
                 kantorId: parseInt(kantorId),
             },
             include: {
@@ -131,16 +175,14 @@ exports.detail = async (req, res) => {
         });
 
         // Flatten data foto
-        // Kita butuh: url, namaFile, yangMenginput (Nama Anggota), Tanggal
         const listFoto = [];
-
         penilaianList.forEach(p => {
-            const penilaiName = p.anggota ? p.anggota.nama : p.akun.timKode; // Fallback
-
+            const penilaiName = p.anggota ? p.anggota.nama : p.akun.timKode;
             p.detail.forEach(d => {
                 if (d.foto && d.foto.length > 0) {
                     d.foto.forEach(f => {
                         listFoto.push({
+                            id: f.id, // Penting untuk hapus
                             url: f.urlFile,
                             caption: d.kunciKriteria + (d.catatan ? ` - ${d.catatan}` : ""),
                             penilai: penilaiName,
@@ -157,11 +199,76 @@ exports.detail = async (req, res) => {
             kantor,
             listFoto,
             user: req.session.user,
+            periodeId: periodeId // Kirim balik biar bisa maintain state kalau perlu
         });
 
     } catch (error) {
         console.error(error);
         res.status(500).send("Error Internal Server");
+    }
+};
+
+exports.hapusFoto = async (req, res) => {
+    try {
+        const { fotoId } = req.body;
+
+        if (!fotoId) {
+            return res.status(400).send("ID Foto diperlukan");
+        }
+
+        const id = parseInt(fotoId);
+        if (isNaN(id)) {
+            return res.status(400).send("ID Foto tidak valid");
+        }
+
+        // Cari foto beserta relasi untuk redirect
+        // Gunakan model yang benar: fotoDetailPenilaian
+        const foto = await prisma.fotoDetailPenilaian.findUnique({
+            where: { id: id },
+            include: {
+                detail: {
+                    include: {
+                        penilaian: true
+                    }
+                }
+            }
+        });
+
+        if (!foto) {
+            return res.status(404).send("Foto tidak ditemukan");
+        }
+
+        // Simpan info untuk redirect
+        const kantorId = foto.detail?.penilaian?.kantorId;
+        const periodeId = foto.detail?.penilaian?.periodeId;
+
+        // Hapus file fisik
+        const relativePath = String(foto.urlFile || "").replace(/^[/\\]+/, "");
+        const fullPath = path.join(process.cwd(), "public", relativePath);
+
+        if (fs.existsSync(fullPath)) {
+            try {
+                fs.unlinkSync(fullPath);
+            } catch (err) {
+                console.error("Gagal hapus file fisik:", err);
+            }
+        }
+
+        // Hapus record DB
+        await prisma.fotoDetailPenilaian.delete({
+            where: { id: id }
+        });
+
+        // Redirect explicitly if possible
+        if (kantorId && periodeId) {
+            return res.redirect(`/admin/kelola-foto/${kantorId}?periodeId=${periodeId}&success=Foto berhasil dihapus`);
+        } else {
+            return res.redirect('back');
+        }
+
+    } catch (error) {
+        console.error("Error menghapus foto:", error);
+        res.status(500).send("Gagal menghapus foto (Detail): " + error.message);
     }
 };
 

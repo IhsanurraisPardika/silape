@@ -126,6 +126,7 @@
         const email = btnEdit.getAttribute("data-email") || "";
         const nama = btnEdit.getAttribute("data-nama") || "";
         const timId = btnEdit.getAttribute("data-timid") || "";
+        const anggotaJson = btnEdit.getAttribute("data-anggota");
 
         const emailHidden = $("#editEmailHidden");
         const emailShow = $("#editEmailShow");
@@ -133,11 +134,38 @@
         const passInput = $("#editPassword");
         const timSelect = $("#editTimId");
 
+        const anggota1Input = $("#editAnggota1");
+        const anggota2Input = $("#editAnggota2");
+        const anggota3Input = $("#editAnggota3");
+        const anggota4Input = $("#editAnggota4");
+        const anggota5Input = $("#editAnggota5");
+
         if (emailHidden) emailHidden.value = email;
         if (emailShow) emailShow.value = email;
         if (namaInput) namaInput.value = nama;
         if (passInput) passInput.value = "";
         if (timSelect) timSelect.value = timId;
+
+        // Parse anggota list
+        let anggota = [];
+        try {
+          anggota = JSON.parse(anggotaJson || "[]");
+        } catch (e) {
+          console.error("Gagal parse anggota JSON", e);
+        }
+
+        // Reset & Fill inputs
+        const setAnggota = (elm, idx) => {
+          if (elm) {
+            elm.value = (anggota[idx] && anggota[idx].nama) ? anggota[idx].nama : "";
+          }
+        };
+
+        setAnggota(anggota1Input, 0);
+        setAnggota(anggota2Input, 1);
+        setAnggota(anggota3Input, 2);
+        setAnggota(anggota4Input, 3);
+        setAnggota(anggota5Input, 4);
 
         openModal("modalEdit");
       }
