@@ -7,6 +7,7 @@
     <title>Beranda</title>
     <link rel="icon" href="/images/sp.png" type="image/sp.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         .bg-factory {
             background-image: url('/images/gerbangSP.jpg');
@@ -21,13 +22,6 @@
             border-radius: 10px;
         }
 
-        #modal5P.hidden {
-            display: none;
-        }
-
-        #modal5P {
-            display: flex;
-        }
     </style>
 </head>
 
@@ -54,9 +48,9 @@
                                 </p>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8 max-w-2xl">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8 w-full items-start">
                                 <div
-                                    class="bg-white rounded-lg shadow-lg p-5 md:p-6 border-l-4 border-red-500 flex items-start justify-between transform transition hover:scale-105">
+                                    class="bg-white rounded-lg shadow-lg p-5 md:p-6 border-l-4 border-red-500 flex items-start justify-between transform transition hover:scale-105 md:col-span-1 self-start order-1 md:order-2">
                                     <div>
                                         <p class="text-gray-500 text-sm mb-2">Penilaian yang Dilakukan</p>
                                         <p class="text-4xl md:text-5xl font-bold text-red-600">
@@ -75,21 +69,106 @@
                                 </div>
 
                                 <div
-                                    class="bg-white rounded-lg shadow-lg p-5 md:p-6 border-l-4 border-green-500 flex items-start justify-between transform transition hover:scale-105">
-                                    <div>
-                                        <p class="text-gray-500 text-sm mb-2">Rata-rata Nilai</p>
-                                        <p class="text-4xl md:text-5xl font-bold text-green-600">
-                                            <%= finalAverage %>
-                                        </p>
-                                        <p class="text-gray-400 text-xs mt-2">Rata-rata penilaian Tim Anda</p>
-                                    </div>
-                                    <div class="text-green-600">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 md:w-6 md:h-6"
-                                            viewBox="0 0 24 24" fill="none" stroke="#43a047" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <path
-                                                d="M2 4h7a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H2z M22 4h-7a3 3 0 0 0-3 3v13a3 3 0 0 1 3-3h7z" />
-                                        </svg>
+                                    class="bg-white rounded-lg shadow-lg p-5 md:p-6 border-l-4 border-green-500 transform transition hover:scale-105 md:col-span-2 order-2 md:order-1">
+                                    <div class="w-full">
+                                        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-3">
+                                            <div>
+                                                <p class="text-gray-500 text-sm">Rata-rata Nilai per Kantor</p>
+                                                <p class="text-gray-400 text-xs mt-1">Grafik rata-rata masing-masing kantor yang dinilai tim</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <p class="text-xs text-gray-500">Rata-rata Semua Kantor</p>
+                                                <p class="text-lg font-bold text-green-600 leading-tight"><%= finalAverage %></p>
+                                            </div>
+                                        </div>
+
+                                        <% const _kantorAverages = Array.isArray(kantorAverages) ? kantorAverages : []; %>
+                                        <% if (_kantorAverages.length === 0) { %>
+                                            <div class="h-40 flex items-center justify-center text-gray-400 text-sm italic bg-gray-50 rounded-lg border border-gray-100">
+                                                Belum ada data penilaian kantor yang lengkap untuk ditampilkan.
+                                            </div>
+                                        <% } else { %>
+                                            <div class="h-52 md:h-56">
+                                                <canvas id="kantorAvgChart"></canvas>
+                                            </div>
+                                            <script id="kantor-avg-data" type="application/json"><%- JSON.stringify(_kantorAverages) %></script>
+                                            <script>
+                                                (function () {
+                                                    const dataEl = document.getElementById('kantor-avg-data');
+                                                    const raw = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+                                                    function wrapLabel(text, maxCharsPerLine) {
+                                                        const words = String(text || '').split(/\s+/).filter(Boolean);
+                                                        if (words.length === 0) return ['-'];
+
+                                                        const lines = [];
+                                                        let line = '';
+                                                        for (const w of words) {
+                                                            const next = line ? `${line} ${w}` : w;
+                                                            if (next.length <= maxCharsPerLine) {
+                                                                line = next;
+                                                            } else {
+                                                                if (line) lines.push(line);
+                                                                // Jika satu kata sangat panjang, potong agar tetap wrap
+                                                                if (w.length > maxCharsPerLine) {
+                                                                    for (let i = 0; i < w.length; i += maxCharsPerLine) {
+                                                                        lines.push(w.slice(i, i + maxCharsPerLine));
+                                                                    }
+                                                                    line = '';
+                                                                } else {
+                                                                    line = w;
+                                                                }
+                                                            }
+                                                        }
+                                                        if (line) lines.push(line);
+                                                        return lines;
+                                                    }
+
+                                                    const labels = raw.map(x => wrapLabel(String(x.kantor), 14));
+                                                    const values = raw.map(x => Number(x.nilai));
+
+                                                    const canvas = document.getElementById('kantorAvgChart');
+                                                    if (!canvas) return;
+
+                                                    new Chart(canvas, {
+                                                        type: 'bar',
+                                                        data: {
+                                                            labels,
+                                                            datasets: [{
+                                                                label: 'Rata-rata',
+                                                                data: values,
+                                                                backgroundColor: 'rgba(34, 197, 94, 0.25)',
+                                                                borderColor: 'rgba(34, 197, 94, 1)',
+                                                                borderWidth: 1,
+                                                                borderRadius: 6
+                                                            }]
+                                                        },
+                                                        options: {
+                                                            responsive: true,
+                                                            maintainAspectRatio: false,
+                                                            plugins: {
+                                                                legend: { display: false },
+                                                                tooltip: {
+                                                                    callbacks: {
+                                                                        label: (ctx) => ` ${ctx.parsed.y}`
+                                                                    }
+                                                                }
+                                                            },
+                                                            scales: {
+                                                                x: {
+                                                                    ticks: { color: '#6b7280', maxRotation: 0, autoSkip: true },
+                                                                    grid: { display: false }
+                                                                },
+                                                                y: {
+                                                                    beginAtZero: true,
+                                                                    ticks: { color: '#6b7280' },
+                                                                    grid: { color: 'rgba(107,114,128,0.15)' }
+                                                                }
+                                                            }
+                                                        }
+                                                    });
+                                                })();
+                                            </script>
+                                        <% } %>
                                     </div>
                                 </div>
                             </div>
@@ -99,40 +178,59 @@
                                 </h2>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                    <div onclick="openModal('P1')"
-                                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer border border-transparent hover:border-red-200 group shadow-sm">
+                                    <div
+                                        class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all border border-transparent hover:border-red-200 group shadow-sm">
                                         <div
-                                            class="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform">
+                                            class="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform flex-shrink-0">
                                             P1</div>
-                                        <h3 class="font-semibold text-gray-800">Pemilihan</h3>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-800">Pemilahan</h3>
+                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Memisahkan yang perlu dan tidak perlu, agar area kerja lebih ringkas.</p>
+                                        </div>
                                     </div>
-                                    <div onclick="openModal('P2')"
-                                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer border border-transparent hover:border-red-200 group shadow-sm">
+
+                                    <div
+                                        class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all border border-transparent hover:border-red-200 group shadow-sm">
                                         <div
-                                            class="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform">
+                                            class="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform flex-shrink-0">
                                             P2</div>
-                                        <h3 class="font-semibold text-gray-800">Penataan</h3>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-800">Penataan</h3>
+                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Menata barang sesuai tempatnya supaya mudah dicari dan cepat digunakan.</p>
+                                        </div>
                                     </div>
-                                    <div onclick="openModal('P3')"
-                                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer border border-transparent hover:border-red-200 group shadow-sm">
+
+                                    <div
+                                        class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all border border-transparent hover:border-red-200 group shadow-sm">
                                         <div
-                                            class="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform">
+                                            class="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform flex-shrink-0">
                                             P3</div>
-                                        <h3 class="font-semibold text-gray-800">Pembersihan</h3>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-800">Pembersihan</h3>
+                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Menjaga kebersihan agar kondisi kerja aman, nyaman, dan rapi setiap saat.</p>
+                                        </div>
                                     </div>
-                                    <div onclick="openModal('P4')"
-                                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer border border-transparent hover:border-red-200 group shadow-sm">
+
+                                    <div
+                                        class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all border border-transparent hover:border-red-200 group shadow-sm">
                                         <div
-                                            class="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform">
+                                            class="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform flex-shrink-0">
                                             P4</div>
-                                        <h3 class="font-semibold text-gray-800">Pemantapan</h3>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-800">Pemantapan</h3>
+                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Membuat standar agar pemilahan, penataan, dan pembersihan berjalan konsisten.</p>
+                                        </div>
                                     </div>
-                                    <div onclick="openModal('P5')"
-                                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer border border-transparent hover:border-red-200 group shadow-sm">
+
+                                    <div
+                                        class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-red-50 transition-all border border-transparent hover:border-red-200 group shadow-sm">
                                         <div
-                                            class="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform">
+                                            class="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform flex-shrink-0">
                                             P5</div>
-                                        <h3 class="font-semibold text-gray-800">Pembiasaan</h3>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-800">Pembiasaan</h3>
+                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Membangun disiplin dan kebiasaan 5P sebagai budaya kerja sehari-hari.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -143,58 +241,6 @@
             </div>
     </div>
 
-    <div id="modal5P" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="bg-white rounded-2xl shadow-2xl relative z-10 w-full max-w-lg overflow-hidden transform transition-all scale-95 opacity-0"
-            id="modalContent">
-            <div class="p-6 md:p-8">
-                <div class="flex justify-between items-start mb-6">
-                    <div id="modalBadge"
-                        class="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-red-200">
-                        P1</div>
-                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 p-2"><svg class="w-6 h-6"
-                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"></path>
-                        </svg></button>
-                </div>
-                <h3 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-4"></h3>
-                <p id="modalDescription" class="text-gray-600 leading-relaxed text-lg"></p>
-            </div>
-            <div class="bg-gray-50 px-6 md:px-8 py-4 flex justify-end">
-                <button onclick="closeModal()"
-                    class="bg-red-600 text-white px-6 py-2 rounded-lg font-medium">Mengerti</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // ... (Script openModal & closeModal tetap sama seperti sebelumnya) ...
-        const pData = {
-            'P1': { title: 'Pemilahan (Seiri)', desc: 'Prinsip ini berfokus pada pemisahan barang-barang yang diperlukan dari yang tidak diperlukan di area kerja...' },
-            'P2': { title: 'Penataan (Seiton)', desc: 'Setelah barang yang diperlukan diidentifikasi, langkah selanjutnya adalah menata dan menempatkannya secara sistematis...' },
-            'P3': { title: 'Pembersihan (Seiso)', desc: 'Prinsip ini menekankan pentingnya menjaga kebersihan tempat kerja secara menyeluruh...' },
-            'P4': { title: 'Pemantapan (Seiketsu)', desc: 'Tahap ini melibatkan standardisasi praktik tiga P sebelumnya...' },
-            'P5': { title: 'Pembiasaan (Shitsuke)', desc: 'Ini adalah tahap paling krusial, yaitu pembentukan budaya disiplin...' }
-        };
-
-        function openModal(pKey) {
-            const data = pData[pKey];
-            document.getElementById('modalBadge').innerText = pKey;
-            document.getElementById('modalTitle').innerText = data.title;
-            document.getElementById('modalDescription').innerText = data.desc;
-            document.getElementById('modal5P').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('modalContent').classList.remove('scale-95', 'opacity-0');
-                document.getElementById('modalContent').classList.add('scale-100', 'opacity-100');
-            }, 10);
-        }
-
-        function closeModal() {
-            document.getElementById('modalContent').classList.add('scale-95', 'opacity-0');
-            setTimeout(() => { document.getElementById('modal5P').classList.add('hidden'); }, 200);
-        }
-    </script>
 </body>
 
 </html>

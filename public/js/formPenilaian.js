@@ -42,11 +42,11 @@
         class="w-full flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-red-50 hover:border-red-300 transition text-left
           ${String(office.id) === String(selectedOfficeId) ? "border-red-500 bg-red-50" : "border-gray-200 bg-white"}"
       >
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 min-w-0">
           <div class="bg-gray-100 text-red-600 rounded-full w-8 h-8 flex items-center justify-center">
             <i class="fas fa-building text-xs"></i>
           </div>
-          <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">${office.name}</span>
+          <span class="text-xs font-bold text-gray-700 uppercase tracking-wide block min-w-0 whitespace-normal break-words leading-tight">${office.name}</span>
         </div>
         ${String(office.id) === String(selectedOfficeId) ? '<span class="text-green-600 text-xs font-semibold">Dipilih</span>' : ""}
       </button>
@@ -733,8 +733,17 @@
 
     // Send silently (no loading spinner)
     try {
-      const res = await fetch("/formPenilaian", { method: "POST", body: fd });
-      const data = await res.json().catch(() => ({}));
+      const res = await fetch("/formPenilaian", {
+        method: "POST",
+        body: fd,
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "fetch"
+        }
+      });
+
+      const ct = String(res.headers.get("content-type") || "");
+      const data = ct.includes("application/json") ? await res.json().catch(() => ({})) : {};
       if (data.success) {
         console.log(`Auto-save success for item ${id}`);
         // Opsional: Kasih indikator visual kecil (misal: "Tersimpan" di dekat input)
@@ -756,8 +765,17 @@
     fd.append("assessments", "[]");
 
     try {
-      const res = await fetch("/formPenilaian", { method: "POST", body: fd });
-      const data = await res.json().catch(() => ({}));
+      const res = await fetch("/formPenilaian", {
+        method: "POST",
+        body: fd,
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "fetch"
+        }
+      });
+
+      const ct = String(res.headers.get("content-type") || "");
+      const data = ct.includes("application/json") ? await res.json().catch(() => ({})) : {};
       if (data.success) {
         console.log("Auto-save recommendation success");
       }
@@ -787,11 +805,54 @@
     // 1. Simpan data langkah saat ini ke state lokal
     saveCurrentStepData();
 
+    function scrollStepToTop() {
+      const scroller = document.getElementById('formPenilaianScroll');
+      if (scroller && typeof scroller.scrollTo === 'function') {
+        scroller.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function scrollToFirstEmptyNilaiInStep(stepId) {
+      const stepData = steps.find(s => s.id === stepId);
+      if (!stepData) return false;
+
+      // Cari item pertama yang nilainya kosong (pakai state yang sudah di-save dari DOM)
+      const firstEmpty = stepData.items.find((item) => {
+        const key = `${item.pKode}-${item.id}`;
+        const nilaiStr = String(formState[key]?.nilai ?? '').trim();
+        return nilaiStr === '';
+      });
+
+      if (!firstEmpty) return true;
+
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Nilai belum lengkap',
+        text: 'Masih ada nilai kriteria yang belum diinputkan. Silakan lengkapi terlebih dahulu.',
+      });
+
+      const nilaiEl = document.querySelector(`[name="nilai_${firstEmpty.id}"]`);
+      if (nilaiEl) {
+        nilaiEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Fokuskan agar user langsung bisa input
+        setTimeout(() => {
+          try { nilaiEl.focus({ preventScroll: true }); } catch { nilaiEl.focus(); }
+        }, 150);
+      }
+      return false;
+    }
+
     // 2. Logika navigasi
     const targetStep = currentStep + n;
 
     // Jika MAJU (Next)
     if (n > 0) {
+      // Validasi: tidak boleh lanjut kalau ada nilai kosong di step saat ini
+      const isStepComplete = await scrollToFirstEmptyNilaiInStep(currentStep);
+      if (!isStepComplete) return;
+
       // Validasi Checkbox hanya di step terakhir
       if (currentStep === steps.length) {
         const cb = document.getElementById('step_valid_checkbox');
@@ -814,14 +875,14 @@
       // Pindah Step Tanpa Save DB
       currentStep = targetStep;
       renderStep();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollStepToTop();
 
     } else {
       // MUNDUR (Back)
       if (targetStep < 1) return;
       currentStep = targetStep;
       renderStep();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollStepToTop();
     }
   }
 
@@ -835,8 +896,42 @@
     // Atau loose validation?
     // Implementasi aman: Save current local state, pindah. (Tanpa save DB / validasi)
     saveCurrentStepData();
+
+    // Jika lompat maju, jangan izinkan kalau masih ada nilai kosong di step sekarang
+    if (s > currentStep) {
+      const stepData = steps.find(st => st.id === currentStep);
+      const firstEmpty = stepData?.items?.find((item) => {
+        const key = `${item.pKode}-${item.id}`;
+        const nilaiStr = String(formState[key]?.nilai ?? '').trim();
+        return nilaiStr === '';
+      });
+
+      if (firstEmpty) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Nilai belum lengkap',
+          text: 'Masih ada nilai kriteria yang belum diinputkan. Silakan lengkapi terlebih dahulu.',
+        }).then(() => {
+          const nilaiEl = document.querySelector(`[name="nilai_${firstEmpty.id}"]`);
+          if (nilaiEl) {
+            nilaiEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+              try { nilaiEl.focus({ preventScroll: true }); } catch { nilaiEl.focus(); }
+            }, 150);
+          }
+        });
+        return;
+      }
+    }
+
     currentStep = s;
     renderStep();
+    const scroller = document.getElementById('formPenilaianScroll');
+    if (scroller && typeof scroller.scrollTo === 'function') {
+      scroller.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   // ============================================================
@@ -903,14 +998,28 @@
     });
 
     try {
-      const res = await fetch("/formPenilaian", { method: "POST", body: fd });
-      const data = await res.json().catch(() => ({}));
+      const res = await fetch("/formPenilaian", {
+        method: "POST",
+        body: fd,
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "fetch"
+        }
+      });
+
+      const ct = String(res.headers.get("content-type") || "");
+      const data = ct.includes("application/json") ? await res.json().catch(() => ({})) : {};
 
       if (data.success) {
         await Swal.fire('Berhasil!', data.message || "Data berhasil disimpan.", 'success');
         if (data.redirect) window.location.href = data.redirect;
       } else {
-        Swal.fire('Gagal', data.message || "Terjadi kesalahan.", 'error');
+        // Jika session habis / response bukan JSON, kasih pesan yang lebih jelas
+        if (res.status === 401) {
+          Swal.fire('Sesi Berakhir', data.message || 'Silakan login ulang.', 'warning');
+        } else {
+          Swal.fire('Gagal', data.message || "Terjadi kesalahan.", 'error');
+        }
       }
     } catch (error) {
       console.error(error);

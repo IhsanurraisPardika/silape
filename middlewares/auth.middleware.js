@@ -10,7 +10,19 @@ function normalizeRole(role) {
   return role; // format baru
 }
 
+function wantsJson(req) {
+  const accept = String(req.headers?.accept || "").toLowerCase();
+  const xhr = String(req.headers?.["x-requested-with"] || "").toLowerCase();
+  return accept.includes("application/json") || xhr === "fetch" || xhr === "xmlhttprequest";
+}
+
 function forbidden(res, message) {
+  if (wantsJson(res.req)) {
+    return res.status(403).json({
+      success: false,
+      message: message || "Anda tidak memiliki izin untuk mengakses halaman ini.",
+    });
+  }
   // kalau kamu punya views/error.ejs gunakan render, kalau tidak fallback send
   try {
     return res.status(403).render("error", {
@@ -23,7 +35,15 @@ function forbidden(res, message) {
 }
 
 function requireAuth(req, res, next) {
-  if (!req.session?.user?.email) return res.redirect("/login");
+  if (!req.session?.user?.email) {
+    if (wantsJson(req)) {
+      return res.status(401).json({
+        success: false,
+        message: "Sesi login berakhir. Silakan login ulang.",
+      });
+    }
+    return res.redirect("/login");
+  }
   // normalisasi session role sekali lewat
   req.session.user.peran = normalizeRole(req.session.user.peran);
   next();
@@ -33,10 +53,26 @@ function requireRole(...allowedRoles) {
   const allowed = allowedRoles.map(normalizeRole);
 
   return (req, res, next) => {
-    if (!req.session?.user?.email) return res.redirect("/login");
+    if (!req.session?.user?.email) {
+      if (wantsJson(req)) {
+        return res.status(401).json({
+          success: false,
+          message: "Sesi login berakhir. Silakan login ulang.",
+        });
+      }
+      return res.redirect("/login");
+    }
 
     const role = normalizeRole(req.session.user.peran);
-    if (!role) return res.redirect("/login");
+    if (!role) {
+      if (wantsJson(req)) {
+        return res.status(401).json({
+          success: false,
+          message: "Sesi login berakhir. Silakan login ulang.",
+        });
+      }
+      return res.redirect("/login");
+    }
 
     if (!allowed.includes(role)) {
       return forbidden(res);
@@ -61,6 +97,7 @@ const harusLogin = requireAuth;
 
 module.exports = {
   normalizeRole,
+  wantsJson,
   requireAuth,
   requireRole,
   requireSuperAdmin,
