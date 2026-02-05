@@ -5,5 +5,6 @@ const daftarPenilaianController = require('../controllers/daftarPenilaianControl
 
 router.get('/', daftarPenilaianController.index);
 router.post('/approve', daftarPenilaianController.approve);
+router.get('/bukti-approval', daftarPenilaianController.downloadBuktiApproval);
 
 module.exports = router;

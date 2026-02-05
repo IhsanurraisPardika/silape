@@ -7,6 +7,7 @@ exports.rekapKantor = async (req, res) => {
         // Asumsi: Hanya ada 1 periode aktif
         const periodeAktif = await prisma.periodePenilaian.findFirst({
             where: { statusAktif: true },
+            orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
         });
 
         // 2. Ambil Daftar Kantor (untuk filter)
@@ -62,7 +63,7 @@ exports.rekapKantor = async (req, res) => {
                     where: {
                         periodeId: periodeAktif.id,
                         kantorId: selectedKantorId,
-                        status: 'SUBMIT', // Hanya yang sudah submit
+                        status: { in: ['SUBMIT', 'APPROVED'] },
                     },
                     include: {
                         detail: true,
@@ -200,6 +201,7 @@ exports.rekapKriteria = async (req, res) => {
         } else {
             periodeTarget = await prisma.periodePenilaian.findFirst({
                 where: { statusAktif: true },
+                orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
             });
         }
 
@@ -234,7 +236,7 @@ exports.rekapKriteria = async (req, res) => {
             const assessments = await prisma.penilaian.findMany({
                 where: {
                     periodeId: periodeAktif.id,
-                    status: 'SUBMIT'
+                    status: { in: ['SUBMIT', 'APPROVED'] }
                 },
                 include: {
                     kantor: true,
@@ -319,6 +321,7 @@ exports.rekapPenilaian = async (req, res) => {
         } else {
             periodeTarget = await prisma.periodePenilaian.findFirst({
                 where: { statusAktif: true }
+                ,orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
             });
         }
 
@@ -345,7 +348,7 @@ exports.rekapPenilaian = async (req, res) => {
                 const assessments = await prisma.penilaian.findMany({
                     where: {
                         periodeId: periodeAktif.id,
-                        status: 'SUBMIT'
+                        status: { in: ['SUBMIT', 'APPROVED'] }
                     },
                     include: {
                         kantor: true,
@@ -473,6 +476,7 @@ const ExcelJS = require('exceljs');
 async function getRekapKantorData(kantorIdStr) {
     const periodeAktif = await prisma.periodePenilaian.findFirst({
         where: { statusAktif: true },
+        orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
     });
     const kantorList = await prisma.kantor.findMany({
         where: { statusAktif: true },
@@ -508,7 +512,7 @@ async function getRekapKantorData(kantorIdStr) {
                 where: {
                     periodeId: periodeAktif.id,
                     kantorId: selectedKantorId,
-                    status: 'SUBMIT',
+                    status: { in: ['SUBMIT', 'APPROVED'] },
                 },
                 include: {
                     detail: true,
@@ -703,7 +707,8 @@ exports.downloadRekapKriteria = async (req, res) => {
             });
         } else {
             periodeTarget = await prisma.periodePenilaian.findFirst({
-                where: { statusAktif: true }
+                where: { statusAktif: true },
+                orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
             });
         }
 
@@ -718,7 +723,7 @@ exports.downloadRekapKriteria = async (req, res) => {
         const criteriaList = config ? config.bobotKriteria.sort((a, b) => a.kunciKriteria.localeCompare(b.kunciKriteria, undefined, { numeric: true })) : [];
 
         const assessments = await prisma.penilaian.findMany({
-            where: { periodeId: periodeTarget.id, status: 'SUBMIT' },
+            where: { periodeId: periodeTarget.id, status: { in: ['SUBMIT', 'APPROVED'] } },
             include: { kantor: true, akun: true, detail: true }
         });
 
@@ -805,7 +810,8 @@ exports.downloadRekapPenilaian = async (req, res) => {
             });
         } else {
             periodeTarget = await prisma.periodePenilaian.findFirst({
-                where: { statusAktif: true }
+                where: { statusAktif: true },
+                orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
             });
         }
 
@@ -823,7 +829,7 @@ exports.downloadRekapPenilaian = async (req, res) => {
         // 3. Build Query Penilaian
         const whereClause = {
             periodeId: periodeTarget.id,
-            status: 'SUBMIT'
+            status: { in: ['SUBMIT', 'APPROVED'] }
         };
         if (timEmail && timEmail !== 'all') {
             whereClause.akunEmail = timEmail;

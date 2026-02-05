@@ -161,17 +161,24 @@ exports.logout = (req, res) => {
   });
 };
 
-// Konstanta jumlah detail yang dianggap lengkap (samakan dengan daftarPenilaianController)
-const EXPECTED_DETAIL_COUNT = 16;
+// Fallback jika konfigurasi bobot belum ada/terbaca
+const DEFAULT_EXPECTED_DETAIL_COUNT = 16;
 
 exports.gethome = async (req, res) => {
   if (!req.session?.user?.email) return res.redirect("/login");
 
   let totalAssessed = 0;
   let finalAverage = 0;
+  let kantorAverages = [];
 
   try {
     const user = req.session.user;
+
+    // Selalu gunakan periode aktif terbaru (agar saat admin mengganti periode, home ikut menyesuaikan)
+    const activePeriode = await prisma.periodePenilaian.findFirst({
+      where: { statusAktif: true },
+      orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
+    });
 
     // 1. Ambil data user lengkap untuk tahu timKode
     const pengguna = await prisma.pengguna.findUnique({
@@ -179,11 +186,12 @@ exports.gethome = async (req, res) => {
       include: { anggotaTim: true }
     });
 
-    if (pengguna && pengguna.peran === 'TIMPENILAI' && pengguna.timKode) {
+    if (pengguna && pengguna.peran === 'TIMPENILAI' && pengguna.timKode && activePeriode) {
       // 2. Ambil Penugasan Kantor untuk User ini
       const penugasan = await prisma.penugasanKantorAkun.findMany({
         where: {
           akunEmail: user.email,
+          periodeId: activePeriode.id,
           statusAktif: true
         },
         include: {
@@ -191,20 +199,26 @@ exports.gethome = async (req, res) => {
         }
       });
 
-      // 3. Ambil anggota tim di tim yang sama
-      const anggotaTim = await prisma.pengguna.findMany({
-        where: {
-          timKode: pengguna.timKode,
-          statusAktif: true,
-          peran: 'TIMPENILAI'
-        },
-        select: { email: true }
+      // Expected count detail dinamis mengikuti konfigurasi periode aktif
+      const configBobot = await prisma.konfigurasiBobot.findFirst({
+        where: { periodeId: activePeriode.id, statusAktif: true },
+        include: { _count: { select: { bobotKriteria: true } }, bobotKriteria: true }
       });
-      const teamEmails = anggotaTim.map((a) => a.email);
-      const totalAnggotaTim = teamEmails.length;
+      const expectedCount = configBobot?._count?.bobotKriteria || DEFAULT_EXPECTED_DETAIL_COUNT;
+
+      const bobotKriteria = Array.isArray(configBobot?.bobotKriteria) ? configBobot.bobotKriteria : [];
+
+      // 3. Ambil anggota tim (orang) yang aktif untuk akun tim ini
+      const anggotaTimAktif = (pengguna.anggotaTim || [])
+        .filter((a) => a.statusAktif)
+        .sort((a, b) => a.urutan - b.urutan);
+
+      const anggotaIdsAktif = anggotaTimAktif.map((a) => a.id);
+      const totalAnggotaTim = anggotaIdsAktif.length;
 
       let sumRata = 0;
       let countRata = 0;
+      const kantorAveragesLocal = [];
 
       // 4. Loop setiap kantor yang ditugaskan
       for (const p of penugasan) {
@@ -213,10 +227,11 @@ exports.gethome = async (req, res) => {
           where: {
             periodeId: p.periodeId,
             kantorId: p.kantorId,
-            akunEmail: { in: teamEmails }
+            akunEmail: user.email,
+            anggotaId: { in: anggotaIdsAktif }
           },
           select: {
-            akunEmail: true,
+            anggotaId: true,
             status: true,
             tanggalMulaiInput: true,
             tanggalSubmit: true,
@@ -224,7 +239,8 @@ exports.gethome = async (req, res) => {
             diubahPada: true,
             detail: {
               select: {
-                nilai: true
+                nilai: true,
+                kunciKriteria: true
               }
             }
           }
@@ -239,41 +255,65 @@ exports.gethome = async (req, res) => {
         const isPenilaianComplete = (penilaian) => {
           if (!penilaian) return false;
           // Cek jumlah detail
-          if (!penilaian.detail || penilaian.detail.length < EXPECTED_DETAIL_COUNT) return false;
+          if (!penilaian.detail || penilaian.detail.length < expectedCount) return false;
           return true;
         };
 
-        const completedByEmail = new Map();
-        for (const email of teamEmails) {
-          const list = penilaianTim.filter((pTim) => pTim.akunEmail === email);
+        const completedByAnggotaId = new Map();
+        for (const anggotaId of anggotaIdsAktif) {
+          const list = penilaianTim.filter((pTim) => Number(pTim.anggotaId) === Number(anggotaId));
           const completed = list.some(isPenilaianComplete);
-          completedByEmail.set(email, completed);
+          completedByAnggotaId.set(Number(anggotaId), completed);
         }
 
-        const completedCount = Array.from(completedByEmail.values()).filter(Boolean).length;
+        const completedCount = Array.from(completedByAnggotaId.values()).filter(Boolean).length;
         const allComplete = totalAnggotaTim > 0 && completedCount >= totalAnggotaTim;
 
         if (allComplete) {
           // Ambil penilaian "terbaru" (atau yang paling valid) dari tiap anggota
-          const completedPerEmail = new Map();
-          for (const email of teamEmails) {
+          const completedPerAnggota = new Map();
+          for (const anggotaId of anggotaIdsAktif) {
             const list = penilaianTim
-              .filter((pTim) => pTim.akunEmail === email)
+              .filter((pTim) => Number(pTim.anggotaId) === Number(anggotaId))
               .filter(isPenilaianComplete)
               .sort((a, b) => {
                 const da = a.diubahPada || a.tanggalSubmit || a.tanggalMulaiInput || a.dibuatPada || new Date(0);
                 const db = b.diubahPada || b.tanggalSubmit || b.tanggalMulaiInput || b.dibuatPada || new Date(0);
                 return db - da; // Descending
               });
-            if (list.length > 0) completedPerEmail.set(email, list[0]);
+            if (list.length > 0) completedPerAnggota.set(Number(anggotaId), list[0]);
           }
 
-          const completedList = Array.from(completedPerEmail.values());
+          const completedList = Array.from(completedPerAnggota.values());
           const allDetails = completedList.flatMap((pTim) => pTim.detail || []);
-          if (allDetails.length > 0) {
-            const total = allDetails.reduce((sum, d) => sum + Number(d.nilai), 0);
-            const rata = total / allDetails.length;
-            sumRata += rata;
+
+          if (bobotKriteria.length > 0 && allDetails.length > 0) {
+            const valuesByKey = new Map();
+            for (const d of allDetails) {
+              const key = d?.kunciKriteria;
+              if (!key) continue;
+              const n = Number(d.nilai);
+              if (!Number.isFinite(n)) continue;
+              const list = valuesByKey.get(key) || [];
+              list.push(n);
+              valuesByKey.set(key, list);
+            }
+
+            let totalSkorAkhir = 0;
+            for (const b of bobotKriteria) {
+              const key = b.kunciKriteria;
+              const list = valuesByKey.get(key) || [];
+              if (list.length === 0) continue;
+              const sum = list.reduce((acc, v) => acc + v, 0);
+              const avg = sum / list.length;
+              const weight = Number.parseFloat(String(b.bobot));
+              if (!Number.isFinite(weight)) continue;
+              totalSkorAkhir += avg * weight;
+            }
+
+            const nilaiAkhir = Number(totalSkorAkhir.toFixed(2));
+            kantorAveragesLocal.push({ kantor: p.kantor?.nama || `Kantor ${p.kantorId}`, nilai: nilaiAkhir });
+            sumRata += totalSkorAkhir;
             countRata++;
           }
         }
@@ -283,6 +323,8 @@ exports.gethome = async (req, res) => {
       if (countRata > 0) {
         finalAverage = (sumRata / countRata).valueOf(); // Biarkan number dulu
       }
+
+      kantorAverages = kantorAveragesLocal.sort((a, b) => String(a.kantor).localeCompare(String(b.kantor)));
     }
 
   } catch (err) {
@@ -297,7 +339,8 @@ exports.gethome = async (req, res) => {
     title: "Home",
     user: req.session.user,
     totalAssessed,
-    finalAverage: formattedAverage
+    finalAverage: formattedAverage,
+    kantorAverages
   });
 };
 
