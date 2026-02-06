@@ -75,8 +75,7 @@ exports.rekapKantor = async (req, res) => {
                     where: {
                         periodeId: periodeAktif.id,
                         kantorId: selectedKantorId,
-                        status: 'APPROVED',
-                        status: { in: ['SUBMIT', 'APPROVED'] },
+                        status: 'APPROVED'
                     },
                     include: {
                         detail: true,
@@ -128,6 +127,7 @@ exports.rekapKantor = async (req, res) => {
                         catatanPerPenilai: {},
                         totalNilai: 0,
                         jumlahPenilai: 0,
+                        cumulativeWeight: 0
                     };
 
                     // Loop setiap kolom (setiap anggota tim yang HARUSNYA menilai)
@@ -142,6 +142,11 @@ exports.rekapKantor = async (req, res) => {
                                 // Hitung rata-rata HANYA dari yang mengisi (value > 0 atau ada record)
                                 rowData.totalNilai += val;
                                 rowData.jumlahPenilai++;
+
+                                // Bobot Historis Logic
+                                // Jika detail punya bobotSaatDinilai, pakai itu. Jika tidak, fallback ke config.
+                                const weightUsed = detail.bobotSaatDinilai ? parseFloat(detail.bobotSaatDinilai) : configWeight;
+                                rowData.cumulativeWeight += weightUsed;
 
                                 // Ambil catatan
                                 rowData.catatanPerPenilai[nama] = detail.catatan || '-';
@@ -161,9 +166,17 @@ exports.rekapKantor = async (req, res) => {
                         ? (rowData.totalNilai / rowData.jumlahPenilai).toFixed(2)
                         : 0;
 
-                    // Hitung Kolom Bobot = Rata-rata * BobotKonfigurasi
-                    // Asumsi: perkalian langsung sesuai request
-                    rowData.bobot = (parseFloat(rowData.rataRata) * configWeight).toFixed(2);
+                    // Hitung Kolom Bobot = Rata-rata * Rata-rata Bobot (atau Bobot Konfigurasi jika detail konsisten)
+                    // Untuk akurasi historis: Weighted Score = (Sum(Nilai_i * Bobot_i) / N) ??
+                    // Atau (AvgScore * AvgWeight)? 
+                    // Sesuai user request: "data yg telah di approve tidak berubah mengikuti bobot baru".
+                    // Artinya Weight yang digunakan adalah weight SAAT ITU.
+                    // Jika ada 2 penilai dengan bobot beda (jarang terjadi tapi mungkin), rata-ratanya harus memperhitungkan itu.
+                    // Namun tampilan tabel hanya punya 1 kolom "Bobot".
+                    // Kita akan pakai Rata-rata Bobot dari penilai yg ada.
+
+                    const avgWeight = rowData.jumlahPenilai > 0 ? (rowData.cumulativeWeight / rowData.jumlahPenilai) : configWeight;
+                    rowData.bobot = (parseFloat(rowData.rataRata) * avgWeight).toFixed(2);
 
                     groupedData[pKey].push(rowData);
                 });
@@ -313,6 +326,21 @@ exports.rekapKriteria = async (req, res) => {
                     group.assessments.forEach(ass => {
                         const scoreItem = ass.detail.find(d => d.kunciKriteria === key);
                         if (scoreItem) {
+                            // Raw value (0-100) is displayed, so we keep summing raw values.
+                            // Currently rekapKriteria only shows RAW average values (not weighted).
+                            // If user wants weighted, we would change logic. 
+                            // But rekapKriteria table shows Columns P1-1, P1-2 which are typically RAW scores.
+                            // Wait, the previous logic was: values[key] = (totalNilai / count).
+                            // This calculates the average RAW score.
+                            // The weight (bobot) is usually applied at the END for P1, P2 score.
+                            // BUT, the user requirement says "rekap penilaian ... tidak berubah".
+                            // "Rekap Kriteria" just shows raw scores per criteria per office.
+                            // Raw scores (0-100) are independent of weight.
+                            // So actually, for Rekap Kriteria (Raw Scores), NO CHANGE is needed unless it shows weighted scores.
+                            // Checking view: It shows values[c.kunciKriteria].
+                            // Conclusion: Rekap Kriteria likely strictly raw scores, so weights don't affect it.
+                            // I will keep it as is unless I see weighted calc here.
+
                             totalNilai += parseFloat(scoreItem.nilai);
                             count++;
                         }
@@ -443,10 +471,38 @@ exports.rekapPenilaian = async (req, res) => {
                         const pKey = b.kategori;
                         const relevantDetails = group.details.filter(d => d.kunciKriteria === b.kunciKriteria);
                         if (relevantDetails.length > 0) {
-                            const sumVal = relevantDetails.reduce((acc, d) => acc + parseFloat(d.nilai), 0);
-                            const avgVal = sumVal / relevantDetails.length;
-                            const weighted = avgVal * parseFloat(b.bobot);
-                            scores[pKey] += weighted;
+                            // Logic: Sum(Nilai * BobotHistoris) / Count? 
+                            // Or Average(Nilai) * Average(BobotHistoris)?
+                            // Usually: For a category P1, score is (Avg(CriteriaScores) * CategoryWeight)? 
+                            // No, typically: Sum(CriteriaScore * CriteriaWeight).
+                            // Let's check previous logic:
+                            // const sumVal = relevantDetails.reduce(...);
+                            // const avgVal = sumVal / relevantDetails.length;
+                            // const weighted = avgVal * parseFloat(b.bobot);
+                            // scores[pKey] += weighted;
+
+                            // NEW LOGIC: Calculate weighted score for EACH detail individually using its stored weight.
+                            let totalWeightedForCriteria = 0;
+                            relevantDetails.forEach(d => {
+                                const val = parseFloat(d.nilai);
+                                const weight = d.bobotSaatDinilai ? parseFloat(d.bobotSaatDinilai) : parseFloat(b.bobot);
+                                // Contribution of this specific detail to the P-score
+                                // If 3 people rated, does each contribute 1/3?
+                                // "b.bobot" is the weight of `P1-1` contributing to `P1` (e.g. 5%).
+                                // If 3 people rate P1-1, the average is used.
+                                // So: Avg(Nilai) * Bobot.
+                                // With historical weights:
+                                // We should calculate the effective weight. 
+                                totalWeightedForCriteria += (val * weight);
+                            });
+
+                            // The logic "avgVal * b.bobot" implies we average raw scores then apply weight.
+                            // ( (v1+v2+v3)/3 ) * W
+                            // = (v1*W + v2*W + v3*W) / 3
+                            // So if W varies: (v1*W1 + v2*W2 + v3*W3) / 3
+
+                            const weightedScore = totalWeightedForCriteria / relevantDetails.length;
+                            scores[pKey] += weightedScore;
                         }
                     });
 
@@ -590,6 +646,7 @@ async function getRekapKantorData(kantorIdStr) {
                     catatanPerPenilai: {},
                     totalNilai: 0,
                     jumlahPenilai: 0,
+                    cumulativeWeight: 0
                 };
 
                 headerColumns.forEach(nama => {
@@ -601,6 +658,10 @@ async function getRekapKantorData(kantorIdStr) {
                             val = parseFloat(detail.nilai);
                             rowData.totalNilai += val;
                             rowData.jumlahPenilai++;
+
+                            const weightUsed = detail.bobotSaatDinilai ? parseFloat(detail.bobotSaatDinilai) : configWeight;
+                            rowData.cumulativeWeight += weightUsed;
+
                             rowData.catatanPerPenilai[nama] = detail.catatan || '-';
                         }
                     }
@@ -613,7 +674,10 @@ async function getRekapKantorData(kantorIdStr) {
                 rowData.rataRata = rowData.jumlahPenilai > 0
                     ? (rowData.totalNilai / rowData.jumlahPenilai).toFixed(2)
                     : 0;
-                rowData.bobot = (parseFloat(rowData.rataRata) * configWeight).toFixed(2);
+
+                const avgWeight = rowData.jumlahPenilai > 0 ? (rowData.cumulativeWeight / rowData.jumlahPenilai) : configWeight;
+                rowData.bobot = (parseFloat(rowData.rataRata) * avgWeight).toFixed(2);
+
                 groupedData[pKey].push(rowData);
             });
 
@@ -772,7 +836,7 @@ exports.downloadRekapKriteria = async (req, res) => {
         const criteriaList = config ? config.bobotKriteria.sort((a, b) => a.kunciKriteria.localeCompare(b.kunciKriteria, undefined, { numeric: true })) : [];
 
         const assessments = await prisma.penilaian.findMany({
-            where: { periodeId: periodeTarget.id, status: { in: ['SUBMIT', 'APPROVED'] } },
+            where: { periodeId: periodeTarget.id, status: 'APPROVED' },
             include: { kantor: true, akun: true, detail: true }
         });
 
@@ -878,7 +942,7 @@ exports.downloadRekapPenilaian = async (req, res) => {
         // 3. Build Query Penilaian
         const whereClause = {
             periodeId: periodeTarget.id,
-            status: { in: ['SUBMIT', 'APPROVED'] }
+            status: 'APPROVED'
         };
         if (timEmail && timEmail !== 'all') {
             whereClause.akunEmail = timEmail;
