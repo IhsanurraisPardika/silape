@@ -2,179 +2,416 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kriteria Penilaian 5P</title>
-    <link rel="icon" href="/images/sp.png" type="image/sp.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .tab-active {
-            border-bottom: 4px solid #dc2626;
-            color: #dc2626;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kriteria Penilaian 5P</title>
+  <link rel="icon" href="/images/sp.png" type="image/sp.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tab-active {
+      border-bottom: 4px solid #dc2626;
+      color: #dc2626;
+      font-weight: 700;
+    }
 
-        .bg-red-sp {
-            background-color: #dc2626;
-        }
-    </style>
+    /* Hide scrollbar (tabs) */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Nicer tap behavior on mobile */
+    .tab-btn { -webkit-tap-highlight-color: transparent; }
+
+    /* Kustomisasi Scrollbar untuk tabel panjang */
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
 </head>
 
-<body class="antialiased bg-gray-100">
-    <div class="flex min-h-screen">
-        <%- include('partials/sidebar') %>
+<body class="antialiased bg-gray-100 font-sans overflow-x-hidden">
+  <div class="flex h-screen overflow-hidden">
+    <%- include('partials/sidebar') %>
 
-            <div class="flex-1 flex flex-col transition-all duration-300">
+      <div class="flex-1 flex flex-col bg-gray-50 overflow-hidden transition-all duration-300">
 
-                <%- include('partials/header') %>
+        <%- include('partials/header') %>
 
-                    <main class="flex-1 p-4 md:p-8 pb-24">
+          <main class="flex-1 overflow-auto bg-gray-50">
+            <div class="p-3 sm:p-4 md:p-8 pb-24">
 
-                        <div class="max-w-6xl mx-auto">
-                            <div class="mb-6 md:mb-8">
-                                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Kriteria
-                                    Penilaian
-                                    5P Kantor</h1>
-                                <p class="text-sm md:text-base text-gray-600 mt-1">Standar operasional penilaian
-                                    kebersihan
-                                    dan tata kelola lingkungan kerja sesuai form penilaian.</p>
-                            </div>
+            <div class="max-w-[95rem] mx-auto">
+              <div class="mb-6 md:mb-8">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Kriteria
+                  Penilaian 5P Kantor</h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1">Standar operasional penilaian lengkap (0-100)
+                  kebersihan dan tata kelola lingkungan kerja.</p>
+              </div>
 
-                            <!-- Responsive Tab Container -->
-                            <div
-                                class="bg-white rounded-t-2xl shadow-sm border-b flex overflow-x-auto sticky top-[73px] z-20 no-scrollbar">
-                                <button onclick="switchTab('P1')" id="btn-P1"
-                                    class="tab-btn flex-shrink-0 px-6 py-4 md:px-8 md:py-5 font-bold text-sm md:text-base text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent tab-active">P1:
-                                    PEMILAHAN</button>
-                                <button onclick="switchTab('P2')" id="btn-P2"
-                                    class="tab-btn flex-shrink-0 px-6 py-4 md:px-8 md:py-5 font-bold text-sm md:text-base text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P2:
-                                    PENATAAN</button>
-                                <button onclick="switchTab('P3')" id="btn-P3"
-                                    class="tab-btn flex-shrink-0 px-6 py-4 md:px-8 md:py-5 font-bold text-sm md:text-base text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P3:
-                                    PEMBERSIHAN</button>
-                                <button onclick="switchTab('P4')" id="btn-P4"
-                                    class="tab-btn flex-shrink-0 px-6 py-4 md:px-8 md:py-5 font-bold text-sm md:text-base text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P4:
-                                    PEMANTAPAN</button>
-                                <button onclick="switchTab('P5')" id="btn-P5"
-                                    class="tab-btn flex-shrink-0 px-6 py-4 md:px-8 md:py-5 font-bold text-sm md:text-base text-gray-400 hover:text-red-600 transition-all border-b-4 border-transparent">P5:
-                                    PEMBIASAAN</button>
-                            </div>
+              <div id="tabbar" role="tablist" aria-label="Kategori 5P"
+                class="bg-white rounded-t-xl shadow-sm border-b flex overflow-x-auto sticky top-0 z-20 no-scrollbar snap-x snap-mandatory">
+                <button onclick="switchTab('P1')" id="btn-P1" role="tab" aria-selected="true"
+                  class="tab-btn snap-start flex-shrink-0 px-5 py-3.5 md:px-8 md:py-5 font-bold text-sm md:text-base text-gray-500 hover:text-red-600 transition-all border-b-4 border-transparent tab-active">
+                  P1: PEMILAHAN
+                </button>
+                <button onclick="switchTab('P2')" id="btn-P2" role="tab" aria-selected="false"
+                  class="tab-btn snap-start flex-shrink-0 px-5 py-3.5 md:px-8 md:py-5 font-bold text-sm md:text-base text-gray-500 hover:text-red-600 transition-all border-b-4 border-transparent">
+                  P2: PENATAAN
+                </button>
+                <button onclick="switchTab('P3')" id="btn-P3" role="tab" aria-selected="false"
+                  class="tab-btn snap-start flex-shrink-0 px-5 py-3.5 md:px-8 md:py-5 font-bold text-sm md:text-base text-gray-500 hover:text-red-600 transition-all border-b-4 border-transparent">
+                  P3: PEMBERSIHAN
+                </button>
+                <button onclick="switchTab('P4')" id="btn-P4" role="tab" aria-selected="false"
+                  class="tab-btn snap-start flex-shrink-0 px-5 py-3.5 md:px-8 md:py-5 font-bold text-sm md:text-base text-gray-500 hover:text-red-600 transition-all border-b-4 border-transparent">
+                  P4: PEMANTAPAN
+                </button>
+                <button onclick="switchTab('P5')" id="btn-P5" role="tab" aria-selected="false"
+                  class="tab-btn snap-start flex-shrink-0 px-5 py-3.5 md:px-8 md:py-5 font-bold text-sm md:text-base text-gray-500 hover:text-red-600 transition-all border-b-4 border-transparent">
+                  P5: PEMBIASAAN
+                </button>
+              </div>
 
-                            <div class="bg-white rounded-b-2xl shadow-xl p-4 md:p-6 mb-12 border-t-0">
+              <div class="bg-white rounded-b-xl shadow-xl p-4 md:p-6 mb-12 border-t-0 overflow-hidden">
+                <!-- Mobile: cards/accordion (same content, more readable on Android) -->
+                <div id="kriteria-cards" class="md:hidden space-y-3"></div>
 
-                                <!-- Desktop Header (Hidden on Mobile) -->
-                                <div
-                                    class="hidden md:grid grid-cols-12 gap-4 bg-gray-50 text-gray-700 uppercase text-xs tracking-widest font-bold px-4 py-3 border-b mb-2 rounded-lg">
-                                    <div class="col-span-1 text-center">No</div>
-                                    <div class="col-span-3">Objek Penilaian / Area</div>
-                                    <div class="col-span-7">Kriteria & Standar Penilaian</div>
-                                    <div class="col-span-1 text-center">Skor</div>
-                                </div>
+                <!-- Desktop/tablet: keep table -->
+                <div class="hidden md:block overflow-x-auto custom-scrollbar pb-4">
+                  <table class="w-full text-left border-collapse min-w-[1200px]">
+                    <thead>
+                      <tr class="bg-gray-50 text-gray-700 uppercase text-xs tracking-wider border-b border-gray-200">
+                        <th class="px-4 py-4 font-bold w-12 text-center sticky left-0 bg-gray-50 z-10 border-r">No</th>
+                        <th class="px-4 py-4 font-bold w-64 sticky left-12 bg-gray-50 z-10 border-r shadow-sm">Kriteria Penilaian</th>
+                        <th class="px-4 py-4 font-bold text-center w-1/5 bg-red-50 text-red-700 border-r border-red-100">0 - 20<br><span class="text-[10px] font-normal text-red-500 capitalize">(Sangat Kurang)</span></th>
+                        <th class="px-4 py-4 font-bold text-center w-1/5 bg-orange-50 text-orange-700 border-r border-orange-100">21 - 40<br><span class="text-[10px] font-normal text-orange-500 capitalize">(Kurang)</span></th>
+                        <th class="px-4 py-4 font-bold text-center w-1/5 bg-yellow-50 text-yellow-700 border-r border-yellow-100">41 - 60<br><span class="text-[10px] font-normal text-yellow-600 capitalize">(Cukup)</span></th>
+                        <th class="px-4 py-4 font-bold text-center w-1/5 bg-blue-50 text-blue-700 border-r border-blue-100">61 - 80<br><span class="text-[10px] font-normal text-blue-500 capitalize">(Baik)</span></th>
+                        <th class="px-4 py-4 font-bold text-center w-1/5 bg-green-50 text-green-700">81 - 100<br><span class="text-[10px] font-normal text-green-600 capitalize">(Sangat Baik)</span></th>
+                      </tr>
+                    </thead>
+                    <tbody id="kriteria-body" class="divide-y divide-gray-100 text-sm text-gray-700"></tbody>
+                  </table>
+                </div>
+              </div>
 
-                                <!-- Content Body -->
-                                <div id="kriteria-body" class="space-y-4 md:space-y-0">
-                                    <!-- Content will be injected here via JS -->
-                                </div>
-                            </div>
-                        </div>
-                    </main>
             </div>
-    </div>
+            </div>
+          </main>
+      </div>
+  </div>
 
-    <script>
-        // Data diupdate sesuai standar Audit 5P/5R Perkantoran Profesional
-        const kriteriaData = {
-            'P1': [
-                { area: 'Meja Kerja & Laci', detail: 'Tidak ada dokumen/barang yang tidak diperlukan (sampah, kertas bekas, ATK rusak) di atas maupun di dalam meja.', skor: 20 },
-                { area: 'Lemari Arsip / Rak', detail: 'Hanya menyimpan dokumen/barang yang masih relevan dengan pekerjaan. Dokumen kadaluarsa dipisahkan/dimusnahkan.', skor: 20 },
-                { area: 'Area Bawah Meja', detail: 'Bebas dari penumpukan barang yang tidak terpakai (kardus kosong, sepatu bekas, tas tidak terpakai).', skor: 20 },
-                { area: 'Lantai & Dinding', detail: 'Tidak ada barang/peralatan rusak yang diletakkan sembarangan di sudut ruangan atau bersandar di dinding.', skor: 20 },
-                { area: 'Peralatan Elektronik', detail: 'Memisahkan kabel atau perangkat elektronik yang rusak/tidak terpakai dari area kerja aktif.', skor: 20 }
-            ],
-            'P2': [
-                { area: 'Tata Letak Dokumen', detail: 'Dokumen tersusun rapi dalam ordner/map, dikelompokkan sesuai jenis, dan mudah ditemukan (kurang dari 30 detik).', skor: 20 },
-                { area: 'Identitas & Labeling', detail: 'Semua ordner, laci, lemari, dan saklar lampu memiliki label identitas yang jelas, lurus, dan mudah dibaca.', skor: 20 },
-                { area: 'Stationary (ATK)', detail: 'ATK tersimpan di tempat khusus (organizer) dan tidak berserakan di atas meja setelah digunakan.', skor: 20 },
-                { area: 'Manajemen Kabel', detail: 'Kabel PC, telepon, dan listrik terikat rapi (cable ties/spiral), tidak semrawut, dan tidak membahayakan.', skor: 20 },
-                { area: 'Penyimpanan Tas/Helm', detail: 'Tas, helm, dan barang pribadi karyawan ditempatkan pada tempat khusus/loker yang disediakan.', skor: 20 }
-            ],
-            'P3': [
-                { area: 'Lantai & Sudut Ruang', detail: 'Lantai bersih, kering, tidak berdebu, dan sudut ruangan bebas dari sarang laba-laba.', skor: 20 },
-                { area: 'Perangkat Kerja (PC/Telp)', detail: 'Layar monitor, keyboard, CPU, dan telepon bersih dari debu dan noda.', skor: 20 },
-                { area: 'Kaca & Jendela', detail: 'Kaca jendela, partisi ruangan, dan kusen bersih serta tembus pandang (tidak buram).', skor: 20 },
-                { area: 'Tempat Sampah', detail: 'Tempat sampah tersedia, tidak penuh (overload), dan kondisi fisik tempat sampah bersih.', skor: 20 },
-                { area: 'Plafon & Lampu', detail: 'Langit-langit bersih dari kotoran/bocor, dan rumah lampu bebas dari debu.', skor: 20 }
-            ],
-            'P4': [
-                { area: 'Visual Management', detail: 'Terdapat rambu/tanda standar (jalur evakuasi, dilarang merokok, jagalah kebersihan) yang terawat baik.', skor: 25 },
-                { area: 'Standarisasi Layout', detail: 'Penataan meja, kursi, dan lemari seragam sesuai standar layout yang ditetapkan perusahaan.', skor: 25 },
-                { area: 'Kontrol Visual', detail: 'Terdapat garis pembatas (line marking) atau shadow board untuk penempatan barang inventaris kantor.', skor: 25 },
-                { area: 'Sirkulasi Udara', detail: 'Suhu ruangan terjaga (AC berfungsi baik) dan pencahayaan memadai sesuai standar kesehatan kerja.', skor: 25 }
-            ],
-            'P5': [
-                { area: 'Disiplin 5 Menit', detail: 'Karyawan terbiasa melakukan "5 Menit Resik" sebelum mulai dan sesudah selesai bekerja.', skor: 25 },
-                { area: 'Kepatuhan Atribut', detail: 'Karyawan menggunakan ID Card dan seragam sesuai ketentuan perusahaan saat berada di area kerja.', skor: 25 },
-                { area: 'Jadwal Piket', detail: 'Terdapat jadwal piket kebersihan yang tertempel dan dilaksanakan secara konsisten.', skor: 25 },
-                { area: 'Budaya K3', detail: 'Karyawan peduli terhadap aspek keselamatan (tidak menghalangi APAR, tidak membiarkan kabel terkelupas).', skor: 25 }
-            ]
-        };
-
-        function switchTab(pKey) {
-            const body = document.getElementById('kriteria-body');
-            const btns = document.querySelectorAll('.tab-btn');
-
-            // Handle active state button
-            btns.forEach(btn => {
-                btn.classList.remove('tab-active', 'text-red-600');
-                btn.classList.add('text-gray-400');
-            });
-
-            const activeBtn = document.getElementById('btn-' + pKey);
-            activeBtn.classList.add('tab-active', 'text-red-600');
-            activeBtn.classList.remove('text-gray-400');
-
-            // Render content
-            body.innerHTML = '';
-            kriteriaData[pKey].forEach((item, index) => {
-                // Responsive Grid/Card Item
-                const row = `
-                    <div class="hover:bg-red-50/50 transition-colors group border-b md:border-b-0 border-gray-100 last:border-0 pb-4 md:pb-0">
-                        <div class="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 px-2 md:px-4 py-2 md:py-3 items-start">
-                            
-                            <!-- No (Hidden on Mobile usually, or shown small) -->
-                            <div class="md:col-span-1 md:text-center flex items-center gap-2 md:block">
-                                <span class="md:hidden text-xs font-bold text-gray-400 uppercase">No.</span>
-                                <span class="text-sm font-bold text-gray-500 group-hover:text-red-600">${index + 1}</span>
-                            </div>
-
-                            <!-- Area -->
-                            <div class="md:col-span-3">
-                                <span class="md:hidden block text-xs font-bold text-gray-400 uppercase mb-1">Area / Objek:</span>
-                                <span class="font-bold text-gray-800 text-sm md:text-base">${item.area}</span>
-                            </div>
-
-                            <!-- Detail -->
-                            <div class="md:col-span-7">
-                                <span class="md:hidden block text-xs font-bold text-gray-400 uppercase mb-1 mt-2">Kriteria:</span>
-                                <span class="text-sm leading-relaxed text-gray-600">${item.detail}</span>
-                            </div>
-
-                            <!-- Skor -->
-                            <div class="md:col-span-1 md:text-center mt-2 md:mt-0">
-                                <div class="inline-flex md:flex items-center gap-2 md:justify-center bg-red-50 md:bg-transparent px-3 py-1 md:p-0 rounded-full md:rounded-none">
-                                    <span class="md:hidden text-xs font-bold text-red-600 uppercase">Max Skor:</span>
-                                    <span class="font-bold text-red-600 text-sm">${item.skor}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                body.innerHTML += row;
-            });
+  <script>
+    // DATA LENGKAP SESUAI FILE EXCEL "Formula PENILAIAN 5P S1 2025"
+    const kriteriaData = {
+      'P1': [
+        {
+          kriteria: 'Pembagian area & Pemilahan',
+          r0_20: 'Tidak ada pembagian fungsi & tanggungjawab serta belum ada pemilahan.',
+          r21_40: 'Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di sebagian kecil area kerja.',
+          r41_60: 'Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di sebagian besar area kerja.',
+          r61_80: 'Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di hampir seluruh area kerja.',
+          r81_100: 'Ada pembagian fungsi & tanggungjawab serta pemilahan barang/alat/dokumen di seluruh area kerja.'
+        },
+        {
+          kriteria: 'Pemindahan ke Tempat Penyimpanan / Pembuangan Sementara',
+          r0_20: 'Tidak ditemukan proses ke TPS.',
+          r21_40: 'Ditemukan hanya ada sebagian kecil proses pemindahan ke TPS & tidak terdokumentasi.',
+          r41_60: 'Ditemukan ada sebagian besar proses pemindahan ke TPS & terdokumentasi.',
+          r61_80: 'Ditemukan ada proses pemindahan ke TPS secara hampir menyeluruh & terdokumentasi.',
+          r81_100: 'Ditemukan ada proses pemindahan ke TPS secara menyeluruh & terdokumentasi.'
+        },
+        {
+          kriteria: 'Standar P1',
+          r0_20: 'Tidak ada standar Pemilahan (P1).',
+          r21_40: 'Sudah ada standar Pemilahan (P1) tapi belum dilaksanakan.',
+          r41_60: 'Sudah ada standar Pemilahan (P1) dan sudah dilaksanakan dengan cukup baik.',
+          r61_80: 'Sudah ada standar Pemilahan (P1) dan sudah dilaksanakan dengan baik & konsisten.',
+          r81_100: 'Sudah ada standar Pemilahan (P1) secara detail dan sudah dilaksanakan dengan baik & konsisten.'
         }
+      ],
+      'P2': [
+        {
+          kriteria: 'Visualisasi Denah Ruang/Area dan Jalur Evakuasi',
+          r0_20: 'Tidak ada visualisasi denah area dan jalur evakuasi.',
+          r21_40: 'Ditemukan di sebagian kecil area memiliki visualisasi denah area dan jalur evakuasi.',
+          r41_60: 'Ditemukan di sebagian besar area memiliki visualisasi denah area dan jalur evakuasi.',
+          r61_80: 'Ditemukan di hampir seluruh area memiliki visualisasi denah area dan jalur evakuasi.',
+          r81_100: 'Ditemukan di seluruh area memiliki visualisasi denah area dan jalur evakuasi.'
+        },
+        {
+          kriteria: 'Labeling, Marka, Visual Control & Penanggung Jawab',
+          r0_20: 'Tidak ditemukan labeling, marka, visual control & penanggungjawab area.',
+          r21_40: 'Ditemukan labeling, marka, visual control & penanggungjawab di sebagian kecil area.',
+          r41_60: 'Ditemukan labeling, marka, visual control & penanggungjawab di sebagian besar area.',
+          r61_80: 'Ditemukan labeling, marka, visual control & penanggungjawab di hampir seluruh area.',
+          r81_100: 'Ditemukan labeling, marka, visual control & penanggungjawab di seluruh area.'
+        },
+        {
+          kriteria: 'Pengelolaan Barang/Bahan',
+          r0_20: 'Ditemukan banyak barang/bahan tidak tertata rapi.',
+          r21_40: 'Ditemukan sebagian kecil barang/bahan tertata namun kurang rapi.',
+          r41_60: 'Ditemukan sebagian besar barang/bahan tertata rapi & teratur.',
+          r61_80: 'Ditemukan hampir seluruh barang/bahan tertata rapi teratur & dalam jumlah yang efisien.',
+          r81_100: 'Ditemukan seluruh barang/bahan tertata rapi, teratur & dalam jumlah yang efisien dan Sesuai Kebutuhan.'
+        },
+        {
+          kriteria: 'Standar P2',
+          r0_20: 'Tidak ada standar Penataan (P2).',
+          r21_40: 'Ada standar Penataan (P2) tapi belum dilaksanakan.',
+          r41_60: 'Ada standar Penataan (P2) dan dilaksanakan dengan cukup baik.',
+          r61_80: 'Ada standar Penataan (P2) dan dilaksanakan dengan baik & konsisten.',
+          r81_100: 'Ada standar Penataan (P2) secara detail dan dilaksanakan dengan baik & konsisten.'
+        }
+      ],
+      'P3': [
+        {
+          kriteria: 'Pembersihan dan Alat bantu kebersihan',
+          r0_20: 'Tidak ditemukan kegiatan pembersihan.',
+          r21_40: 'Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di sebagian kecil area.',
+          r41_60: 'Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di sebagian besar area.',
+          r61_80: 'Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di hampir seluruh area.',
+          r81_100: 'Ditemukan kegiatan pembersihan dan alat/sarana kebersihan dalam jumlah yg sesuai dan mudah dijangkau di seluruh area.'
+        },
+        {
+          kriteria: 'Upaya Mengatasi Sumber Kotor & Gangguan',
+          r0_20: 'Tidak ada upaya mengatasi sumber kotor & gangguan.',
+          r21_40: 'Ada upaya untuk mengatasi sumber kotor & gangguan aktifitas di sebagian kecil area.',
+          r41_60: 'Ada upaya untuk mengatasi sumber kotor & gangguan aktifitas di sebagian besar area.',
+          r61_80: 'Ada upaya dilakukan untuk mengatasi sumber kotor & gangguan aktifitas di hampir seluruh area.',
+          r81_100: 'Ada upaya dilakukan untuk mengatasi sumber kotor & gangguan aktifitas di seluruh area.'
+        },
+        {
+          kriteria: 'Standar P3',
+          r0_20: 'Tidak ada standar Pembersihan (P3).',
+          r21_40: 'Ada standar Pembersihan (P3) tapi belum dilaksanakan.',
+          r41_60: 'Ada standar Pembersihan (P3) dan dilaksanakan dengan cukup baik.',
+          r61_80: 'Ada standar Pembersihan (P3) dan dilaksanakan dengan baik & konsisten.',
+          r81_100: 'Ada standar Pembersihan (P3) secara detail dan dilaksanakan dengan baik & konsisten.'
+        }
+      ],
+      'P4': [
+        {
+          kriteria: 'Konsistensi Pelaksanaan P1-P3',
+          r0_20: 'Tidak ada Jadwal Rencana & Realisasi Kegiatan serta Rapat Rutin Terkait Implementasi Kegiatan P1-P3.',
+          r21_40: 'Ada bukti jadwal Rencana Terkait Implementasi Kegiatan P1-P3, tetapi tidak ada realisasi kegiatan dan rapat Rutin.',
+          r41_60: 'Ada bukti jadwal Rencana & Realisasi Terkait Implementasi Kegiatan P1-P3, tetapi tidak ada jadwal rapat Rutin.',
+          r61_80: 'Ada bukti jadwal Rencana & Realisasi Terkait Implementasi Kegiatan P1-P3, serta dilakukan rapat Rutin (Minimal 1 Kali sebulan).',
+          r81_100: 'Ada bukti jadwal Rencana & Realisasi Terkait Implementasi Kegiatan P1-P3, serta dilakukan rapat Rutin (Minimal 2 Kali sebulan).'
+        },
+        {
+          kriteria: 'Pemeliharaan P1 - P3',
+          r0_20: 'Tidak ditemukan pemeliharaan terhadap P1 - P3 serta aktifitas kegiatan perbaikan berkelanjutan.',
+          r21_40: 'Ditemukan di sebagian kecil area ada pemeliharaan terhadap kondisi P1 - P3 & belum ada aktifitas kegiatan perbaikan berkelanjutan.',
+          r41_60: 'Ditemukan di sebagian besar area ada pemeliharaan terhadap kondisi P1 - P3 & ada aktifitas kegiatan perbaikan berkelanjutan (1 tema).',
+          r61_80: 'Ditemukan di hampir seluruh area ada pemeliharaan terhadap kondisi P1 - P3 & ada aktifitas kegiatan perbaikan berkelanjutan (lebih dari 2 tema).',
+          r81_100: 'Ditemukan di seluruh area ada pemeliharaan terhadap kondisi P1 - P3 & ada aktifitas kegiatan perbaikan berkelanjutan (lebih dari 3 tema).'
+        },
+        {
+          kriteria: 'Standar P4',
+          r0_20: 'Tidak ada standar Pemantapan (P4).',
+          r21_40: 'Ada standar Pemantapan (P4) tapi belum dilaksanakan.',
+          r41_60: 'Ada standar Pemantapan (P4) dan dilaksanakan dengan cukup baik.',
+          r61_80: 'Ada standar Pemantapan (P4) dan dilaksanakan dengan baik & konsisten.',
+          r81_100: 'Ada standar Pemantapan (P4) secara detail dan dilaksanakan dengan baik & konsisten.'
+        }
+      ],
+      'P5': [
+        {
+          kriteria: 'Sikap Kerja & Kedisiplinan',
+          r0_20: 'Sebagian besar personil organisasi/area kerja belum mempunyai sikap kerja/kebiasaan positif dan disiplin.',
+          r21_40: 'Sebagian kecil personil organisasi/area kerja belum mempunyai sikap kerja/kebiasaan positif dan disiplin.',
+          r41_60: 'Sikap kerja/kebiasaan positif dan disiplin telah terbentuk tapi masih harus diikuti dengan reward dan punishment.',
+          r61_80: 'Setiap personil dalam organisasi/area kerja sudah menunjukkan sikap kerja, kebiasaan positif dan disiplin.',
+          r81_100: 'Setiap personil dalam organisasi/area kerja sudah menunjukkan sikap kerja, kebiasaan positif dan disiplin serta mempunyai budaya malu.'
+        },
+        {
+          kriteria: 'Papan Aktivitas (Activity Board)',
+          r0_20: 'Tidak ada papan aktivitas/informasi penerapan 5P di area kerja.',
+          r21_40: 'Ada papan aktivitas, tapi informasi yang disajikan tidak up to date dan tidak memadai.',
+          r41_60: 'Sudah ada papan aktivitas yang menyajikan informasi penerapan 5P.',
+          r61_80: 'Activity board/papan informasi 5P tersedia dan menyajikan informasi memadai (kegiatan 5P, hasil Kaizen, efisiensi, dll).',
+          r81_100: 'Activity board/papan informasi 5P tersedia, menyajikan informasi memadai (kegiatan 5P, hasil Kaizen, dll) serta up to date.'
+        },
+        {
+          kriteria: 'Standar P5',
+          r0_20: 'Tidak ada standar Pembiasaan (P5).',
+          r21_40: 'Ada standar Pembiasaan (P5) tapi belum dilaksanakan.',
+          r41_60: 'Ada standar Pembiasaan (P5) dan dilaksanakan dengan cukup baik.',
+          r61_80: 'Ada standar Pembiasaan (P5) dan dilaksanakan dengan baik & konsisten.',
+          r81_100: 'Ada standar Pembiasaan (P5) secara detail dan dilaksanakan dengan baik & konsisten.'
+        }
+      ]
+    };
 
-        // Initialize first tab
-        window.onload = () => switchTab('P1');
-    </script>
+    const TAB_KEYS = ['P1', 'P2', 'P3', 'P4', 'P5'];
+
+    function renderTableRows(items) {
+      const body = document.getElementById('kriteria-body');
+      if (!body) return;
+      body.innerHTML = '';
+      if (!items || items.length === 0) return;
+
+      items.forEach((item, index) => {
+        const row = `
+          <tr class="hover:bg-gray-50 transition-colors group align-top">
+            <td class="px-4 py-4 text-center font-bold text-gray-500 group-hover:text-red-600 sticky left-0 bg-white group-hover:bg-gray-50 border-r border-gray-100">
+              ${index + 1}
+            </td>
+            <td class="px-4 py-4 font-bold text-gray-800 sticky left-12 bg-white group-hover:bg-gray-50 border-r border-gray-100 shadow-[4px_0_5px_-2px_rgba(0,0,0,0.05)]">
+              ${item.kriteria}
+            </td>
+            <td class="px-4 py-4 border-r border-gray-100 bg-red-50/30 text-gray-600 group-hover:bg-red-50/50">${item.r0_20}</td>
+            <td class="px-4 py-4 border-r border-gray-100 bg-orange-50/30 text-gray-600 group-hover:bg-orange-50/50">${item.r21_40}</td>
+            <td class="px-4 py-4 border-r border-gray-100 bg-yellow-50/30 text-gray-600 group-hover:bg-yellow-50/50">${item.r41_60}</td>
+            <td class="px-4 py-4 border-r border-gray-100 bg-blue-50/30 text-gray-600 group-hover:bg-blue-50/50">${item.r61_80}</td>
+            <td class="px-4 py-4 bg-green-50/30 text-gray-800 font-medium group-hover:bg-green-50/50 border-l-2 border-green-100">${item.r81_100}</td>
+          </tr>
+        `;
+        body.innerHTML += row;
+      });
+    }
+
+    function renderMobileCards(items) {
+      const cards = document.getElementById('kriteria-cards');
+      if (!cards) return;
+      cards.innerHTML = '';
+      if (!items || items.length === 0) return;
+
+      items.forEach((item, index) => {
+        const card = `
+          <div class="rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white">
+            <div class="p-4">
+              <div class="flex items-start gap-3">
+                <div class="flex-none w-9 h-9 rounded-lg bg-red-50 text-red-700 font-extrabold flex items-center justify-center">${index + 1}</div>
+                <div class="min-w-0">
+                  <div class="font-extrabold text-gray-900 leading-snug">${item.kriteria}</div>
+                  <div class="text-xs text-gray-500 mt-1">Tap untuk buka detail rentang nilai</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-gray-100">
+              <details class="group">
+                <summary class="cursor-pointer select-none list-none px-4 py-3 flex items-center justify-between bg-red-50/40">
+                  <span class="text-sm font-bold text-red-700">0 - 20 <span class=\"font-normal text-red-500\">(Sangat Kurang)</span></span>
+                  <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-gray-700">${item.r0_20}</div>
+              </details>
+              <details class="group border-t border-gray-100">
+                <summary class="cursor-pointer select-none list-none px-4 py-3 flex items-center justify-between bg-orange-50/40">
+                  <span class="text-sm font-bold text-orange-700">21 - 40 <span class=\"font-normal text-orange-600\">(Kurang)</span></span>
+                  <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-gray-700">${item.r21_40}</div>
+              </details>
+              <details class="group border-t border-gray-100">
+                <summary class="cursor-pointer select-none list-none px-4 py-3 flex items-center justify-between bg-yellow-50/50">
+                  <span class="text-sm font-bold text-yellow-700">41 - 60 <span class=\"font-normal text-yellow-700\">(Cukup)</span></span>
+                  <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-gray-700">${item.r41_60}</div>
+              </details>
+              <details class="group border-t border-gray-100">
+                <summary class="cursor-pointer select-none list-none px-4 py-3 flex items-center justify-between bg-blue-50/40">
+                  <span class="text-sm font-bold text-blue-700">61 - 80 <span class=\"font-normal text-blue-600\">(Baik)</span></span>
+                  <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-gray-700">${item.r61_80}</div>
+              </details>
+              <details class="group border-t border-gray-100">
+                <summary class="cursor-pointer select-none list-none px-4 py-3 flex items-center justify-between bg-green-50/40">
+                  <span class="text-sm font-bold text-green-700">81 - 100 <span class=\"font-normal text-green-700\">(Sangat Baik)</span></span>
+                  <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-gray-700">${item.r81_100}</div>
+              </details>
+            </div>
+          </div>
+        `;
+        cards.innerHTML += card;
+      });
+    }
+
+    function setActiveTab(pKey) {
+      const btns = document.querySelectorAll('.tab-btn');
+      btns.forEach(btn => {
+        btn.classList.remove('tab-active', 'text-red-600');
+        btn.classList.add('text-gray-500');
+        btn.setAttribute('aria-selected', 'false');
+      });
+
+      const activeBtn = document.getElementById('btn-' + pKey);
+      if (activeBtn) {
+        activeBtn.classList.add('tab-active', 'text-red-600');
+        activeBtn.classList.remove('text-gray-500');
+        activeBtn.setAttribute('aria-selected', 'true');
+
+        // Ensure active tab is visible on mobile
+        activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+
+    function switchTab(pKey) {
+      setActiveTab(pKey);
+      const items = kriteriaData[pKey] || [];
+      renderMobileCards(items);
+      renderTableRows(items);
+    }
+
+    function enableSwipeTabs() {
+      let startX = 0;
+      let startY = 0;
+      let startTime = 0;
+
+      const swipeTarget = document.querySelector('main');
+      if (!swipeTarget) return;
+
+      swipeTarget.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length !== 1) return;
+        const t = e.touches[0];
+        startX = t.clientX;
+        startY = t.clientY;
+        startTime = Date.now();
+      }, { passive: true });
+
+      swipeTarget.addEventListener('touchend', (e) => {
+        if (!e.changedTouches || e.changedTouches.length !== 1) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - startX;
+        const dy = t.clientY - startY;
+        const dt = Date.now() - startTime;
+
+        // Only trigger on quick horizontal swipes
+        if (dt > 600) return;
+        if (Math.abs(dx) < 70) return;
+        if (Math.abs(dx) < Math.abs(dy) * 1.5) return;
+
+        const active = document.querySelector('.tab-btn[aria-selected="true"]');
+        const activeId = active ? active.id.replace('btn-', '') : 'P1';
+        const idx = TAB_KEYS.indexOf(activeId);
+        if (idx === -1) return;
+
+        if (dx < 0 && idx < TAB_KEYS.length - 1) switchTab(TAB_KEYS[idx + 1]);
+        if (dx > 0 && idx > 0) switchTab(TAB_KEYS[idx - 1]);
+      }, { passive: true });
+    }
+
+    window.onload = () => {
+      switchTab('P1');
+      enableSwipeTabs();
+    };
+  </script>
 </body>
 
 </html>

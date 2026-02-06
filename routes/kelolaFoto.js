@@ -9,5 +9,6 @@ const { harusAdmin } = require("../middlewares/auth.middleware");
 router.get("/kelola-foto", harusAdmin, kelolaFotoController.index);
 router.get("/kelola-foto/:kantorId", harusAdmin, kelolaFotoController.detail);
 router.get("/kelola-foto/:kantorId/pdf", harusAdmin, kelolaFotoController.downloadPdf);
+router.post("/kelola-foto/hapus", harusAdmin, kelolaFotoController.hapusFoto);
 
 module.exports = router;
