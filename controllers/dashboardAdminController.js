@@ -266,7 +266,6 @@ exports.rekapKriteria = async (req, res) => {
                 where: {
                     periodeId: periodeAktif.id,
                     status: 'APPROVED'
-                    status: { in: ['SUBMIT', 'APPROVED'] }
                 },
                 include: {
                     kantor: true,
@@ -360,8 +359,8 @@ exports.rekapPenilaian = async (req, res) => {
             });
         } else {
             periodeTarget = await prisma.periodePenilaian.findFirst({
-                where: { statusAktif: true }
-                ,orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
+                where: { statusAktif: true },
+                orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
             });
         }
 
@@ -389,7 +388,6 @@ exports.rekapPenilaian = async (req, res) => {
                     where: {
                         periodeId: periodeAktif.id,
                         status: 'APPROVED'
-                        status: { in: ['SUBMIT', 'APPROVED'] }
                     },
                     include: {
                         kantor: true,
@@ -563,7 +561,7 @@ async function getRekapKantorData(kantorIdStr) {
                 where: {
                     periodeId: periodeAktif.id,
                     kantorId: selectedKantorId,
-                    status: { in: ['SUBMIT', 'APPROVED'] },
+                    status: 'APPROVED',
                 },
                 include: {
                     detail: true,
