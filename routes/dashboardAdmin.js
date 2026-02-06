@@ -14,10 +14,8 @@ router.get("/", harusAdmin, async (req, res) => {
       where: { statusAktif: true },
     });
 
-    // 2. Total Kantor (Aktif)
-    const totalKantor = await prisma.kantor.count({
-      where: { statusAktif: true },
-    });
+    // 2. Total Kantor (Aktif) - Init 0 (akan diupdate berdasarkan penugasan periode aktif)
+    let totalKantor = 0;
 
     let sudahDinilai = 0;
     let sedangProses = 0;
@@ -26,13 +24,13 @@ router.get("/", harusAdmin, async (req, res) => {
     let totalKriteriaDiharapkan = 16; // Fallback
 
     if (periodeAktif) {
-      // 3. Ambil Konfigurasi Bobot (untuk tahu target kriteria)
+      // 3. Ambil Konfigurasi Bobot (untuk tahu target kriteria dan bobot)
       const konfigurasi = await prisma.konfigurasiBobot.findFirst({
         where: { periodeId: periodeAktif.id, statusAktif: true },
-        include: { _count: { select: { bobotKriteria: true } } }
+        include: { bobotKriteria: true } // Include full objects, not just count
       });
-      if (konfigurasi && konfigurasi._count) {
-        totalKriteriaDiharapkan = konfigurasi._count.bobotKriteria;
+      if (konfigurasi && konfigurasi.bobotKriteria) {
+        totalKriteriaDiharapkan = konfigurasi.bobotKriteria.length;
       }
 
       // 4. Ambil Data Penugasan & Anggota Tim per Akun
@@ -47,16 +45,21 @@ router.get("/", harusAdmin, async (req, res) => {
         }
       });
 
+      // Update Total Kantor sesuai jumlah penugasan di periode ini
+      totalKantor = penugasanList.length;
+
       // 5. Ambil Semua Penilaian untuk periode ini
       const semuaPenilaian = await prisma.penilaian.findMany({
         where: { periodeId: periodeAktif.id },
-        include: { detail: true, akun: true }
+        include: { detail: true, akun: true, kantor: true }
       });
 
       const perTim = {};
+      const chartDataKantorRef = {};
 
       // Analisis status per Penugasan (Per Kantor & Per Akun Tim)
       penugasanList.forEach(tug => {
+        // ... (Logic Lama untuk Summary Card tetap sama) ...
         const totalAnggota = tug.akun.anggotaTim.length;
         const timKey = tug.akun.timKode || 'TIM';
         if (!perTim[timKey]) {
@@ -64,7 +67,6 @@ router.get("/", harusAdmin, async (req, res) => {
         }
         perTim[timKey].totalTugas += 1;
 
-        // Cari penilaian untuk kantor ini dari akun ini
         const penilaianKantorIni = semuaPenilaian.filter(p =>
           p.kantorId === tug.kantorId && p.akunEmail === tug.akunEmail
         );
@@ -79,13 +81,7 @@ router.get("/", harusAdmin, async (req, res) => {
 
           if (isSelesai) {
             anggotaSelesaiCount++;
-            // Hitung kontribusi kantor selesai pro-rata terhadap jumlah anggota tim
             perTim[timKey].selesai += (1 / Math.max(1, totalAnggota));
-          }
-
-          if (p.nilaiTotal) {
-            perTim[timKey].totalNilai += Number(p.nilaiTotal);
-            perTim[timKey].countNilai += 1;
           }
         });
 
@@ -96,12 +92,47 @@ router.get("/", harusAdmin, async (req, res) => {
         }
       });
 
-      // Bulatkan jumlah selesai per tim
-      Object.keys(perTim).forEach(key => {
-        perTim[key].selesai = Math.floor(perTim[key].selesai + 0.001);
-      });
+      // 7. Format data kantor untuk Top 5 List (LOGIC BARU)
+      if (konfigurasi && konfigurasi.bobotKriteria) {
+        const groupedByKantor = {};
 
-      // 5. Ambil 10 aktivitas terbaru untuk "Riwayat Penilaian"
+        // Group details by Kantor
+        semuaPenilaian.forEach(ass => {
+          const kId = ass.kantorId;
+          if (!kId) return;
+          if (!groupedByKantor[kId]) {
+            groupedByKantor[kId] = {
+              nama: ass.kantor ? ass.kantor.nama : 'Kantor #' + kId,
+              details: []
+            };
+          }
+          groupedByKantor[kId].details.push(...ass.detail);
+        });
+
+        chartDataTim = Object.values(groupedByKantor).map(group => {
+          let totalScore = 0;
+
+          // Calculate Score based on Weighted Criteria (like Rekap Kantor)
+          konfigurasi.bobotKriteria.forEach(b => {
+            const relevant = group.details.filter(d => d.kunciKriteria === b.kunciKriteria);
+            if (relevant.length > 0) {
+              const avg = relevant.reduce((a, r) => a + Number(r.nilai), 0) / relevant.length;
+              totalScore += (avg * Number(b.bobot));
+            }
+          });
+
+          return {
+            kantor: group.nama,
+            rataRata: Number(totalScore.toFixed(2))
+          };
+        })
+          .sort((a, b) => b.rataRata - a.rataRata)
+          .slice(0, 5);
+      } else {
+        chartDataTim = [];
+      }
+
+      // 5. RESTORED: Ambil 10 aktivitas terbaru untuk "Riwayat Penilaian"
       const dataRiwayat = await prisma.penilaian.findMany({
         where: {
           periodeId: periodeAktif.id,
@@ -128,14 +159,6 @@ router.get("/", harusAdmin, async (req, res) => {
           isSelesai: isSubmitted && isLengkap && adaRekomendasi
         };
       });
-
-      // 7. Format data tim untuk chart
-      chartDataTim = Object.keys(perTim).map(key => ({
-        tim: key,
-        selesai: perTim[key].selesai,
-        totalTugas: perTim[key].totalTugas,
-        rataRata: perTim[key].countNilai > 0 ? (perTim[key].totalNilai / perTim[key].countNilai).toFixed(2) : 0
-      }));
     }
 
     const belumDiinput = Math.max(0, totalKantor - sudahDinilai - sedangProses);
