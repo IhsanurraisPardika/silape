@@ -71,56 +71,79 @@
 
                 <!-- Team Performance Chart -->
                 <div class="bg-white rounded-lg shadow p-6">
-                  <h2 class="text-xl font-semibold text-gray-800 mb-4">Penyelesaian per Tim</h2>
-                  <div class="h-64 flex items-center justify-center">
-                    <canvas id="teamChart"></canvas>
+                  <h2 class="text-xl font-semibold text-gray-800 mb-4">Peringkat Rata-rata Tertinggi (Top 5)</h2>
+                  <div class="space-y-3">
+                    <% chartData.dataTim.forEach((team, index)=> {
+                      let rankColor = 'bg-gray-100 text-gray-700';
+                      if (index === 0) rankColor = 'bg-yellow-100 text-yellow-700';
+                      if (index === 1) rankColor = 'bg-gray-200 text-gray-700';
+                      if (index === 2) rankColor = 'bg-orange-100 text-orange-800';
+                      %>
+                      <div
+                        class="flex flex-col sm:flex-row sm:items-center justify-between border rounded-lg p-3 hover:bg-gray-50 gap-2 sm:gap-0">
+                        <div class="flex items-center gap-3">
+                          <div
+                            class="w-8 h-8 <%= rankColor %> rounded-full flex items-center justify-center font-bold text-sm shrink-0">
+                            #<%= index + 1 %>
+                          </div>
+                          <div>
+                            <p class="font-semibold text-gray-800 text-sm">
+                              <%= team.kantor %>
+                            </p>
+                            <!-- Subtitle removed for cleaner look -->
+                          </div>
+                        </div>
+                        <span
+                          class="self-start sm:self-auto px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+                          Skor: <%= team.rataRata %>
+                        </span>
+                      </div>
+                      <% }); %>
+                        <% if (chartData.dataTim.length===0) { %>
+                          <p class="text-center text-gray-500 italic text-sm py-4">Belum ada data penilaian.</p>
+                          <% } %>
                   </div>
                 </div>
               </div>
 
-              <!-- Riwayat Penilaian -->
+              <!-- Riwayat Approve Kantor -->
               <div class="bg-white rounded-lg shadow p-6 mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Riwayat Penilaian</h2>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Riwayat Approve Kantor</h2>
 
                 <div class="space-y-3">
                   <% if (riwayatPenilaian.length===0) { %>
                     <div class="text-center py-8 text-gray-500 italic">
-                      Belum ada aktivitas penilaian.
+                      Belum ada data yang disetujui (Approved).
                     </div>
                     <% } else { %>
                       <% riwayatPenilaian.forEach(item=> { %>
                         <div
                           class="flex flex-col sm:flex-row sm:items-center justify-between border rounded-lg p-4 hover:bg-gray-50 gap-4 sm:gap-0">
                           <div class="flex items-center gap-4">
-                            <% if (item.isSelesai) { %>
-                              <div
-                                class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shrink-0">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7"></path>
-                                </svg>
-                              </div>
-                              <% } else { %>
-                                <div
-                                  class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
-                                  <div class="w-3 h-3 bg-white rounded-full"></div>
-                                </div>
-                                <% } %>
-                                  <div>
-                                    <p class="font-semibold text-gray-800">
-                                      <%= item.akun ? (item.akun.timKode || 'TIM' ) : 'TIM' %>
-                                        <% if (item.anggota) { %> - <%= item.anggota.nama %>
-                                            <% } %>
-                                    </p>
-                                    <p class="text-sm text-gray-500 uppercase">
-                                      <%= item.kantor ? item.kantor.nama : 'KANTOR TIDAK DIKETAHUI' %>
-                                    </p>
-                                  </div>
+                            <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shrink-0">
+                              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M5 13l4 4L19 7"></path>
+                              </svg>
+                            </div>
+                            <div>
+                              <p class="font-semibold text-gray-800">
+                                <%= item.kantor ? item.kantor.nama : 'KANTOR TIDAK DIKETAHUI' %>
+                              </p>
+                              <p class="text-sm text-gray-500">
+                                Tim: <%= item.akun ? (item.akun.timKode || 'TIM' ) : 'TIM' %>
+                              </p>
+                            </div>
                           </div>
-                          <span
-                            class="self-start sm:self-auto px-4 py-2 rounded-full <%= item.isSelesai ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700' %> text-sm font-medium">
-                            <%= item.isSelesai ? 'Selesai' : 'Proses' %>
-                          </span>
+                          <div class="text-right">
+                            <span
+                              class="block px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold mb-1">
+                              APPROVED
+                            </span>
+                            <span class="text-xs text-gray-500">
+                              <%= item.tanggalApprove %>
+                            </span>
+                          </div>
                         </div>
                         <% }); %>
                           <% } %>
@@ -188,104 +211,7 @@
       }
     });
 
-    // Team Chart
-    const labelsTim = chartData.dataTim.map(d => d.tim);
-    const dataSelesai = chartData.dataTim.map(d => d.selesai);
-    const dataRataRata = chartData.dataTim.map(d => d.rataRata);
-
-    const ctxTeam = document.getElementById('teamChart').getContext('2d');
-    new Chart(ctxTeam, {
-      type: 'bar',
-      data: {
-        labels: labelsTim,
-        datasets: [
-          {
-            label: 'Kantor Selesai',
-            data: dataSelesai,
-            backgroundColor: '#dc2626',
-            borderRadius: 5,
-            yAxisID: 'y'
-          },
-          {
-            label: 'Rata-rata Skor',
-            data: dataRataRata,
-            backgroundColor: '#3b82f6',
-            borderRadius: 5,
-            yAxisID: 'y1'
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            type: 'linear',
-            display: true,
-            position: 'left',
-            title: {
-              display: true,
-              text: 'Jumlah Kantor'
-            },
-            beginAtZero: true,
-            ticks: {
-              stepSize: 1
-            }
-          },
-          y1: {
-            type: 'linear',
-            display: true,
-            position: 'right',
-            title: {
-              display: true,
-              text: 'Rata-rata Skor'
-            },
-            grid: {
-              drawOnChartArea: false
-            },
-            beginAtZero: true,
-            max: 100
-          }
-        },
-        plugins: {
-          datalabels: {
-            anchor: 'end',
-            align: 'top',
-            color: '#444',
-            font: {
-              size: 10
-            },
-            formatter: (value, ctx) => {
-              if (ctx.datasetIndex === 0) { // Only for 'Kantor Selesai'
-                const totalTugas = chartData.dataTim[ctx.dataIndex].totalTugas || 0;
-                if (totalTugas > 0) {
-                  const pct = (value * 100 / totalTugas).toFixed(0);
-                  return pct + '%';
-                }
-              }
-              return '';
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: function (context) {
-                let label = context.dataset.label || '';
-                const value = context.parsed.y;
-                if (context.datasetIndex === 0) { // Kantor Selesai
-                  const totalTugas = chartData.dataTim[context.dataIndex].totalTugas || 0;
-                  const percentage = totalTugas > 0 ? (value * 100 / totalTugas).toFixed(1) : 0;
-                  return ` ${label}: ${value} (${percentage}%) dari ${totalTugas} tugas`;
-                }
-                return ` ${label}: ${value}`;
-              }
-            }
-          },
-          legend: {
-            position: 'bottom'
-          }
-        }
-      }
-    });
+    // Team Chart removed in favor of List View
   </script>
 </body>
 
