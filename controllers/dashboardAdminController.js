@@ -3,20 +3,32 @@ const prisma = new PrismaClient();
 
 exports.rekapKantor = async (req, res) => {
     try {
-        // 1. Ambil Periode Aktif
-        // Asumsi: Hanya ada 1 periode aktif
-        const periodeAktif = await prisma.periodePenilaian.findFirst({
-            where: { statusAktif: true },
-            orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
+        const { periodeId, kantorId } = req.query;
+
+        // 1. Ambil Semua Periode (untuk filter)
+        const periodes = await prisma.periodePenilaian.findMany({
+            orderBy: [{ tahun: 'desc' }, { semester: 'desc' }]
         });
 
-        // 2. Ambil Daftar Kantor (untuk filter)
+        // 2. Tentukan Periode Target
+        let periodeAktif; // Bisa aktif atau histori
+        if (periodeId) {
+            periodeAktif = await prisma.periodePenilaian.findUnique({
+                where: { id: parseInt(periodeId) }
+            });
+        } else {
+            periodeAktif = await prisma.periodePenilaian.findFirst({
+                where: { statusAktif: true },
+            });
+        }
+
+        // 3. Ambil Daftar Kantor (untuk filter)
         const kantorList = await prisma.kantor.findMany({
-            where: { statusAktif: true },
+            where: { statusAktif: true }, // Atau hapus filter active jika ingin lihat histori kantor lama? (Opsional, user minta filter kantor & semester)
             orderBy: { nama: 'asc' },
         });
 
-        const selectedKantorId = req.query.kantorId ? parseInt(req.query.kantorId) : null;
+        const selectedKantorId = kantorId ? parseInt(kantorId) : null;
         let selectedKantor = null;
         let rekapData = { groupedData: {}, pAverages: {} };
         let headerColumns = []; // Daftar penilai (nama anggota)
@@ -58,28 +70,43 @@ exports.rekapKantor = async (req, res) => {
             }
 
             if (konfigurasi) {
-                // 4. Ambil Semua Penilaian untuk Kantor & Periode ini
+                // 4. Ambil Semua Penilaian untuk Kantor & Periode ini (APPROVED only)
                 const penilaianList = await prisma.penilaian.findMany({
                     where: {
                         periodeId: periodeAktif.id,
                         kantorId: selectedKantorId,
+                        status: 'APPROVED',
                         status: { in: ['SUBMIT', 'APPROVED'] },
                     },
                     include: {
                         detail: true,
-                        anggota: true, // Untuk ambil nama anggota
-                        akun: true,    // Fallback jika anggota null (akun tim)
+                        anggota: true,
+                        akun: true,
                     },
                 });
 
+                // Cek apakah ada data yang belum diapprove (status SUBMIT)
+                const pendingCount = await prisma.penilaian.count({
+                    where: {
+                        periodeId: periodeAktif.id,
+                        kantorId: selectedKantorId,
+                        status: 'SUBMIT'
+                    }
+                });
+
+                const hasUnapprovedData = pendingCount > 0;
+
                 // Mapping Penilaian: Map [Nama Anggota] -> Object Penilaian
-                // Gunanya agar saat loop kolom (anggota), kita bisa cek "anggota ini punya nilai gk?"
                 const mapPenilaianByNama = {};
                 penilaianList.forEach((p) => {
-                    // Ambil nama penilai. Prioritas: nama anggota > nama akun (fallback)
                     const nama = p.anggota ? p.anggota.nama : p.akun.nama;
                     mapPenilaianByNama[nama] = p;
                 });
+
+                console.log("DEBUG REKAP KANTOR:");
+                console.log("Kantor ID:", selectedKantorId);
+                console.log("Has Unapproved:", hasUnapprovedData);
+                console.log("Approved Found:", penilaianList.length);
 
                 // 6. Struktur Data untuk Tabel
                 const groupedData = {
@@ -176,10 +203,12 @@ exports.rekapKantor = async (req, res) => {
             title: 'Rekap Kantor',
             kantorList,
             periodeAktif,
+            periodes,
             selectedKantorId,
             selectedKantor,
             headerColumns,
-            rekapData
+            rekapData,
+            hasUnapprovedData: typeof hasUnapprovedData !== 'undefined' ? hasUnapprovedData : false
         });
 
     } catch (error) {
@@ -232,11 +261,11 @@ exports.rekapKriteria = async (req, res) => {
         let rekapList = [];
 
         if (periodeAktif) {
-            // 3. Ambil Semua Penilaian SUBMIT
+            // 3. Ambil Semua Penilaian APPROVED
             const assessments = await prisma.penilaian.findMany({
                 where: {
                     periodeId: periodeAktif.id,
-                    status: { in: ['SUBMIT', 'APPROVED'] }
+                    status: 'APPROVED'
                 },
                 include: {
                     kantor: true,
@@ -244,6 +273,15 @@ exports.rekapKriteria = async (req, res) => {
                     detail: true
                 }
             });
+
+            // Cek data waiting approval global
+            const pendingCount = await prisma.penilaian.count({
+                where: {
+                    periodeId: periodeAktif.id,
+                    status: 'SUBMIT'
+                }
+            });
+            var hasUnapprovedData = pendingCount > 0;
 
             // 4. Group by Kantor
             const groupedByKantor = {};
@@ -298,7 +336,8 @@ exports.rekapKriteria = async (req, res) => {
             periodeAktif,
             periodes,
             criteriaList,
-            rekapList
+            rekapList,
+            hasUnapprovedData: typeof hasUnapprovedData !== 'undefined' ? hasUnapprovedData : false
         });
 
     } catch (error) {
@@ -320,8 +359,8 @@ exports.rekapPenilaian = async (req, res) => {
             });
         } else {
             periodeTarget = await prisma.periodePenilaian.findFirst({
-                where: { statusAktif: true }
-                ,orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
+                where: { statusAktif: true },
+                orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
             });
         }
 
@@ -348,7 +387,7 @@ exports.rekapPenilaian = async (req, res) => {
                 const assessments = await prisma.penilaian.findMany({
                     where: {
                         periodeId: periodeAktif.id,
-                        status: { in: ['SUBMIT', 'APPROVED'] }
+                        status: 'APPROVED'
                     },
                     include: {
                         kantor: true,
@@ -357,6 +396,15 @@ exports.rekapPenilaian = async (req, res) => {
                         detail: true
                     }
                 });
+
+                // Cek data waiting approval global
+                const pendingCount = await prisma.penilaian.count({
+                    where: {
+                        periodeId: periodeAktif.id,
+                        status: 'SUBMIT'
+                    }
+                });
+                var hasUnapprovedData = pendingCount > 0;
 
                 // Group by Kantor
                 const groupedByKantor = {};
@@ -437,7 +485,8 @@ exports.rekapPenilaian = async (req, res) => {
             user: req.session.user || 'ADMIN',
             periodeAktif,
             periodes,
-            rekapList
+            rekapList,
+            hasUnapprovedData: typeof hasUnapprovedData !== 'undefined' ? hasUnapprovedData : false
         });
 
     } catch (error) {
@@ -512,7 +561,7 @@ async function getRekapKantorData(kantorIdStr) {
                 where: {
                     periodeId: periodeAktif.id,
                     kantorId: selectedKantorId,
-                    status: { in: ['SUBMIT', 'APPROVED'] },
+                    status: 'APPROVED',
                 },
                 include: {
                     detail: true,
