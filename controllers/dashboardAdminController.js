@@ -387,8 +387,8 @@ exports.rekapPenilaian = async (req, res) => {
             });
         } else {
             periodeTarget = await prisma.periodePenilaian.findFirst({
-                where: { statusAktif: true },
-                orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
+                where: { statusAktif: true }
+                , orderBy: [{ tahun: 'desc' }, { semester: 'desc' }, { diubahPada: 'desc' }]
             });
         }
 
@@ -913,7 +913,7 @@ exports.downloadRekapKriteria = async (req, res) => {
 
 exports.downloadRekapPenilaian = async (req, res) => {
     try {
-        const { periodeId, timEmail } = req.query;
+        const { periodeId, timUsername } = req.query;
 
         // 1. Ambil Periode
         let periodeTarget;
@@ -944,8 +944,8 @@ exports.downloadRekapPenilaian = async (req, res) => {
             periodeId: periodeTarget.id,
             status: 'APPROVED'
         };
-        if (timEmail && timEmail !== 'all') {
-            whereClause.akunEmail = timEmail;
+        if (timUsername && timUsername !== 'all') {
+            whereClause.akunUsername = timUsername;
         }
 
         const assessments = await prisma.penilaian.findMany({
@@ -1091,7 +1091,7 @@ exports.downloadRekapPenilaian = async (req, res) => {
         });
 
         let teamSuffix = "";
-        if (timEmail && timEmail !== 'all' && rekapList.length > 0) {
+        if (timUsername && timUsername !== 'all' && rekapList.length > 0) {
             teamSuffix = `_${rekapList[0].tim.replace(/[^a-zA-Z0-9]/g, '_')}`;
         }
 

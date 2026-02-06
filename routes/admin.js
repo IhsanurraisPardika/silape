@@ -18,4 +18,19 @@ router.post("/tambah-user", harusAdmin, adminController.postTambahUser);
 // Daftar pengguna (untuk ADMIN dan SUPERADMIN)
 router.get("/daftar-pengguna", harusAdmin, adminController.getDaftarPengguna);
 
+// Halaman Statis Admin
+router.get('/tentang', harusAdmin, (req, res) => {
+    res.render('admin/tentang', {
+        title: 'Tentang Sistem',
+        user: req.session.user || null
+    });
+});
+
+router.get('/kriteriapenilaian', harusAdmin, (req, res) => {
+    res.render('admin/kriteriapenilaian', {
+        title: 'Kriteria Penilaian 5P',
+        user: req.session.user || null
+    });
+});
+
 module.exports = router;

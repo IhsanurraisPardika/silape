@@ -35,7 +35,7 @@ function forbidden(res, message) {
 }
 
 function requireAuth(req, res, next) {
-  if (!req.session?.user?.email) {
+  if (!req.session?.user?.username) {
     if (wantsJson(req)) {
       return res.status(401).json({
         success: false,
@@ -53,7 +53,7 @@ function requireRole(...allowedRoles) {
   const allowed = allowedRoles.map(normalizeRole);
 
   return (req, res, next) => {
-    if (!req.session?.user?.email) {
+    if (!req.session?.user?.username) {
       if (wantsJson(req)) {
         return res.status(401).json({
           success: false,

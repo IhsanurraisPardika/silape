@@ -17,7 +17,7 @@
       <!-- Main Content Area -->
       <div class="flex-1 flex flex-col overflow-hidden">
         <!-- Header -->
-        <%- include('../partials/header') %>
+        <%- include('../partials/headerAdmin') %>
 
           <!-- Main Content -->
           <main class="flex-1 overflow-auto bg-gray-50">
@@ -49,8 +49,8 @@
                     class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white">
                     <option value="all">Semua tim</option>
                     <% teams.forEach(t=> { %>
-                      <option value="<%= t.email %>">
-                        <%= t.timKode || t.nama || t.email %>
+                      <option value="<%= t.username %>">
+                        <%= t.timKode || t.nama || t.username %>
                       </option>
                       <% }) %>
                   </select>
@@ -73,11 +73,11 @@
           <script>
             document.getElementById('downloadBtn').addEventListener('click', function () {
               const periodeId = document.getElementById('periodeSelect').value;
-              const timEmail = document.getElementById('timSelect').value;
+              const timUsername = document.getElementById('timSelect').value;
 
               let url = `/dashboardAdmin/downloadRekapPenilaian?periodeId=${periodeId}`;
-              if (timEmail !== 'all') {
-                url += `&timEmail=${encodeURIComponent(timEmail)}`;
+              if (timUsername !== 'all') {
+                url += `&timUsername=${encodeURIComponent(timUsername)}`;
               }
 
               window.location.href = url;

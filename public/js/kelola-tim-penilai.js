@@ -123,13 +123,13 @@
       // open edit via delegation
       const btnEdit = t.closest(".btnOpenEdit");
       if (btnEdit) {
-        const email = btnEdit.getAttribute("data-email") || "";
+        const username = btnEdit.getAttribute("data-username") || "";
         const nama = btnEdit.getAttribute("data-nama") || "";
         const timId = btnEdit.getAttribute("data-timid") || "";
         const anggotaJson = btnEdit.getAttribute("data-anggota");
 
-        const emailHidden = $("#editEmailHidden");
-        const emailShow = $("#editEmailShow");
+        const usernameHidden = $("#editUsernameHidden");
+        const usernameShow = $("#editUsernameShow");
         const namaInput = $("#editNama");
         const passInput = $("#editPassword");
         const timSelect = $("#editTimId");
@@ -140,8 +140,8 @@
         const anggota4Input = $("#editAnggota4");
         const anggota5Input = $("#editAnggota5");
 
-        if (emailHidden) emailHidden.value = email;
-        if (emailShow) emailShow.value = email;
+        if (usernameHidden) usernameHidden.value = username;
+        if (usernameShow) usernameShow.value = username;
         if (namaInput) namaInput.value = nama;
         if (passInput) passInput.value = "";
         if (timSelect) timSelect.value = timId;
@@ -168,6 +168,10 @@
         setAnggota(anggota5Input, 4);
 
         openModal("modalEdit");
+
+        // Update hapus form hidden input as well
+        const usernameHiddenHapus = $("#editUsernameHiddenHapus");
+        if (usernameHiddenHapus) usernameHiddenHapus.value = username;
       }
     });
 
@@ -200,17 +204,17 @@
     const success = params.get("success");
     const error = params.get("error");
 
-    // ===== Auto-open Tambah kalau email duplicate (openTambah/emailError) =====
+    // ===== Auto-open Tambah kalau username duplicate (openTambah/usernameError) =====
     const openTambah = params.get("openTambah");
-    const emailError = params.get("emailError");
+    const usernameError = params.get("usernameError");
 
-    if (openTambah === "1" || emailError) {
+    if (openTambah === "1" || usernameError) {
       openModal("modalTambah");
       // pastikan wrapper tim sesuai role (kalau role sudah terisi dari server)
       toggleTimTambah();
 
       // bersihkan param agar tidak kebuka terus saat refresh
-      removeQueryParams(["openTambah", "emailError", "nama", "email", "peran", "timId"]);
+      removeQueryParams(["openTambah", "usernameError", "nama", "username", "peran", "timId"]);
     }
 
     // tampilkan swal setelah auto-open logic (biar tidak ganggu)
