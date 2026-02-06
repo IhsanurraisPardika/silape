@@ -3,15 +3,16 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 async function main() {
-  const email =
-    process.env.SUPERADMIN_EMAIL || "superadmin@semenpadang.co.id";
+  const username =
+    process.env.SUPERADMIN_USERNAME || "superadmin";
   const password =
     process.env.SUPERADMIN_PASSWORD || "Admin@12345";
 
   const hash = await bcrypt.hash(password, 10);
 
+  // Menggunakan username sebagai patokan
   await prisma.pengguna.upsert({
-    where: { email },
+    where: { username },
     update: {
       kataSandiHash: hash,
       peran: "SUPERADMINTPM",
@@ -20,7 +21,8 @@ async function main() {
       dihapusPada: null,   // pastikan aktif
     },
     create: {
-      email,
+      username,
+      // nama field does not exist in Pengguna model
       kataSandiHash: hash,
       peran: "SUPERADMINTPM",
       statusAktif: true,
@@ -28,16 +30,19 @@ async function main() {
     },
   });
 
-  // Opsional tapi bagus: kalau ada superadmin lain, nonaktifkan
+  // Opsional: nonaktifkan superadmin lain jika ada (selain yang baru diseseed)
+  // Note: Hati-hati jika ada banyak admin yang valid
+  /*
   await prisma.pengguna.updateMany({
     where: {
       peran: "SUPERADMINTPM",
-      email: { not: email },
+      username: { not: username },
     },
     data: { statusAktif: false },
   });
+  */
 
-  console.log("Seed SUPERADMIN selesai:", email);
+  console.log("Seed SUPERADMIN selesai:", username);
 }
 
 main()

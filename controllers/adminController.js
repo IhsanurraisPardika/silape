@@ -9,11 +9,11 @@ exports.getDashboard = async (req, res) => {
     const totalPengguna = await prisma.pengguna.count({
       where: { statusAktif: true }
     });
-    
+
     const totalTim = await prisma.tim.count({
       where: { statusAktif: true }
     });
-    
+
     const totalKantor = await prisma.kantor.count({
       where: { statusAktif: true }
     });
@@ -51,11 +51,11 @@ exports.getTambahAdmin = async (req, res) => {
 
 // Proses Tambah Admin
 exports.postTambahAdmin = async (req, res) => {
-  const { email, nama, password, konfirmasiPassword } = req.body;
-  
+  const { username, nama, password, konfirmasiPassword } = req.body;
+
   try {
     // Validasi
-    if (!email || !nama || !password || !konfirmasiPassword) {
+    if (!username || !nama || !password || !konfirmasiPassword) {
       return res.render('admin/tambah-admin', {
         title: 'Tambah Admin',
         user: req.session.user,
@@ -73,16 +73,16 @@ exports.postTambahAdmin = async (req, res) => {
       });
     }
 
-    // Cek apakah email sudah terdaftar
+    // Cek apakah username sudah terdaftar
     const existingUser = await prisma.pengguna.findUnique({
-      where: { email }
+      where: { username }
     });
 
     if (existingUser) {
       return res.render('admin/tambah-admin', {
         title: 'Tambah Admin',
         user: req.session.user,
-        error: 'Email sudah terdaftar',
+        error: 'Username sudah terdaftar (Username tidak case-sensitive saat pendaftaran, tapi case-sensitive saat login)',
         formData: req.body
       });
     }
@@ -94,16 +94,16 @@ exports.postTambahAdmin = async (req, res) => {
     // Buat admin baru
     await prisma.pengguna.create({
       data: {
-        email,
+        username,
         nama,
         kataSandiHash: hashedPassword,
         peran: 'ADMIN',
-        dibuatOlehEmail: req.session.user.email
+        dibuatOlehUsername: req.session.user.username
       }
     });
 
     res.redirect('/admin/dashboard?success=Admin berhasil ditambahkan');
-    
+
   } catch (error) {
     console.error('Post tambah admin error:', error);
     res.render('admin/tambah-admin', {
@@ -138,11 +138,11 @@ exports.getTambahUser = async (req, res) => {
 
 // Proses Tambah User
 exports.postTambahUser = async (req, res) => {
-  const { email, nama, password, konfirmasiPassword, peran, timId } = req.body;
-  
+  const { username, nama, password, konfirmasiPassword, peran, timId } = req.body;
+
   try {
     // Validasi
-    if (!email || !nama || !password || !konfirmasiPassword || !peran) {
+    if (!username || !nama || !password || !konfirmasiPassword || !peran) {
       return res.render('admin/tambah-user', {
         title: 'Tambah User',
         user: req.session.user,
@@ -173,16 +173,16 @@ exports.postTambahUser = async (req, res) => {
       });
     }
 
-    // Cek apakah email sudah terdaftar
+    // Cek apakah username sudah terdaftar
     const existingUser = await prisma.pengguna.findUnique({
-      where: { email }
+      where: { username }
     });
 
     if (existingUser) {
       return res.render('admin/tambah-user', {
         title: 'Tambah User',
         user: req.session.user,
-        error: 'Email sudah terdaftar',
+        error: 'Username sudah terdaftar (Username tidak case-sensitive saat pendaftaran, tapi case-sensitive saat login)',
         formData: req.body,
         timList: await prisma.tim.findMany({ where: { statusAktif: true } })
       });
@@ -194,11 +194,11 @@ exports.postTambahUser = async (req, res) => {
 
     // Data untuk user baru
     const userData = {
-      email,
+      username,
       nama,
       kataSandiHash: hashedPassword,
       peran,
-      dibuatOlehEmail: req.session.user.email
+      dibuatOlehUsername: req.session.user.username
     };
 
     // Tambah timId jika peran adalah TIM_PENILAI
@@ -212,7 +212,7 @@ exports.postTambahUser = async (req, res) => {
     });
 
     res.redirect('/admin/dashboard?success=User berhasil ditambahkan');
-    
+
   } catch (error) {
     console.error('Post tambah user error:', error);
     res.render('admin/tambah-user', {
@@ -233,7 +233,7 @@ exports.getDaftarPengguna = async (req, res) => {
       include: {
         tim: true,
         dibuatOleh: {
-          select: { nama: true, email: true }
+          select: { nama: true, username: true }
         }
       },
       orderBy: { dibuatPada: 'desc' }

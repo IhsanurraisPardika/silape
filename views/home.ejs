@@ -21,7 +21,6 @@
             background-color: rgba(255, 255, 255, 0.2);
             border-radius: 10px;
         }
-
     </style>
 </head>
 
@@ -43,7 +42,7 @@
                                 <h1 class="text-3xl md:text-5xl font-bold mb-2">Selamat Datang di Sistem Penilaian 5P
                                 </h1>
                                 <p class="text-lg md:text-2xl opacity-90">
-                                    <%= anggotaAktif ? anggotaAktif.nama : (user.nama || user.email) %>,
+                                    <%= anggotaAktif ? anggotaAktif.nama : (user.nama || user.username) %>,
                                         <%= user.timLabel ? user.timLabel : 'Tim Penilai' %>
                                 </p>
                             </div>
@@ -71,104 +70,110 @@
                                 <div
                                     class="bg-white rounded-lg shadow-lg p-5 md:p-6 border-l-4 border-green-500 transform transition hover:scale-105 md:col-span-2 order-2 md:order-1">
                                     <div class="w-full">
-                                        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-3">
+                                        <div
+                                            class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-3">
                                             <div>
                                                 <p class="text-gray-500 text-sm">Rata-rata Nilai per Kantor</p>
-                                                <p class="text-gray-400 text-xs mt-1">Grafik rata-rata masing-masing kantor yang dinilai tim</p>
+                                                <p class="text-gray-400 text-xs mt-1">Grafik rata-rata masing-masing
+                                                    kantor yang dinilai tim</p>
                                             </div>
                                             <div class="text-right">
                                                 <p class="text-xs text-gray-500">Rata-rata Semua Kantor</p>
-                                                <p class="text-lg font-bold text-green-600 leading-tight"><%= finalAverage %></p>
+                                                <p class="text-lg font-bold text-green-600 leading-tight">
+                                                    <%= finalAverage %>
+                                                </p>
                                             </div>
                                         </div>
 
-                                        <% const _kantorAverages = Array.isArray(kantorAverages) ? kantorAverages : []; %>
-                                        <% if (_kantorAverages.length === 0) { %>
-                                            <div class="h-40 flex items-center justify-center text-gray-400 text-sm italic bg-gray-50 rounded-lg border border-gray-100">
-                                                Belum ada data penilaian kantor yang lengkap untuk ditampilkan.
-                                            </div>
-                                        <% } else { %>
-                                            <div class="h-52 md:h-56">
-                                                <canvas id="kantorAvgChart"></canvas>
-                                            </div>
-                                            <script id="kantor-avg-data" type="application/json"><%- JSON.stringify(_kantorAverages) %></script>
-                                            <script>
-                                                (function () {
-                                                    const dataEl = document.getElementById('kantor-avg-data');
-                                                    const raw = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
-                                                    function wrapLabel(text, maxCharsPerLine) {
-                                                        const words = String(text || '').split(/\s+/).filter(Boolean);
-                                                        if (words.length === 0) return ['-'];
+                                        <% const _kantorAverages=Array.isArray(kantorAverages) ? kantorAverages : []; %>
+                                            <% if (_kantorAverages.length===0) { %>
+                                                <div
+                                                    class="h-40 flex items-center justify-center text-gray-400 text-sm italic bg-gray-50 rounded-lg border border-gray-100">
+                                                    Belum ada data penilaian kantor yang lengkap untuk ditampilkan.
+                                                </div>
+                                                <% } else { %>
+                                                    <div class="h-52 md:h-56">
+                                                        <canvas id="kantorAvgChart"></canvas>
+                                                    </div>
+                                                    <script id="kantor-avg-data"
+                                                        type="application/json"><%- JSON.stringify(_kantorAverages) %></script>
+                                                    <script>
+                                                        (function () {
+                                                            const dataEl = document.getElementById('kantor-avg-data');
+                                                            const raw = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+                                                            function wrapLabel(text, maxCharsPerLine) {
+                                                                const words = String(text || '').split(/\s+/).filter(Boolean);
+                                                                if (words.length === 0) return ['-'];
 
-                                                        const lines = [];
-                                                        let line = '';
-                                                        for (const w of words) {
-                                                            const next = line ? `${line} ${w}` : w;
-                                                            if (next.length <= maxCharsPerLine) {
-                                                                line = next;
-                                                            } else {
+                                                                const lines = [];
+                                                                let line = '';
+                                                                for (const w of words) {
+                                                                    const next = line ? `${line} ${w}` : w;
+                                                                    if (next.length <= maxCharsPerLine) {
+                                                                        line = next;
+                                                                    } else {
+                                                                        if (line) lines.push(line);
+                                                                        // Jika satu kata sangat panjang, potong agar tetap wrap
+                                                                        if (w.length > maxCharsPerLine) {
+                                                                            for (let i = 0; i < w.length; i += maxCharsPerLine) {
+                                                                                lines.push(w.slice(i, i + maxCharsPerLine));
+                                                                            }
+                                                                            line = '';
+                                                                        } else {
+                                                                            line = w;
+                                                                        }
+                                                                    }
+                                                                }
                                                                 if (line) lines.push(line);
-                                                                // Jika satu kata sangat panjang, potong agar tetap wrap
-                                                                if (w.length > maxCharsPerLine) {
-                                                                    for (let i = 0; i < w.length; i += maxCharsPerLine) {
-                                                                        lines.push(w.slice(i, i + maxCharsPerLine));
-                                                                    }
-                                                                    line = '';
-                                                                } else {
-                                                                    line = w;
-                                                                }
+                                                                return lines;
                                                             }
-                                                        }
-                                                        if (line) lines.push(line);
-                                                        return lines;
-                                                    }
 
-                                                    const labels = raw.map(x => wrapLabel(String(x.kantor), 14));
-                                                    const values = raw.map(x => Number(x.nilai));
+                                                            const labels = raw.map(x => wrapLabel(String(x.kantor), 14));
+                                                            const values = raw.map(x => Number(x.nilai));
 
-                                                    const canvas = document.getElementById('kantorAvgChart');
-                                                    if (!canvas) return;
+                                                            const canvas = document.getElementById('kantorAvgChart');
+                                                            if (!canvas) return;
 
-                                                    new Chart(canvas, {
-                                                        type: 'bar',
-                                                        data: {
-                                                            labels,
-                                                            datasets: [{
-                                                                label: 'Rata-rata',
-                                                                data: values,
-                                                                backgroundColor: 'rgba(34, 197, 94, 0.25)',
-                                                                borderColor: 'rgba(34, 197, 94, 1)',
-                                                                borderWidth: 1,
-                                                                borderRadius: 6
-                                                            }]
-                                                        },
-                                                        options: {
-                                                            responsive: true,
-                                                            maintainAspectRatio: false,
-                                                            plugins: {
-                                                                legend: { display: false },
-                                                                tooltip: {
-                                                                    callbacks: {
-                                                                        label: (ctx) => ` ${ctx.parsed.y}`
-                                                                    }
-                                                                }
-                                                            },
-                                                            scales: {
-                                                                x: {
-                                                                    ticks: { color: '#6b7280', maxRotation: 0, autoSkip: true },
-                                                                    grid: { display: false }
+                                                            new Chart(canvas, {
+                                                                type: 'bar',
+                                                                data: {
+                                                                    labels,
+                                                                    datasets: [{
+                                                                        label: 'Rata-rata',
+                                                                        data: values,
+                                                                        backgroundColor: 'rgba(34, 197, 94, 0.25)',
+                                                                        borderColor: 'rgba(34, 197, 94, 1)',
+                                                                        borderWidth: 1,
+                                                                        borderRadius: 6
+                                                                    }]
                                                                 },
-                                                                y: {
-                                                                    beginAtZero: true,
-                                                                    ticks: { color: '#6b7280' },
-                                                                    grid: { color: 'rgba(107,114,128,0.15)' }
+                                                                options: {
+                                                                    responsive: true,
+                                                                    maintainAspectRatio: false,
+                                                                    plugins: {
+                                                                        legend: { display: false },
+                                                                        tooltip: {
+                                                                            callbacks: {
+                                                                                label: (ctx) => ` ${ctx.parsed.y}`
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    scales: {
+                                                                        x: {
+                                                                            ticks: { color: '#6b7280', maxRotation: 0, autoSkip: true },
+                                                                            grid: { display: false }
+                                                                        },
+                                                                        y: {
+                                                                            beginAtZero: true,
+                                                                            ticks: { color: '#6b7280' },
+                                                                            grid: { color: 'rgba(107,114,128,0.15)' }
+                                                                        }
+                                                                    }
                                                                 }
-                                                            }
-                                                        }
-                                                    });
-                                                })();
-                                            </script>
-                                        <% } %>
+                                                            });
+                                                        })();
+                                                    </script>
+                                                    <% } %>
                                     </div>
                                 </div>
                             </div>
@@ -185,7 +190,8 @@
                                             P1</div>
                                         <div>
                                             <h3 class="font-semibold text-gray-800">Pemilahan</h3>
-                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Memisahkan yang perlu dan tidak perlu, agar area kerja lebih ringkas.</p>
+                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Memisahkan yang perlu
+                                                dan tidak perlu, agar area kerja lebih ringkas.</p>
                                         </div>
                                     </div>
 
@@ -196,7 +202,8 @@
                                             P2</div>
                                         <div>
                                             <h3 class="font-semibold text-gray-800">Penataan</h3>
-                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Menata barang sesuai tempatnya supaya mudah dicari dan cepat digunakan.</p>
+                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Menata barang sesuai
+                                                tempatnya supaya mudah dicari dan cepat digunakan.</p>
                                         </div>
                                     </div>
 
@@ -207,7 +214,8 @@
                                             P3</div>
                                         <div>
                                             <h3 class="font-semibold text-gray-800">Pembersihan</h3>
-                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Menjaga kebersihan agar kondisi kerja aman, nyaman, dan rapi setiap saat.</p>
+                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Menjaga kebersihan
+                                                agar kondisi kerja aman, nyaman, dan rapi setiap saat.</p>
                                         </div>
                                     </div>
 
@@ -218,7 +226,8 @@
                                             P4</div>
                                         <div>
                                             <h3 class="font-semibold text-gray-800">Pemantapan</h3>
-                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Membuat standar agar pemilahan, penataan, dan pembersihan berjalan konsisten.</p>
+                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Membuat standar agar
+                                                pemilahan, penataan, dan pembersihan berjalan konsisten.</p>
                                         </div>
                                     </div>
 
@@ -229,7 +238,8 @@
                                             P5</div>
                                         <div>
                                             <h3 class="font-semibold text-gray-800">Pembiasaan</h3>
-                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Membangun disiplin dan kebiasaan 5P sebagai budaya kerja sehari-hari.</p>
+                                            <p class="text-sm text-gray-600 mt-1 leading-relaxed">Membangun disiplin dan
+                                                kebiasaan 5P sebagai budaya kerja sehari-hari.</p>
                                         </div>
                                     </div>
                                 </div>

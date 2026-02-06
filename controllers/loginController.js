@@ -17,7 +17,7 @@ function timLabel(timKode) {
 }
 
 exports.getlogin = (req, res) => {
-  if (req.session?.user?.email) {
+  if (req.session?.user?.username) {
     return res.redirect(redirectByRole(req.session.user.peran));
   }
 
@@ -26,28 +26,28 @@ exports.getlogin = (req, res) => {
     appName: "SILAPE",
     message: "",
     error: null,
-    email: "",
+    username: "",
   });
 };
 
 exports.postlogin = async (req, res) => {
-  const { email, password } = req.body || {};
+  const { username, password } = req.body || {};
 
   try {
-    if (!email || !password) {
+    if (!username || !password) {
       return res.status(400).render("login", {
         title: "Login - SILAPE",
         appName: "SILAPE",
         message: "",
-        error: "Email dan password harus diisi",
-        email: email || "",
+        error: "Username dan password harus diisi",
+        username: username || "",
       });
     }
 
     // Ambil user. Jangan include "tim" karena sudah tidak ada.
     // Ambil anggotaTim hanya kalau role-nya TIMPENILAI (opsional dilakukan setelah cek password juga).
     const pengguna = await prisma.pengguna.findUnique({
-      where: { email },
+      where: { username },
       include: {
         anggotaTim: true, // aman; untuk admin/superadmin akan kosong
       },
@@ -58,8 +58,19 @@ exports.postlogin = async (req, res) => {
         title: "Login - SILAPE",
         appName: "SILAPE",
         message: "",
-        error: "Email atau password salah",
-        email,
+        error: "Username atau password salah",
+        username,
+      });
+    }
+
+    // ENFORCE CASE SENSITIVITY
+    if (pengguna.username !== username) {
+      return res.status(401).render("login", {
+        title: "Login - SILAPE",
+        appName: "SILAPE",
+        message: "",
+        error: "Username atau password salah (perhatikan huruf besar/kecil)",
+        username,
       });
     }
 
@@ -69,7 +80,7 @@ exports.postlogin = async (req, res) => {
         appName: "SILAPE",
         message: "",
         error: "Akun tidak aktif. Hubungi administrator.",
-        email,
+        username,
       });
     }
 
@@ -79,8 +90,8 @@ exports.postlogin = async (req, res) => {
         title: "Login - SILAPE",
         appName: "SILAPE",
         message: "",
-        error: "Email atau password salah",
-        email,
+        error: "Username atau password salah",
+        username,
       });
     }
 
@@ -94,7 +105,7 @@ exports.postlogin = async (req, res) => {
           appName: "SILAPE",
           message: "",
           error: "Akun tim belum memiliki TimKode. Hubungi administrator.",
-          email,
+          username,
         });
       }
 
@@ -110,7 +121,7 @@ exports.postlogin = async (req, res) => {
           appName: "SILAPE",
           message: "",
           error: "Akun tim belum memiliki Anggota 1 (ketua). Hubungi administrator.",
-          email,
+          username,
         });
       }
 
@@ -129,7 +140,7 @@ exports.postlogin = async (req, res) => {
 
     // Session user: schema terbaru tidak punya id & (mungkin) tidak punya nama.
     req.session.user = {
-      email: pengguna.email,
+      username: pengguna.username,
       peran: pengguna.peran,
       timKode: pengguna.timKode ?? null,
       timLabel: timLabel(pengguna.timKode),
@@ -149,7 +160,7 @@ exports.postlogin = async (req, res) => {
       appName: "SILAPE",
       message: "",
       error: "Terjadi kesalahan server. Silakan coba lagi.",
-      email: email || "",
+      username: username || "",
     });
   }
 };
@@ -165,7 +176,7 @@ exports.logout = (req, res) => {
 const DEFAULT_EXPECTED_DETAIL_COUNT = 16;
 
 exports.gethome = async (req, res) => {
-  if (!req.session?.user?.email) return res.redirect("/login");
+  if (!req.session?.user?.username) return res.redirect("/login");
 
   let totalAssessed = 0;
   let finalAverage = 0;
@@ -182,7 +193,7 @@ exports.gethome = async (req, res) => {
 
     // 1. Ambil data user lengkap untuk tahu timKode
     const pengguna = await prisma.pengguna.findUnique({
-      where: { email: user.email },
+      where: { username: user.username },
       include: { anggotaTim: true }
     });
 
@@ -190,7 +201,7 @@ exports.gethome = async (req, res) => {
       // 2. Ambil Penugasan Kantor untuk User ini
       const penugasan = await prisma.penugasanKantorAkun.findMany({
         where: {
-          akunEmail: user.email,
+          akunUsername: user.username,
           periodeId: activePeriode.id,
           statusAktif: true
         },
@@ -227,7 +238,7 @@ exports.gethome = async (req, res) => {
           where: {
             periodeId: p.periodeId,
             kantorId: p.kantorId,
-            akunEmail: user.email,
+            akunUsername: user.username,
             anggotaId: { in: anggotaIdsAktif }
           },
           select: {
@@ -345,7 +356,7 @@ exports.gethome = async (req, res) => {
 };
 
 exports.requireAuth = (req, res, next) => {
-  if (!req.session?.user?.email) return res.redirect("/login");
+  if (!req.session?.user?.username) return res.redirect("/login");
   next();
 };
 

@@ -32,7 +32,7 @@ exports.index = async (req, res) => {
 
     // 1. Ambil data user lengkap
     const pengguna = await prisma.pengguna.findUnique({
-      where: { email: user.email },
+      where: { username: user.username },
       include: {
         anggotaTim: true // Untuk cek urutan (ketua = 1)
       }
@@ -62,7 +62,7 @@ exports.index = async (req, res) => {
     // Kita asumsikan menampilkan untuk Periode Aktif (atau semua? Request tidak spesifik, kita ambil semua yang ditugaskan)
     const penugasan = await prisma.penugasanKantorAkun.findMany({
       where: {
-        akunEmail: user.email,
+        akunUsername: user.username,
         periodeId: activePeriode.id,
         statusAktif: true
       },
@@ -122,7 +122,7 @@ exports.index = async (req, res) => {
         where: {
           periodeId: p.periodeId,
           kantorId: p.kantorId,
-          akunEmail: user.email,
+          akunUsername: user.username,
           anggotaId: { in: anggotaIdsAktif }
         },
         select: {
@@ -142,6 +142,7 @@ exports.index = async (req, res) => {
           }
         }
       });
+
 
       const hasStarted = penilaianTim.length > 0;
 
@@ -176,12 +177,12 @@ exports.index = async (req, res) => {
 
       const approvedAt = approvedAllRequired
         ? penilaianTim
-            .filter((item) => item.status === 'APPROVED')
-            .reduce((maxDate, item) => {
-              const d = item.diubahPada || item.tanggalSubmit || item.tanggalMulaiInput || item.dibuatPada;
-              if (!d) return maxDate;
-              return !maxDate || d > maxDate ? d : maxDate;
-            }, null)
+          .filter((item) => item.status === 'APPROVED')
+          .reduce((maxDate, item) => {
+            const d = item.diubahPada || item.tanggalSubmit || item.tanggalMulaiInput || item.dibuatPada;
+            if (!d) return maxDate;
+            return !maxDate || d > maxDate ? d : maxDate;
+          }, null)
         : null;
 
       let status;
@@ -302,7 +303,7 @@ exports.approve = async (req, res) => {
     }
 
     const pengguna = await prisma.pengguna.findUnique({
-      where: { email: user.email },
+      where: { username: user.username },
       include: { anggotaTim: true }
     });
 
@@ -328,7 +329,7 @@ exports.approve = async (req, res) => {
       where: {
         periodeId: parseInt(periodeId),
         kantorId: parseInt(kantorId),
-        akunEmail: user.email,
+        akunUsername: user.username,
         anggotaId: { in: anggotaIdsAktif }
       },
       select: {
@@ -368,7 +369,7 @@ exports.approve = async (req, res) => {
       where: {
         periodeId: parseInt(periodeId),
         kantorId: parseInt(kantorId),
-        akunEmail: user.email,
+        akunUsername: user.username,
         anggotaId: { in: anggotaIdsAktif }
       },
       data: {
@@ -400,7 +401,7 @@ exports.downloadBuktiApproval = async (req, res) => {
     }
 
     const pengguna = await prisma.pengguna.findUnique({
-      where: { email: user.email },
+      where: { username: user.username },
       include: { anggotaTim: true }
     });
 
@@ -417,7 +418,7 @@ exports.downloadBuktiApproval = async (req, res) => {
 
     const penugasan = await prisma.penugasanKantorAkun.findFirst({
       where: {
-        akunEmail: user.email,
+        akunUsername: user.username,
         kantorId: parseInt(kantorId),
         periodeId: parseInt(periodeId),
         statusAktif: true
@@ -437,7 +438,7 @@ exports.downloadBuktiApproval = async (req, res) => {
       where: {
         periodeId: parseInt(periodeId),
         kantorId: parseInt(kantorId),
-        akunEmail: user.email,
+        akunUsername: user.username,
         anggotaId: { in: anggotaIdsAktif }
       },
       select: {

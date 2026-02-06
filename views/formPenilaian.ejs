@@ -21,6 +21,7 @@
         /* Prevent mobile browsers (iOS/Chrome) from auto-zooming on input focus.
            Auto-zoom usually happens when input font-size < 16px. */
         @media (max-width: 768px) {
+
             input,
             select,
             textarea {
@@ -115,7 +116,8 @@
                                             class="font-bold text-gray-700 uppercase tracking-wide whitespace-normal break-words leading-snug">
                                             <%= (kantor?.nama || 'KANTOR PENILAIAN' ).toUpperCase() %>
                                         </h2>
-                                        <p class="text-gray-400 text-xs whitespace-normal break-words leading-snug">Formulir Penilaian Standar 5P Kantor
+                                        <p class="text-gray-400 text-xs whitespace-normal break-words leading-snug">
+                                            Formulir Penilaian Standar 5P Kantor
                                         </p>
                                     </div>
                                 </div>
@@ -126,34 +128,48 @@
                                 </button>
                             </div>
 
-                            <div class="bg-white rounded-t-xl border-x border-t border-gray-200 p-2 grid grid-cols-5 gap-1 shadow-sm">
+                            <div
+                                class="bg-white rounded-t-xl border-x border-t border-gray-200 p-2 grid grid-cols-5 gap-1 shadow-sm">
                                 <button onclick="jumpToStep(1)" id="nav-1"
                                     class="flex flex-col items-center justify-center w-full py-3 px-2 transition step-active">
-                                    <span class="text-[10px] font-bold uppercase text-center leading-tight break-words">P1 - Pemilahan</span>
+                                    <span
+                                        class="text-[10px] font-bold uppercase text-center leading-tight break-words">P1
+                                        - Pemilahan</span>
                                 </button>
                                 <button onclick="jumpToStep(2)" id="nav-2"
                                     class="flex flex-col items-center justify-center w-full py-3 px-2 transition text-gray-400">
-                                    <span class="text-[10px] font-bold uppercase text-center leading-tight break-words">P2 - Penataan</span>
+                                    <span
+                                        class="text-[10px] font-bold uppercase text-center leading-tight break-words">P2
+                                        - Penataan</span>
                                 </button>
                                 <button onclick="jumpToStep(3)" id="nav-3"
                                     class="flex flex-col items-center justify-center w-full py-3 px-2 transition text-gray-400">
-                                    <span class="text-[10px] font-bold uppercase text-center leading-tight break-words">P3 - Pembersihan</span>
+                                    <span
+                                        class="text-[10px] font-bold uppercase text-center leading-tight break-words">P3
+                                        - Pembersihan</span>
                                 </button>
                                 <button onclick="jumpToStep(4)" id="nav-4"
                                     class="flex flex-col items-center justify-center w-full py-3 px-2 transition text-gray-400">
-                                    <span class="text-[10px] font-bold uppercase text-center leading-tight break-words">P4 - Pemantapan</span>
+                                    <span
+                                        class="text-[10px] font-bold uppercase text-center leading-tight break-words">P4
+                                        - Pemantapan</span>
                                 </button>
                                 <button onclick="jumpToStep(5)" id="nav-5"
                                     class="flex flex-col items-center justify-center w-full py-3 px-2 transition text-gray-400">
-                                    <span class="text-[10px] font-bold uppercase text-center leading-tight break-words">P5 - Pembiasaan</span>
+                                    <span
+                                        class="text-[10px] font-bold uppercase text-center leading-tight break-words">P5
+                                        - Pembiasaan</span>
                                 </button>
                             </div>
 
                             <div class="bg-white rounded-b-xl shadow-lg border border-gray-200 overflow-hidden">
                                 <div
                                     class="bg-[#C8102E] text-white px-4 md:px-8 py-4 font-bold uppercase tracking-widest text-sm flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                                    <span id="step-title-display" class="whitespace-normal break-words leading-snug">Kriteria P1 - Pemilahan</span>
-                                    <span class="bg-white/20 px-3 py-1 rounded text-[10px] flex-shrink-0" id="step-counter">STEP 1 OF 5</span>
+                                    <span id="step-title-display"
+                                        class="whitespace-normal break-words leading-snug">Kriteria P1 -
+                                        Pemilahan</span>
+                                    <span class="bg-white/20 px-3 py-1 rounded text-[10px] flex-shrink-0"
+                                        id="step-counter">STEP 1 OF 5</span>
                                 </div>
 
                                 <form id="penilaian-form">
@@ -219,7 +235,7 @@
         kantorId: kantor ? kantor.id : null,
         kantorNama: kantor ? kantor.nama : null,
         kantorList: (kantorList || []).map(k => ({ id: k.id, nama: k.nama })),
-        userNama: anggotaAktif ? anggotaAktif.nama : (user.nama || user.email),
+        userNama: anggotaAktif ? anggotaAktif.nama : (user.nama || user.username),
         existingDetails: existingDetails || [],
         catatanRekomendasi: catatanRekomendasi || ""
     }) %></script>

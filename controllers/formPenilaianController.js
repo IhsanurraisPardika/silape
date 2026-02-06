@@ -74,7 +74,7 @@ exports.getFormPenilaian = async (req, res) => {
             isTimPenilai
                 ? prisma.penugasanKantorAkun.findMany({ // Jika TIMPENILAI, ambil dari penugasan
                     where: {
-                        akunEmail: user.email, // Filter berdasarkan email tim yang login
+                        akunUsername: user.username, // Filter berdasarkan email tim yang login
                         statusAktif: true,
                         kantor: { statusAktif: true },
                         periode: { statusAktif: true }
@@ -125,7 +125,7 @@ exports.getFormPenilaian = async (req, res) => {
                 where: {
                     periodeId: periode.id,
                     kantorId: parseInt(kantorId),
-                    akunEmail: user.email,
+                    akunUsername: user.username,
                     anggotaId: currentAnggotaId // Menggunakan ID anggota spesifik
                 },
                 include: {
@@ -267,7 +267,7 @@ exports.postFormPenilaian = async (req, res) => {
                     where: {
                         periodeId: periode.id,
                         kantorId: kantorIdInt, // Pastikan tersimpan sesuai kantor yang dipilih
-                        akunEmail: user.email,
+                        akunUsername: user.username,
                         anggotaId: currentAnggotaId // Cek berdasarkan anggota spesifik
                     }
                 });
@@ -292,7 +292,7 @@ exports.postFormPenilaian = async (req, res) => {
                         data: {
                             periodeId: periode.id,
                             kantorId: kantorIdInt,
-                            akunEmail: user.email,
+                            akunUsername: user.username,
                             anggotaId: currentAnggotaId,
                             status: 'DRAFT',
                             ...headerData
@@ -303,7 +303,7 @@ exports.postFormPenilaian = async (req, res) => {
                 // Upsert Detail (Simpan Nilai) - Hanya jika ada item
                 if (item) {
                     // Determine effective author for this item
-                    const effectiveAuthor = item.namaAnggota || anggotaAktif?.nama || user.nama || user.email;
+                    const effectiveAuthor = item.namaAnggota || anggotaAktif?.nama || user.nama || user.username;
 
                     const kategoriEnum = item.pKode;
                     if (!kategoriEnum || !['P1', 'P2', 'P3', 'P4', 'P5'].includes(kategoriEnum)) {
@@ -348,7 +348,7 @@ exports.postFormPenilaian = async (req, res) => {
                 where: {
                     periodeId: periode.id,
                     kantorId: kantorIdInt,
-                    akunEmail: user.email,
+                    akunUsername: user.username,
                     anggotaId: currentAnggotaId
                 }
             });
@@ -374,7 +374,7 @@ exports.postFormPenilaian = async (req, res) => {
                     data: {
                         periodeId: periode.id,
                         kantorId: kantorIdInt,
-                        akunEmail: user.email,
+                        akunUsername: user.username,
                         anggotaId: currentAnggotaId,
                         status: action === 'submit' ? 'SUBMIT' : 'DRAFT',
                         tanggalSubmit: action === 'submit' ? new Date() : null,
@@ -395,7 +395,7 @@ exports.postFormPenilaian = async (req, res) => {
 
 
             // Define default author (fallback)
-            const namaPenginput = anggotaAktif ? anggotaAktif.nama : (user.nama || user.email);
+            const namaPenginput = anggotaAktif ? anggotaAktif.nama : (user.nama || user.username);
 
             for (const item of assessments) {
                 if (!item.kriteriaKey || typeof item.kriteriaKey !== 'string') {
