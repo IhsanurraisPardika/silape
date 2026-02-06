@@ -96,8 +96,9 @@ router.get("/", harusAdmin, async (req, res) => {
       if (konfigurasi && konfigurasi.bobotKriteria) {
         const groupedByKantor = {};
 
-        // Group details by Kantor
+        // Group details by Kantor (Hanya yang APPROVED)
         semuaPenilaian.forEach(ass => {
+          if (ass.status !== 'APPROVED') return; // Filter Approved
           const kId = ass.kantorId;
           if (!kId) return;
           if (!groupedByKantor[kId]) {
@@ -132,31 +133,45 @@ router.get("/", harusAdmin, async (req, res) => {
         chartDataTim = [];
       }
 
-      // 5. RESTORED: Ambil 10 aktivitas terbaru untuk "Riwayat Penilaian"
-      const dataRiwayat = await prisma.penilaian.findMany({
+      // 5. Riwayat Approve Kantor (Hanya yang APPROVED)
+      // Ambil lebih banyak data dulu untuk di-deduplicate (karena 1 kantor bisa punya banyak record penilaian dari anggota tim)
+      const rawRiwayat = await prisma.penilaian.findMany({
         where: {
           periodeId: periodeAktif.id,
+          status: 'APPROVED'
         },
         include: {
           kantor: true,
           akun: true,
           anggota: true,
-          detail: true,
         },
         orderBy: {
-          diubahPada: "desc",
+          diubahPada: "desc", // Waktu approval (update terakhir)
         },
-        take: 10,
+        take: 50, // Ambil cukup banyak untuk antisipasi duplikat
       });
 
-      riwayatPenilaian = dataRiwayat.map(item => {
-        const isLengkap = item.detail ? item.detail.length >= totalKriteriaDiharapkan : false;
-        const adaRekomendasi = item.catatanRekomendasi && item.catatanRekomendasi.trim() !== "";
-        const isSubmitted = item.status === "SUBMIT";
+      // Deduplikasi by KantorId (Ambil yang paling baru aja)
+      const uniqueRiwayat = [];
+      const seenKantorIds = new Set();
+
+      for (const item of rawRiwayat) {
+        if (!seenKantorIds.has(item.kantorId)) {
+          seenKantorIds.add(item.kantorId);
+          uniqueRiwayat.push(item);
+        }
+        if (uniqueRiwayat.length >= 10) break; // Cukup 10 unique
+      }
+
+      riwayatPenilaian = uniqueRiwayat.map(item => {
+        // Format tanggal approval
+        const dateObj = new Date(item.diubahPada);
+        const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
         return {
           ...item,
-          isSelesai: isSubmitted && isLengkap && adaRekomendasi
+          tanggalApprove: dateStr,
+          approvedBy: 'Ketua Tim' // Asumsi approval oleh ketua
         };
       });
     }
