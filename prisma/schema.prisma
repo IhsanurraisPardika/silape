@@ -41,8 +41,8 @@ enum KategoriPenilaian {
 }
 
 model Pengguna {
-  // PK pakai email
-  email         String @id @db.VarChar(191)
+  // PK pakai username
+  username      String @id @db.VarChar(191)
   kataSandiHash String @db.VarChar(191)
 
   peran   PeranPengguna
@@ -69,19 +69,19 @@ model Pengguna {
 }
 
 model AnggotaTim {
-  id        Int    @id @default(autoincrement())
-  akunEmail String @db.VarChar(191)
-  urutan    Int
-  nama      String @db.VarChar(191)
-  statusAktif Boolean @default(true)
+  id           Int    @id @default(autoincrement())
+  akunUsername String @db.VarChar(191)
+  urutan       Int
+  nama         String @db.VarChar(191)
+  statusAktif  Boolean @default(true)
 
-  akun Pengguna @relation(fields: [akunEmail], references: [email], onDelete: Cascade)
+  akun Pengguna @relation(fields: [akunUsername], references: [username], onDelete: Cascade)
 
   // INI YANG KURANG:
   penilaian Penilaian[] @relation("AnggotaPenilai")
 
-  @@unique([akunEmail, urutan])
-  @@index([akunEmail])
+  @@unique([akunUsername, urutan])
+  @@index([akunUsername])
   @@map("anggota_tim")
 }
 
@@ -93,11 +93,11 @@ model PeriodePenilaian {
   namaPeriode String @db.VarChar(100) // mis: "2026 Semester 1"
   statusAktif Boolean @default(true)
 
-  dibuatOlehEmail String?
-  dibuatPada      DateTime @default(now())
-  diubahPada      DateTime @updatedAt
+  dibuatOlehUsername String?
+  dibuatPada         DateTime @default(now())
+  diubahPada         DateTime @updatedAt
 
-  dibuatOleh Pengguna? @relation("PeriodeDibuatOleh", fields: [dibuatOlehEmail], references: [email])
+  dibuatOleh Pengguna? @relation("PeriodeDibuatOleh", fields: [dibuatOlehUsername], references: [username])
 
   penugasanKantor  PenugasanKantorAkun[]
   konfigurasiBobot KonfigurasiBobot[]
@@ -131,7 +131,7 @@ model PenugasanKantorAkun {
   kantorId  Int
 
   // akun tim penilai yang ditugaskan
-  akunEmail String @db.VarChar(191)
+  akunUsername String @db.VarChar(191)
 
   statusAktif    Boolean   @default(true)
   tanggalMulai   DateTime?
@@ -143,11 +143,11 @@ model PenugasanKantorAkun {
 
   periode PeriodePenilaian @relation(fields: [periodeId], references: [id], onDelete: Cascade)
   kantor  Kantor           @relation(fields: [kantorId], references: [id], onDelete: Cascade)
-  akun    Pengguna         @relation(fields: [akunEmail], references: [email], onDelete: Cascade)
+  akun    Pengguna         @relation(fields: [akunUsername], references: [username], onDelete: Cascade)
 
   // default asumsi: 1 kantor hanya ditugaskan ke 1 akun pada 1 periode
   @@unique([periodeId, kantorId])
-  @@index([akunEmail])
+  @@index([akunUsername])
   @@index([periodeId])
   @@map("penugasan_kantor_akun")
 }
@@ -159,12 +159,12 @@ model KonfigurasiBobot {
   nama        String  @db.VarChar(191)
   statusAktif Boolean @default(true)
 
-  dibuatOlehEmail String?
-  dibuatPada      DateTime @default(now())
-  diubahPada      DateTime @updatedAt
+  dibuatOlehUsername String?
+  dibuatPada         DateTime @default(now())
+  diubahPada         DateTime @updatedAt
 
   periode   PeriodePenilaian @relation(fields: [periodeId], references: [id], onDelete: Cascade)
-  dibuatOleh Pengguna?       @relation("KonfigurasiDibuatOleh", fields: [dibuatOlehEmail], references: [email])
+  dibuatOleh Pengguna?       @relation("KonfigurasiDibuatOleh", fields: [dibuatOlehUsername], references: [username])
 
   bobotKriteria BobotKriteria[]
   penilaian     Penilaian[]
@@ -198,7 +198,7 @@ model Penilaian {
   kantorId  Int
 
   // akun tim yang login
-  akunEmail String @db.VarChar(191)
+  akunUsername String @db.VarChar(191)
 
   // siapa anggota yang dipilih saat menilai
   anggotaId Int?
@@ -218,7 +218,7 @@ model Penilaian {
 
   periode PeriodePenilaian @relation(fields: [periodeId], references: [id], onDelete: Cascade)
   kantor  Kantor           @relation(fields: [kantorId], references: [id], onDelete: Cascade)
-  akun    Pengguna         @relation(fields: [akunEmail], references: [email], onDelete: Cascade)
+  akun    Pengguna         @relation(fields: [akunUsername], references: [username], onDelete: Cascade)
   anggota AnggotaTim?      @relation("AnggotaPenilai", fields: [anggotaId], references: [id], onDelete: Restrict)
 
   konfigurasiBobot KonfigurasiBobot? @relation(fields: [konfigurasiBobotId], references: [id], onDelete: SetNull)
@@ -226,8 +226,8 @@ model Penilaian {
   detail DetailPenilaian[]
 
   // mencegah 1 anggota menilai kantor yang sama di periode yang sama lebih dari sekali
-  @@unique([periodeId, kantorId, akunEmail, anggotaId])
-  @@index([akunEmail])
+  @@unique([periodeId, kantorId, akunUsername, anggotaId])
+  @@index([akunUsername])
   @@index([periodeId, kantorId])
   @@index([status])
   @@map("penilaian")

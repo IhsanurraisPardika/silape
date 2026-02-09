@@ -50,7 +50,7 @@ exports.index = async (req, res) => {
       const displayName = ketua ? ketua.nama : "Tanpa Nama";
 
       return {
-        email: u.email,
+        username: u.username,
         nama: displayName, // Gunakan nama ketua sebagai display
         timKode: u.timKode,
         timNama: timDef ? timDef.nama : "-",
@@ -75,10 +75,10 @@ exports.index = async (req, res) => {
 
 exports.tambahPengguna = async (req, res) => {
   try {
-    // req.body: nama, email, password, peran, timId (sebagai timKode)
+    // req.body: nama, username, password, peran, timId (sebagai timKode)
     // Plus: anggota1..5 (dari modal UI custom)
     const {
-      email, password, peran, timId,
+      username, password, peran, timId,
       anggota1, anggota2, anggota3, anggota4, anggota5
     } = req.body;
 
@@ -90,14 +90,14 @@ exports.tambahPengguna = async (req, res) => {
 
     const pembuat = req.session.user;
 
-    if (!email || !password || !peran) {
-      return go(res, "error", "Email, Password, dan Role wajib diisi");
+    if (!username || !password || !peran) {
+      return go(res, "error", "Username, Password, dan Role wajib diisi");
     }
 
-    // Cek duplikat email
-    const exists = await prisma.pengguna.findUnique({ where: { email } });
+    // Cek duplikat username
+    const exists = await prisma.pengguna.findUnique({ where: { username } });
     if (exists) {
-      return go(res, "error", "Email sudah digunakan");
+      return go(res, "error", "Username sudah digunakan");
     }
 
     const hash = await bcrypt.hash(password, 10);
@@ -132,13 +132,12 @@ exports.tambahPengguna = async (req, res) => {
       // 1. Buat User
       await tx.pengguna.create({
         data: {
-          email,
+          username,
           kataSandiHash: hash,
           peran: dbRole, // pakai normalized role
           timKode: timKodeVal,
           statusAktif: true,
-          statusAktif: true,
-          // dibuatOlehEmail: pembuat.email, // REMOVED: Not in schema
+          // dibuatOlehUsername: pembuat.username, // REMOVED: Not in schema or optional
         }
       });
 
@@ -154,7 +153,7 @@ exports.tambahPengguna = async (req, res) => {
         for (const ang of listAnggota) {
           await tx.anggotaTim.create({
             data: {
-              akunEmail: email,
+              akunUsername: username,
               urutan: ang.urutan,
               nama: ang.nama,
               statusAktif: true
@@ -176,12 +175,12 @@ exports.editPengguna = async (req, res) => {
   // Untuk simplifikasi awal, kita support ganti password & tim dulu
   // Idealnya edit anggota juga.
   try {
-    const { email, password, timId, anggota1, anggota2, anggota3, anggota4, anggota5 } = req.body;
-    // Note: email jadi key lookup, biasanya hidden input
+    const { username, password, timId, anggota1, anggota2, anggota3, anggota4, anggota5 } = req.body;
+    // Note: username jadi key lookup, biasanya hidden input
 
-    if (!email) return go(res, "error", "Email tidak valid");
+    if (!username) return go(res, "error", "Username tidak valid");
 
-    const pengguna = await prisma.pengguna.findUnique({ where: { email } });
+    const pengguna = await prisma.pengguna.findUnique({ where: { username } });
     if (!pengguna || pengguna.dihapusPada) {
       return go(res, "error", "Pengguna tidak ditemukan");
     }
@@ -200,7 +199,7 @@ exports.editPengguna = async (req, res) => {
       // Update user
       if (Object.keys(dataUpdate).length > 0) {
         await tx.pengguna.update({
-          where: { email },
+          where: { username },
           data: dataUpdate
         });
       }
@@ -223,7 +222,7 @@ exports.editPengguna = async (req, res) => {
 
           // Cek existing
           const existing = await tx.anggotaTim.findUnique({
-            where: { akunEmail_urutan: { akunEmail: email, urutan: item.urutan } }
+            where: { akunUsername_urutan: { akunUsername: username, urutan: item.urutan } }
           });
 
           if (existing) {
@@ -238,7 +237,7 @@ exports.editPengguna = async (req, res) => {
             // Create baru
             await tx.anggotaTim.create({
               data: {
-                akunEmail: email,
+                akunUsername: username,
                 urutan: item.urutan,
                 nama: item.nama,
                 statusAktif: true
@@ -258,18 +257,18 @@ exports.editPengguna = async (req, res) => {
 
 exports.hapusPengguna = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { username } = req.body;
     const pembuat = req.session.user;
 
-    if (!email) return go(res, "error", "Email tidak valid");
-    if (email === pembuat.email) return go(res, "error", "Tidak bisa menghapus akun sendiri");
+    if (!username) return go(res, "error", "Username tidak valid");
+    if (username === pembuat.username) return go(res, "error", "Tidak bisa menghapus akun sendiri");
 
-    const pengguna = await prisma.pengguna.findUnique({ where: { email } });
+    const pengguna = await prisma.pengguna.findUnique({ where: { username } });
     if (!pengguna) return go(res, "error", "Pengguna tidak ditemukan");
 
     // Soft delete
     await prisma.pengguna.update({
-      where: { email },
+      where: { username },
       data: {
         statusAktif: false,
         dihapusPada: new Date(),

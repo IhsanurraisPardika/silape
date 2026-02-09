@@ -13,7 +13,7 @@ exports.index = async (req, res) => {
       // Cek peran dari session, sesuaikan dengan nama field di session
       const penugasan = await prisma.penugasanKantorAkun.findMany({
         where: {
-          akunEmail: user.email,
+          akunUsername: user.username,
           statusAktif: true,
           kantor: {
             statusAktif: true
@@ -36,7 +36,7 @@ exports.index = async (req, res) => {
         id: p.kantor.id,
         nama: p.kantor.nama,
         kode: null, // Schema Kantor tidak punya kode, sesuaikan
-        timNama: user.nama || user.email, // Tampilkan siapa yang login
+        timNama: user.nama || user.username, // Tampilkan siapa yang login
       }));
     } else {
       // Jika ADMIN/SUPERADMIN, mungkin bisa lihat semua? atau kosongkan

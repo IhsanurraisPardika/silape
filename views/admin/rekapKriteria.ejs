@@ -17,7 +17,7 @@
 
       <!-- MAIN -->
       <div class="flex-1 flex flex-col overflow-hidden">
-        <%- include('../partials/header') %>
+        <%- include('../partials/headerAdmin') %>
 
           <main class="flex-1 overflow-auto bg-gray-50 flex flex-col">
             <div class="p-4 md:p-8 pb-24 flex-grow">
@@ -170,8 +170,19 @@
                     <tbody class="divide-y divide-gray-100">
                       <% if (rekapList.length===0) { %>
                         <tr>
-                          <td colspan="<%= 3 + criteriaList.length %>" class="p-8 text-gray-500 italic">
-                            Belum ada data penilaian yang masuk.
+                          <td colspan="<%= 3 + criteriaList.length %>" class="p-12 text-center">
+                            <% if (hasUnapprovedData) { %>
+                              <div class="text-yellow-600 flex flex-col items-center">
+                                <svg class="w-12 h-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p class="font-bold">Beberapa data penilaian sedang menunggu persetujuan Ketua Tim.</p>
+                                <p class="text-sm">Silakan hubungi Ketua Tim untuk melakukan Approval.</p>
+                              </div>
+                              <% } else { %>
+                                <p class="text-gray-500 italic">Belum ada penilaian yang masuk (APPROVED).</p>
+                                <% } %>
                           </td>
                         </tr>
                         <% } %>

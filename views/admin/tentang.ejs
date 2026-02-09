@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link rel="icon" href="/images/sp.png" type="image/sp.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bg-factory {
+            background-image: url('/images/gerbangSP.jpg');
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+
+<body class="antialiased bg-gray-100">
+    <div class="flex min-h-screen">
+        <%- include('../partials/sidebarAdmin') %>
+
+            <!-- Main Content -->
+            <div class="flex-1 flex flex-col min-h-screen">
+                <%- include('../partials/headerAdmin') %>
+
+                    <div class="flex-1 relative bg-factory overflow-hidden">
+                        <div class="absolute inset-0 bg-black/60 z-0"></div>
+
+                        <div class="absolute inset-0 z-10 overflow-y-auto p-4 md:p-8 flex flex-col pb-24">
+                            <div class="mb-6 md:mb-8 text-white text-center">
+                                <h1 class="text-3xl md:text-4xl font-bold mb-3 md:mb-4">Tentang Sistem</h1>
+                                <p class="text-base md:text-xl opacity-90 max-w-3xl mx-auto px-4">
+                                    Sistem 5P merupakan aplikasi untuk melakukan penilaian pada PT Semen Padang.
+                                    Aplikasi ini dirancang untuk memudahkan proses evaluasi dan pemantauan kinerja
+                                    berdasarkan
+                                    prinsip 5P.
+                                </p>
+                            </div>
+
+                            <div
+                                class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-5 md:p-8 w-full max-w-6xl mx-auto">
+                                <h2
+                                    class="text-xl md:text-2xl font-bold text-gray-800 mb-6 md:mb-8 text-center border-b pb-3 md:pb-4">
+                                    Tim Pengembang</h2>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                                    <!-- Card 1 -->
+                                    <div
+                                        class="bg-gray-50 rounded-xl p-5 md:p-6 hover:shadow-lg transition-all duration-300 border hover:border-red-200 group text-center">
+                                        <img src="/images/IHSAN (4).jpg" alt="Ihsanurrais Pardika"
+                                            class="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 md:mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                                        <h3 class="font-bold text-gray-800 text-base md:text-lg mb-1">Ihsanurrais
+                                            Pardika
+                                        </h3>
+                                        <p class="text-red-600 font-medium text-sm mb-2">NIM. 2311523031</p>
+                                        <p class="text-blck-600 font-medium text-sm mb-2">No. Telp. 082384563492</p>
+                                        <p class="text-gray-500 text-xs">S-1 Sistem Informasi<br>Universitas Andalas</p>
+                                    </div>
+
+                                    <!-- Card 2 -->
+                                    <div
+                                        class="bg-gray-50 rounded-xl p-5 md:p-6 hover:shadow-lg transition-all duration-300 border hover:border-red-200 group text-center">
+                                        <img src="/images/IKHWAN.jpg" alt="Ikhwan Hamidi"
+                                            class="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 md:mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                                        <h3 class="font-bold text-gray-800 text-base md:text-lg mb-1">Ikhwan Hamidi</h3>
+                                        <p class="text-red-600 font-medium text-sm mb-2">NIM. 2311521003</p>
+                                        <p class="text-black-600 font-medium text-sm mb-2">No. Telp. 082284311320</p>
+                                        <p class="text-gray-500 text-xs">S-1 Sistem Informasi<br>Universitas Andalas</p>
+                                    </div>
+
+                                    <!-- Card 3 -->
+                                    <div
+                                        class="bg-gray-50 rounded-xl p-5 md:p-6 hover:shadow-lg transition-all duration-300 border hover:border-red-200 group text-center">
+                                        <img src="/images/REVA.jpg" alt="Reva Hanum Salsabila"
+                                            class="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 md:mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                                        <h3 class="font-bold text-gray-800 text-base md:text-lg mb-1">Reva Hanum
+                                            Salsabila
+                                        </h3>
+                                        <p class="text-red-600 font-medium text-sm mb-2">NIM. 2311522011</p>
+                                        <p class="text-black-600 font-medium text-sm mb-2">No. Telp. 085156573687</p>
+                                        <p class="text-gray-500 text-xs">S-1 Sistem Informasi<br>Universitas Andalas</p>
+                                    </div>
+
+                                    <!-- Card 4 -->
+                                    <div
+                                        class="bg-gray-50 rounded-xl p-5 md:p-6 hover:shadow-lg transition-all duration-300 border hover:border-red-200 group text-center">
+                                        <img src="/images/uniang.png" alt="Asyifa Rahmina Yudi"
+                                            class="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 md:mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                                        <h3 class="font-bold text-gray-800 text-base md:text-lg mb-1">Asyifa Rahmina
+                                            Yudi
+                                        </h3>
+                                        <p class="text-red-600 font-medium text-sm mb-2">NIM. 2311521007</p>
+                                        <p class="text-black-600 font-medium text-sm mb-2">No. Telp. 083181248718</p>
+                                        <p class="text-gray-500 text-xs">S-1 Sistem Informasi<br>Universitas Andalas</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+    </div>
+    </div>
+</body>
+
+</html>
