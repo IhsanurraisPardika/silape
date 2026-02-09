@@ -5,6 +5,15 @@
   const dataEl = document.getElementById("fp-data");
   const fpData = dataEl ? JSON.parse(dataEl.textContent || "{}") : {};
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   const offices = (fpData.kantorList || []).map((k) => ({
     id: String(k.id),
     name: String(k.nama || "").toUpperCase(),
@@ -306,6 +315,7 @@
       nilai: det?.nilai,
       catatan: det?.catatan,
       namaAnggota: det?.namaAnggota,
+      foto: Array.isArray(det?.foto) ? det.foto : [],
     };
   }
 
@@ -323,6 +333,15 @@
         catatan: x.catatan == null ? '' : String(x.catatan),
         namaAnggota: x.namaAnggota == null ? '' : String(x.namaAnggota),
         files: [],
+        existingPhotos: Array.isArray(x.foto)
+          ? x.foto
+            .filter(Boolean)
+            .map((f) => ({
+              urlFile: f?.urlFile ? String(f.urlFile) : '',
+              namaFile: f?.namaFile ? String(f.namaFile) : '',
+            }))
+            .filter((f) => !!f.urlFile)
+          : [],
       };
     });
 
@@ -339,7 +358,8 @@
           nilai: "", // Default empty string or 0
           catatan: "",
           namaAnggota: "",
-          files: []
+          files: [],
+          existingPhotos: []
         };
       } else {
         // Update static info just in case
@@ -396,6 +416,9 @@
       // Pertahankan files yang sudah ada di state
       const currentFiles = prevState.files || [];
 
+      // Pertahankan existing photos dari DB yang sudah ada di state
+      const currentExistingPhotos = prevState.existingPhotos || [];
+
       // Simpan ke State Global
       formState[key] = {
         kriteriaId: item.id,
@@ -404,7 +427,8 @@
         nilai: currNilai,
         catatan: currCatatan,
         namaAnggota: author,
-        files: currentFiles
+        files: currentFiles,
+        existingPhotos: currentExistingPhotos
       };
     });
 
@@ -438,19 +462,33 @@
       const filledBy = savedData.namaAnggota || "";
 
       const files = savedData.files || [];
+      const existingPhotos = Array.isArray(savedData.existingPhotos) ? savedData.existingPhotos : [];
 
       // Generate HTML for File Previews
       let filesHtml = "";
-      if (files.length > 0) {
+      if (existingPhotos.length > 0 || files.length > 0) {
         filesHtml = `<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">`;
+
+        // Existing photos from DB (no remove button)
+        existingPhotos.forEach((p) => {
+          const url = p?.urlFile ? String(p.urlFile) : "#";
+          const name = escapeHtml(p?.namaFile || "foto");
+
+          filesHtml += `
+            <div class="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                <img src="${url}" class="w-full h-full object-cover">
+                <div class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] p-1 truncate text-center">
+                    ${name}
+                </div>
+            </div>`;
+        });
+
+        // Newly uploaded files (with remove button)
         files.forEach((f, i) => {
-          // Create Object URL for preview (if it's a File object)
-          // Note: If using multiple reads, memory management is important but browser handles basic ref.
           let url = "";
           if (f instanceof File || f instanceof Blob) {
             url = URL.createObjectURL(f);
           } else {
-            // Fallback / Unknown type
             url = "#";
           }
 
@@ -461,7 +499,7 @@
                     <i class="fas fa-times text-xs"></i>
                 </button>
                 <div class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] p-1 truncate text-center">
-                    ${f.name}
+                    ${escapeHtml(f?.name || 'foto')}
                 </div>
             </div>`;
         });
@@ -528,12 +566,6 @@
                     <span class="text-xs font-bold uppercase">Upload Foto</span>
                 </button>
                 <input type="file" id="file_${item.id}" class="hidden" accept="image/*" multiple onchange="handleFileUpload(this, '${item.id}')">
-
-                <button type="button" onclick="openCamera('${item.id}')"
-                    class="flex-1 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:bg-gray-50 hover:border-red-400 hover:text-red-600 text-gray-500 transition flex flex-col items-center justify-center gap-2 group">
-                    <i class="fas fa-camera text-xl group-hover:scale-110 transition"></i>
-                    <span class="text-xs font-bold uppercase">Ambil Foto (Kamera)</span>
-                </button>
             </div>
 
             ${filesHtml}
@@ -1052,7 +1084,8 @@
       nilai: "",
       catatan: "",
       namaAnggota: fpData.userNama,
-      files: []
+      files: [],
+      existingPhotos: []
     };
   }
 

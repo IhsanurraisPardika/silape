@@ -30,6 +30,8 @@ app.set("views", path.join(__dirname, "views"));
 
 // ===== STATIC FILES =====
 app.use(express.static(path.join(__dirname, "public")));
+// Serve uploaded files (foto penilaian, dll)
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ===== BODY PARSER =====
 app.use(express.json());

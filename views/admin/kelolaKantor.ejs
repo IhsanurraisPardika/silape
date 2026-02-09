@@ -192,10 +192,9 @@
               </div>
             </div>
           </div>
+          <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
           <script>
             const modalTambah = document.getElementById('modalTambahKantor');
-            const modalDelete = document.getElementById('modalDelete');
-            const namaDelete = document.getElementById('namaKantorDelete');
 
             const formTambah = modalTambah.querySelector('form');
             // Gunakan selector by name agar lebih robust
@@ -292,13 +291,17 @@
               if (placeholder) placeholder.remove();
 
               const card = document.createElement('div');
-              card.className = 'border rounded p-3 flex justify-between items-center';
+              card.className = 'bg-white border rounded-lg p-3 flex justify-between items-center shadow-sm hover:shadow-md transition';
               card.innerHTML = `
       <div class="flex items-center gap-3">
         🏢 <span class="font-medium">${namaKantor}</span>
       </div>
-      <button class="text-red-600 btn-delete hover:text-red-800" data-nama="${namaKantor}">
-        Delete
+      <button class="text-red-600 btn-delete hover:text-red-800 p-1 rounded hover:bg-red-50 transition ml-2" data-nama="${namaKantor}" title="Hapus">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+            clip-rule="evenodd" />
+        </svg>
       </button>
     `;
 
@@ -315,29 +318,21 @@
             // ==============================
             function attachDeleteListener(btn) {
               btn.onclick = () => {
-                targetElement = btn.closest('.border.rounded.p-3');
-                namaDelete.textContent = btn.dataset.nama;
-                modalDelete.classList.remove('hidden');
-                modalDelete.classList.add('flex');
-              };
-            }
+                // Card kantor yang dirender server/dynamic sama-sama direct child dari .list-kantor
+                targetElement = btn.closest('.list-kantor > div');
+                const namaKantor = btn.dataset.nama;
+                if (!namaKantor) return;
 
-            // Initial Attach
-            document.querySelectorAll('.btn-delete').forEach(btn => attachDeleteListener(btn));
-
-            const btnBatalDelete = document.getElementById('batalDelete');
-            if (btnBatalDelete) {
-              btnBatalDelete.onclick = () => {
-                modalDelete.classList.add('hidden');
-                modalDelete.classList.remove('flex');
-              };
-            }
-
-            const btnConfirmDelete = document.getElementById('confirmDelete');
-            if (btnConfirmDelete) {
-              btnConfirmDelete.onclick = async () => {
-                if (targetElement) {
-                  const namaKantor = namaDelete.textContent;
+                Swal.fire({
+                  title: 'Konfirmasi Hapus',
+                  text: `Yakin ingin menghapus kantor: ${namaKantor}?`,
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonText: 'Ya, Hapus',
+                  cancelButtonText: 'Batal',
+                  confirmButtonColor: '#dc2626'
+                }).then(async (result) => {
+                  if (!result.isConfirmed) return;
 
                   try {
                     const res = await fetch('/kelolaKantor/hapus', {
@@ -348,26 +343,45 @@
                     const data = await res.json();
 
                     if (data.success) {
-                      const listParent = targetElement.parentElement;
-                      targetElement.remove();
-
-                      // If empty, show placeholder?
-                      if (listParent.children.length === 0) {
-                        // optional: add placeholder back
+                      if (targetElement) {
+                        const listParent = targetElement.parentElement;
+                        targetElement.remove();
+                        if (listParent && listParent.children.length === 0) {
+                          // optional: placeholder
+                        }
                       }
                       updateJumlahKantor();
+                      Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Kantor berhasil dihapus.',
+                        icon: 'success',
+                        confirmButtonColor: '#dc2626'
+                      });
                     } else {
-                      alert('Gagal menghapus: ' + (data.message || 'Error'));
+                      Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Gagal menghapus kantor.',
+                        icon: 'error',
+                        confirmButtonColor: '#dc2626'
+                      });
                     }
                   } catch (err) {
                     console.error(err);
-                    alert('Gagal menghubungi server');
+                    Swal.fire({
+                      title: 'Gagal',
+                      text: 'Gagal menghubungi server.',
+                      icon: 'error',
+                      confirmButtonColor: '#dc2626'
+                    });
                   }
-                }
-                modalDelete.classList.add('hidden');
-                modalDelete.classList.remove('flex');
+                });
               };
             }
+
+            // Initial Attach
+            document.querySelectorAll('.btn-delete').forEach(btn => attachDeleteListener(btn));
+
+            // Modal delete custom tidak dipakai lagi (diganti SweetAlert2)
 
             // ==============================
             // INIT SAAT LOAD
