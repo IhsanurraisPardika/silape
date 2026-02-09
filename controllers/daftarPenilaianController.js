@@ -1,6 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const PDFDocument = require("pdfkit");
+const path = require('path');
+const fs = require('fs');
 
 // Jumlah detail yang dianggap lengkap untuk satu penilaian
 // Hapus EXPECTED_DETAIL_COUNT konstan, kita akan hitung dinamis
@@ -490,6 +492,39 @@ exports.downloadBuktiApproval = async (req, res) => {
 
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     doc.pipe(res);
+
+    // Header logos (SIG left, Semen Padang right)
+    const imagesDir = path.join(__dirname, '..', 'public', 'images');
+    const sigLogoPath = path.join(imagesDir, 'SIG.jpg');
+    const spLogoPath = fs.existsSync(path.join(imagesDir, 'sp_full.png'))
+      ? path.join(imagesDir, 'sp_full.png')
+      : path.join(imagesDir, 'sp.png');
+
+    const headerY = 20;
+    const logoWidth = 70;
+    const logoHeight = 40;
+    const pageWidth = doc.page.width;
+    const leftX = doc.page.margins.left;
+    const rightX = pageWidth - doc.page.margins.right - logoWidth;
+
+    try {
+      if (fs.existsSync(sigLogoPath)) {
+        doc.image(sigLogoPath, leftX, headerY, { fit: [logoWidth, logoHeight], align: 'left', valign: 'top' });
+      }
+    } catch (e) {
+      console.warn('PDF header: gagal render logo SIG', e);
+    }
+
+    try {
+      if (fs.existsSync(spLogoPath)) {
+        doc.image(spLogoPath, rightX, headerY, { fit: [logoWidth, logoHeight], align: 'right', valign: 'top' });
+      }
+    } catch (e) {
+      console.warn('PDF header: gagal render logo Semen Padang', e);
+    }
+
+    // Start content below header
+    doc.y = headerY + 55;
 
     doc.fontSize(16).text('BUKTI APPROVE PENILAIAN', { align: 'center' });
     doc.moveDown(0.5);
