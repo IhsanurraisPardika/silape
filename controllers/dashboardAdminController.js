@@ -53,11 +53,13 @@ exports.rekapKantor = async (req, res) => {
                 }
             });
 
+            const assignedAkunUsername = penugasan?.akunUsername || null;
+
             // Jika ada penugasan, ambil semua anggota dari akun tim tersebut
-            if (penugasan) {
+            if (assignedAkunUsername) {
                 const anggotaTimList = await prisma.anggotaTim.findMany({
                     where: {
-                        akunEmail: penugasan.akunEmail,
+                        akunUsername: assignedAkunUsername,
                         statusAktif: true
                     },
                     orderBy: { urutan: 'asc' }
@@ -75,7 +77,8 @@ exports.rekapKantor = async (req, res) => {
                     where: {
                         periodeId: periodeAktif.id,
                         kantorId: selectedKantorId,
-                        status: 'APPROVED'
+                        status: 'APPROVED',
+                        ...(assignedAkunUsername ? { akunUsername: assignedAkunUsername } : {})
                     },
                     include: {
                         detail: true,
@@ -89,7 +92,8 @@ exports.rekapKantor = async (req, res) => {
                     where: {
                         periodeId: periodeAktif.id,
                         kantorId: selectedKantorId,
-                        status: 'SUBMIT'
+                        status: 'SUBMIT',
+                        ...(assignedAkunUsername ? { akunUsername: assignedAkunUsername } : {})
                     }
                 });
 
@@ -101,6 +105,15 @@ exports.rekapKantor = async (req, res) => {
                     const nama = p.anggota ? p.anggota.nama : p.akun.nama;
                     mapPenilaianByNama[nama] = p;
                 });
+
+                // Fallback: jika headerColumns kosong (mis. belum ada anggota tim), ambil dari penilaian yang ada.
+                if (headerColumns.length === 0 && penilaianList.length > 0) {
+                    headerColumns = Array.from(new Set(
+                        penilaianList
+                            .map((p) => (p.anggota ? p.anggota.nama : p.akun?.nama))
+                            .filter(Boolean)
+                    ));
+                }
 
                 console.log("DEBUG REKAP KANTOR:");
                 console.log("Kantor ID:", selectedKantorId);
@@ -604,9 +617,11 @@ async function getRekapKantorData(kantorIdStr) {
             where: { periodeId: periodeAktif.id, kantorId: selectedKantorId }
         });
 
-        if (penugasan) {
+        const assignedAkunUsername = penugasan?.akunUsername || null;
+
+        if (assignedAkunUsername) {
             const anggotaTimList = await prisma.anggotaTim.findMany({
-                where: { akunEmail: penugasan.akunEmail, statusAktif: true },
+                where: { akunUsername: assignedAkunUsername, statusAktif: true },
                 orderBy: { urutan: 'asc' }
             });
             anggotaTimList.forEach(agt => headerColumns.push(agt.nama));
@@ -618,6 +633,7 @@ async function getRekapKantorData(kantorIdStr) {
                     periodeId: periodeAktif.id,
                     kantorId: selectedKantorId,
                     status: 'APPROVED',
+                    ...(assignedAkunUsername ? { akunUsername: assignedAkunUsername } : {})
                 },
                 include: {
                     detail: true,
@@ -631,6 +647,14 @@ async function getRekapKantorData(kantorIdStr) {
                 const nama = p.anggota ? p.anggota.nama : p.akun.nama;
                 mapPenilaianByNama[nama] = p;
             });
+
+            if (headerColumns.length === 0 && penilaianList.length > 0) {
+                headerColumns = Array.from(new Set(
+                    penilaianList
+                        .map((p) => (p.anggota ? p.anggota.nama : p.akun?.nama))
+                        .filter(Boolean)
+                ));
+            }
 
             const groupedData = { P1: [], P2: [], P3: [], P4: [], P5: [] };
 

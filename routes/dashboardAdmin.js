@@ -60,7 +60,9 @@ router.get("/", harusAdmin, async (req, res) => {
       // Analisis status per Penugasan (Per Kantor & Per Akun Tim)
       penugasanList.forEach(tug => {
         // ... (Logic Lama untuk Summary Card tetap sama) ...
-        const totalAnggota = tug.akun.anggotaTim.length;
+        const anggotaAktifList = Array.isArray(tug?.akun?.anggotaTim) ? tug.akun.anggotaTim : [];
+        const anggotaIdsAktif = anggotaAktifList.map((a) => a.id);
+        const totalAnggota = anggotaIdsAktif.length;
         const timKey = tug.akun.timKode || 'TIM';
         if (!perTim[timKey]) {
           perTim[timKey] = { selesai: 0, totalNilai: 0, countNilai: 0, totalTugas: 0 };
@@ -68,26 +70,28 @@ router.get("/", harusAdmin, async (req, res) => {
         perTim[timKey].totalTugas += 1;
 
         const penilaianKantorIni = semuaPenilaian.filter(p =>
-          p.kantorId === tug.kantorId && p.akunEmail === tug.akunEmail
+          p.kantorId === tug.kantorId && p.akunUsername === tug.akunUsername
         );
 
-        let anggotaSelesaiCount = 0;
-        let adaAktivitas = penilaianKantorIni.length > 0;
+        const hasStarted = penilaianKantorIni.length > 0;
 
-        penilaianKantorIni.forEach(p => {
-          const isLengkap = p.detail ? p.detail.length >= totalKriteriaDiharapkan : false;
-          const adaRekomendasi = p.catatanRekomendasi && p.catatanRekomendasi.trim() !== "";
-          const isSelesai = p.status === "SUBMIT" && isLengkap && adaRekomendasi;
+        const isPenilaianComplete = (p) => {
+          return !!(p && Array.isArray(p.detail) && p.detail.length >= totalKriteriaDiharapkan);
+        };
 
-          if (isSelesai) {
-            anggotaSelesaiCount++;
-            perTim[timKey].selesai += (1 / Math.max(1, totalAnggota));
-          }
-        });
+        // Selesai jika semua anggota tim aktif sudah complete (berdasarkan jumlah kriteria)
+        let allComplete = false;
+        if (totalAnggota > 0) {
+          allComplete = anggotaIdsAktif.every((anggotaId) => {
+            const row = penilaianKantorIni.find((x) => Number(x.anggotaId) === Number(anggotaId));
+            return row && isPenilaianComplete(row);
+          });
+        }
 
-        if (totalAnggota > 0 && anggotaSelesaiCount === totalAnggota) {
+        if (allComplete) {
           sudahDinilai++;
-        } else if (adaAktivitas) {
+          perTim[timKey].selesai += 1;
+        } else if (hasStarted) {
           sedangProses++;
         }
       });
