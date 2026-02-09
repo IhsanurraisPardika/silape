@@ -50,7 +50,7 @@ exports.index = async (req, res) => {
       // Kita bisa format jadi "TIM 1" dengan spasi jika perlu, atau biarkan raw
       nama: formatTimName(tim.timKode),
       kode: tim.timKode,
-      email: tim.email,
+      username: tim.username,
       jumlah: tim.penugasanKantor.length,
       kantor: tim.penugasanKantor
         .filter(p => p.kantor)
@@ -110,10 +110,10 @@ exports.tambahKantor = async (req, res) => {
     // 4. Create Penugasan (Link ke Akun & Periode)
     await prisma.penugasanKantorAkun.create({
       data: {
-        periodeId: activePeriod.id,
-        kantorId: kantor.id,
-        akunEmail: tim.email, // Link ke email pengguna
-        statusAktif: true
+        statusAktif: true,
+        periode: { connect: { id: activePeriod.id } },
+        kantor: { connect: { id: kantor.id } },
+        akun: { connect: { username: tim.username } }
       }
     });
 

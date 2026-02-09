@@ -129,12 +129,43 @@ exports.getFormPenilaian = async (req, res) => {
                     anggotaId: currentAnggotaId // Menggunakan ID anggota spesifik
                 },
                 include: {
-                    detail: true
+                    detail: {
+                        include: {
+                            foto: {
+                                where: { dihapusPada: null },
+                                orderBy: { tanggalUnggah: 'asc' }
+                            }
+                        }
+                    }
                 }
             });
             if (existingPenilaian) {
                 if (existingPenilaian.detail) {
-                    existingDetails = existingPenilaian.detail;
+                    // Pastikan data aman untuk JSON.stringify di view
+                    existingDetails = existingPenilaian.detail.map((d) => ({
+                        id: d.id,
+                        penilaianId: d.penilaianId,
+                        kategori: d.kategori,
+                        kunciKriteria: d.kunciKriteria,
+                        nilai: d.nilai,
+                        catatan: d.catatan,
+                        namaAnggota: d.namaAnggota,
+                        bobotSaatDinilai: d.bobotSaatDinilai,
+                        dibuatPada: d.dibuatPada,
+                        diubahPada: d.diubahPada,
+                        foto: Array.isArray(d.foto)
+                            ? d.foto.map((f) => ({
+                                id: f.id,
+                                detailId: f.detailId,
+                                urlFile: f.urlFile,
+                                namaFile: f.namaFile,
+                                tipeFile: f.tipeFile,
+                                ukuranFile: f.ukuranFile,
+                                tanggalUnggah: f.tanggalUnggah,
+                                dihapusPada: f.dihapusPada,
+                            }))
+                            : [],
+                    }));
                 }
                 catatanRekomendasi = existingPenilaian.catatanRekomendasi || "";
             }

@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 exports.index = async (req, res) => {
   try {
     const user = req.session.user;
-    if (!user?.email) {
+    if (!user?.username) {
       return res.redirect('/login');
     }
 
@@ -63,7 +63,7 @@ exports.index = async (req, res) => {
 exports.simpan = async (req, res) => {
   try {
     const user = req.session.user;
-    if (!user?.email) {
+    if (!user?.username) {
       return res.status(401).send('User belum login');
     }
 
@@ -106,7 +106,7 @@ exports.simpan = async (req, res) => {
           nama: `Konfigurasi ${new Date().toLocaleString('id-ID')}`,
           statusAktif: true,
           dibuatOleh: {
-            connect: { email: user.email }
+            connect: { username: user.username }
           },
           periode: {
             connect: { id: activePeriod.id }
