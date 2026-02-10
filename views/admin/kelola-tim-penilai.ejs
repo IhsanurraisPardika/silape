@@ -33,7 +33,7 @@
 
                 <!-- Title + Button -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <h1 class="text-2xl font-bold text-gray-900">Kelola Tim</h1>
+                  <h1 class="text-2xl font-bold text-gray-900">Kelola Pengguna</h1>
 
                   <button type="button" id="btnOpenTambah"
                     class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-600 text-white shadow hover:bg-red-700 active:scale-[0.99] whitespace-nowrap">
@@ -45,14 +45,28 @@
                 </div>
 
                 <!-- Tabs -->
-                <div class="flex flex-wrap gap-3 items-center pb-1">
-                  <span class="px-4 py-2 bg-red-600 text-white rounded shadow font-medium">
-                    Kelola Tim Penilai
-                  </span>
-                  <a href="/kelolaKantor"
-                    class="px-4 py-2 bg-white border rounded shadow-sm text-gray-700 hover:bg-gray-50">
-                    Kelola Kantor Tim
-                  </a>
+                <div class="flex flex-col gap-2 pb-1">
+                  <div class="flex flex-wrap gap-3 items-center">
+                    <form id="filterForm" action="/kelola-tim-penilai" method="GET" class="flex gap-3 items-center">
+                      <select name="role"
+                        class="px-4 py-2 bg-white border border-gray-300 rounded shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                        <option value="TIM_PENILAI" <%=(typeof currentRole !=='undefined' && currentRole==='TIM_PENILAI'
+                          ) ? 'selected' : '' %>>Tim Penilai</option>
+                        <option value="ADMIN" <%=(typeof currentRole !=='undefined' && currentRole==='ADMIN' )
+                          ? 'selected' : '' %>>Admin</option>
+                      </select>
+                    </form>
+                    <a href="/kelolaKantor"
+                      class="px-4 py-2 bg-white border rounded shadow-sm text-gray-700 hover:bg-gray-50">
+                      Kelola Kantor Tim
+                    </a>
+                  </div>
+                  <div>
+                    <button type="submit" form="filterForm"
+                      class="px-3 py-1 text-xs bg-red-600 text-white rounded shadow font-medium hover:bg-red-700 transition">
+                      Tampilkan
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Table Card -->
@@ -119,7 +133,7 @@
                               <button type="button"
                                 class="text-blue-600 hover:text-blue-800 transition-colors btnOpenEdit bg-blue-50 md:bg-transparent p-2 md:p-0 rounded-lg md:rounded-none"
                                 title="Edit Pengguna" data-username="<%= u.username %>" data-nama="<%= u.nama %>"
-                                data-timid="<%= u.timKode || '' %>"
+                                data-role="<%= u.peran %>" data-timid="<%= u.timKode || '' %>"
                                 data-anggota='<%- JSON.stringify(u.anggota || []) %>'>
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -128,8 +142,7 @@
                               </button>
 
                               <!-- Delete Button (Form) -->
-                              <form action="/pengguna/hapus" method="POST"
-                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengguna ini?');">
+                              <form action="/pengguna/hapus" method="POST" class="formHapusPengguna">
                                 <input type="hidden" name="username" value="<%= u.username %>">
                                 <button type="submit"
                                   class="text-red-600 hover:text-red-800 transition-colors bg-red-50 md:bg-transparent p-2 md:p-0 rounded-lg md:rounded-none"
@@ -308,12 +321,12 @@
         <!-- Role (Disabled for edit) -->
         <div>
           <label class="block text-sm font-bold text-black mb-1">Role</label>
-          <input value="TIM_PENILAI" disabled
+          <input id="editRoleDisplay" value="TIM_PENILAI" disabled
             class="w-full rounded-xl border-2 border-gray-300 bg-gray-100 px-4 py-2.5 outline-none text-gray-500" />
         </div>
 
         <!-- Tim -->
-        <div>
+        <div id="wrapTimEdit">
           <label class="block text-sm font-bold text-black mb-1">Pilih Tim</label>
           <div class="relative">
             <select name="timId" id="editTimId"
@@ -351,44 +364,47 @@
             placeholder="Kosongkan jika tidak ubah..." />
         </div>
 
-        <!-- Anggota 1 -->
-        <div>
-          <label class="block text-sm font-bold text-black mb-1">Anggota 1</label>
-          <input name="anggota1" id="editAnggota1" placeholder="Ketua Tim"
-            class="w-full rounded-xl border-2 border-red-600 px-4 py-2.5 outline-none text-gray-700" />
-        </div>
+        <!-- Edit Anggota Wrapper -->
+        <div id="wrapAnggotaEdit" class="space-y-4">
+          <!-- Anggota 1 -->
+          <div>
+            <label class="block text-sm font-bold text-black mb-1">Anggota 1</label>
+            <input name="anggota1" id="editAnggota1" placeholder="Ketua Tim"
+              class="w-full rounded-xl border-2 border-red-600 px-4 py-2.5 outline-none text-gray-700" />
+          </div>
 
-        <!-- Anggota 2 -->
-        <div>
-          <label class="block text-sm font-bold text-black mb-1">Anggota 2</label>
-          <input name="anggota2" id="editAnggota2"
-            class="w-full rounded-xl border-2 border-red-600 px-4 py-2.5 outline-none text-gray-700" />
-        </div>
+          <!-- Anggota 2 -->
+          <div>
+            <label class="block text-sm font-bold text-black mb-1">Anggota 2</label>
+            <input name="anggota2" id="editAnggota2"
+              class="w-full rounded-xl border-2 border-red-600 px-4 py-2.5 outline-none text-gray-700" />
+          </div>
 
-        <!-- Anggota 3 -->
-        <div>
-          <label class="block text-sm font-bold text-black mb-1">Anggota 3</label>
-          <input name="anggota3" id="editAnggota3"
-            class="w-full rounded-xl border-2 border-red-600 px-4 py-2.5 outline-none text-gray-700" />
-        </div>
+          <!-- Anggota 3 -->
+          <div>
+            <label class="block text-sm font-bold text-black mb-1">Anggota 3</label>
+            <input name="anggota3" id="editAnggota3"
+              class="w-full rounded-xl border-2 border-red-600 px-4 py-2.5 outline-none text-gray-700" />
+          </div>
 
-        <!-- Anggota 4 -->
-        <div>
-          <label class="block text-sm font-bold text-black mb-1">Anggota 4</label>
-          <input name="anggota4" id="editAnggota4"
-            class="w-full rounded-xl border-2 border-red-600 px-4 py-2.5 outline-none text-gray-700" />
-        </div>
+          <!-- Anggota 4 -->
+          <div>
+            <label class="block text-sm font-bold text-black mb-1">Anggota 4</label>
+            <input name="anggota4" id="editAnggota4"
+              class="w-full rounded-xl border-2 border-red-600 px-4 py-2.5 outline-none text-gray-700" />
+          </div>
 
-        <!-- Anggota 5 -->
-        <div>
-          <label class="block text-sm font-bold text-black mb-1">Anggota 5</label>
-          <input name="anggota5" id="editAnggota5"
-            class="w-full rounded-xl border-2 border-red-600 px-4 py-2.5 outline-none text-gray-700" />
+          <!-- Anggota 5 -->
+          <div>
+            <label class="block text-sm font-bold text-black mb-1">Anggota 5</label>
+            <input name="anggota5" id="editAnggota5"
+              class="w-full rounded-xl border-2 border-red-600 px-4 py-2.5 outline-none text-gray-700" />
+          </div>
         </div>
 
         <!-- Hapus Button -->
         <div class="mt-4 flex justify-between items-center pt-4 border-t border-gray-100">
-          <button type="submit" form="formHapus" class="text-red-500 font-bold hover:underline text-sm">
+          <button type="button" id="btnHapusDariModal" class="text-red-500 font-bold hover:underline text-sm">
             Hapus Pengguna Ini
           </button>
 
@@ -406,8 +422,7 @@
 
       </form>
       <!-- Form Hapus Separate -->
-      <form id="formHapus" action="/pengguna/hapus" method="POST" onsubmit="return confirm('Yakin hapus pengguna ini?')"
-        class="hidden">
+      <form id="formHapus" action="/pengguna/hapus" method="POST" class="hidden">
         <input type="hidden" name="username" id="editUsernameHiddenHapus" />
       </form>
     </div>
