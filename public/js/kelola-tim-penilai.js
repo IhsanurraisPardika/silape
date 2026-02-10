@@ -243,5 +243,48 @@
       alert(error);
       removeQueryParams(["error"]);
     }
+
+    // ===== SweetAlert Delete Confirmation (Table rows) =====
+    document.querySelectorAll('.formHapusPengguna').forEach((form) => {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        Swal.fire({
+          title: 'Hapus Pengguna?',
+          text: 'Apakah Anda yakin ingin menghapus pengguna ini?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280',
+          confirmButtonText: 'Ya, Hapus',
+          cancelButtonText: 'Tidak',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            form.submit();
+          }
+        });
+      });
+    });
+
+    // ===== SweetAlert Delete Confirmation (Edit Modal) =====
+    const btnHapusDariModal = $('#btnHapusDariModal');
+    const formHapus = $('#formHapus');
+    if (btnHapusDariModal && formHapus) {
+      btnHapusDariModal.addEventListener('click', () => {
+        Swal.fire({
+          title: 'Hapus Pengguna?',
+          text: 'Apakah Anda yakin ingin menghapus pengguna ini?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280',
+          confirmButtonText: 'Ya, Hapus',
+          cancelButtonText: 'Tidak',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            formHapus.submit();
+          }
+        });
+      });
+    }
   });
 })();

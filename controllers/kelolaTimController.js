@@ -24,12 +24,18 @@ function go(res, type, msg) {
 
 exports.index = async (req, res) => {
   try {
-    // Ambil pengguna dengan role TIMPENILAI (sesuai schema)
-    // Include anggotaTim untuk ditampilkan di tabel
+    // Ambil filter role dari query, default 'TIM_PENILAI' (tapi mapper ke DB value)
+    const roleFilter = req.query.role || "TIM_PENILAI";
+
+    // Mapping UI Value -> DB Value
+    let dbRole = "TIMPENILAI"; // Default
+    if (roleFilter === "ADMIN") dbRole = "ADMIN";
+    // Jika ada role lain, tambahkan di sini
+
     const users = await prisma.pengguna.findMany({
       where: {
         dihapusPada: null,
-        peran: "TIMPENILAI",
+        peran: dbRole,
       },
       include: {
         anggotaTim: {
@@ -45,13 +51,19 @@ exports.index = async (req, res) => {
       const timDef = TIM_LIST.find((t) => t.id === u.timKode);
 
       // Ambil nama anggota pertama sebagai 'Ketua' (display nama utama)
-      // Karena schema Pengguna tidak ada field 'nama', kita ambil dari AnggotaTim urutan 1
-      const ketua = u.anggotaTim.find(a => a.urutan === 1);
-      const displayName = ketua ? ketua.nama : "Tanpa Nama";
+      let displayName = "Tanpa Nama";
+
+      if (u.peran === "TIMPENILAI") {
+        const ketua = u.anggotaTim.find(a => a.urutan === 1);
+        if (ketua) displayName = ketua.nama;
+      } else {
+        // Untuk Admin, pakai field nama dari table Pengguna (jika ada) atau username
+        displayName = u.nama || u.username;
+      }
 
       return {
         username: u.username,
-        nama: displayName, // Gunakan nama ketua sebagai display
+        nama: displayName,
         timKode: u.timKode,
         timNama: timDef ? timDef.nama : "-",
         statusAktif: u.statusAktif,
@@ -64,6 +76,7 @@ exports.index = async (req, res) => {
       users: mapped,
       timList: TIM_LIST, // Kirim list static ke view
       title: "Kelola Tim Penilai",
+      currentRole: roleFilter, // Kirim state filter ke view
       error: req.query.error || null,
       success: req.query.success || null,
     });
