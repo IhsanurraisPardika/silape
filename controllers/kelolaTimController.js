@@ -107,6 +107,18 @@ exports.tambahPengguna = async (req, res) => {
       return go(res, "error", "Username, Password, dan Role wajib diisi");
     }
 
+    if (username.length < 4) {
+      return go(res, "error", "Username minimal 4 karakter");
+    }
+
+    if (/\s/.test(username)) {
+      return go(res, "error", "Username tidak boleh mengandung spasi");
+    }
+
+    if (password.length < 6) {
+      return go(res, "error", "Password minimal 6 karakter");
+    }
+
     // Cek duplikat username
     const exists = await prisma.pengguna.findUnique({ where: { username } });
     if (exists) {
