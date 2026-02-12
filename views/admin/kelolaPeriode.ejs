@@ -154,6 +154,7 @@
                         </div>
                     </div>
 
+                    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                     <script>
                         const modal = document.getElementById('modalTambah');
                         document.getElementById('btnTambah').onclick = () => {
@@ -178,39 +179,95 @@
                                 });
                                 const result = await res.json();
                                 if (result.success) {
-                                    location.reload();
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: 'Periode berhasil ditambahkan',
+                                        showConfirmButton: false,
+                                        timer: 1500
+                                    }).then(() => location.reload());
                                 } else {
-                                    alert(result.message);
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal',
+                                        text: result.message
+                                    });
                                 }
                             } catch (err) {
                                 console.error(err);
-                                alert('Gagal menambah periode');
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'Terjadi kesalahan sistem'
+                                });
                             }
                         };
 
                         async function aktifkanPeriode(id) {
-                            if (!confirm('Aktifkan periode ini? Periode lain akan dinonaktifkan.')) return;
+                            const confirm = await Swal.fire({
+                                title: 'Aktifkan Periode?',
+                                text: "Periode lain akan otomatis dinonaktifkan.",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#16a34a',
+                                cancelButtonColor: '#d33',
+                                confirmButtonText: 'Ya, Aktifkan!',
+                                cancelButtonText: 'Batal'
+                            });
+
+                            if (!confirm.isConfirmed) return;
+
                             try {
                                 const res = await fetch(`/kelola-periode/aktifkan/${id}`, { method: 'POST' });
                                 const result = await res.json();
-                                if (result.success) location.reload();
-                                else alert(result.message);
+                                if (result.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: 'Periode berhasil diaktifkan',
+                                        showConfirmButton: false,
+                                        timer: 1500
+                                    }).then(() => location.reload());
+                                } else {
+                                    Swal.fire({ icon: 'error', title: 'Gagal', text: result.message });
+                                }
                             } catch (err) {
                                 console.error(err);
-                                alert('Gagal mengaktifkan');
+                                Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal mengaktifkan periode' });
                             }
                         }
 
                         async function hapusPeriode(id) {
-                            if (!confirm('Yakin hapus? Data terkait (Penilaian dll) mungkin akan error.')) return;
+                            const confirm = await Swal.fire({
+                                title: 'Yakin Hapus?',
+                                text: "Data terkait (Penilaian dll) mungkin akan error/hilang!",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#d33',
+                                cancelButtonColor: '#6b7280',
+                                confirmButtonText: 'Ya, Hapus!',
+                                cancelButtonText: 'Batal'
+                            });
+
+                            if (!confirm.isConfirmed) return;
+
                             try {
                                 const res = await fetch(`/kelola-periode/hapus/${id}`, { method: 'DELETE' });
                                 const result = await res.json();
-                                if (result.success) location.reload();
-                                else alert(result.message);
+                                if (result.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Terhapus!',
+                                        text: 'Periode berhasil dihapus.',
+                                        showConfirmButton: false,
+                                        timer: 1500
+                                    }).then(() => location.reload());
+                                } else {
+                                    Swal.fire({ icon: 'error', title: 'Gagal', text: result.message });
+                                }
                             } catch (err) {
                                 console.error(err);
-                                alert('Gagal menghapus');
+                                Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal menghapus periode' });
                             }
                         }
                     </script>
