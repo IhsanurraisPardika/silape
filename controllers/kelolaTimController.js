@@ -196,9 +196,6 @@ exports.tambahPengguna = async (req, res) => {
 };
 
 exports.editPengguna = async (req, res) => {
-  // IMPLEMENTASI EDIT (update nama, tim, password, dan anggota)
-  // Untuk simplifikasi awal, kita support ganti password & tim dulu
-  // Idealnya edit anggota juga.
   try {
     const { username, password, timId, anggota1, anggota2, anggota3, anggota4, anggota5 } = req.body;
     // Note: username jadi key lookup, biasanya hidden input
@@ -298,10 +295,6 @@ exports.hapusPengguna = async (req, res) => {
         statusAktif: false,
         dihapusPada: new Date(),
       },
-      // Cascade delete atau manual soft delete child?
-      // Schema: AnggotaTim -> onDelete Cascade (di DB level biasanya hard delete). 
-      // Tapi karena soft delete user, anggota mungkin tetap ada tapi status ikut user?
-      // Bisa manual update statusAktif anggota.
     });
 
     return go(res, "success", "Pengguna berhasil dihapus");
