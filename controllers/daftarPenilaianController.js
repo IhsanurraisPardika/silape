@@ -66,7 +66,10 @@ exports.index = async (req, res) => {
       where: {
         akunUsername: user.username,
         periodeId: activePeriode.id,
-        statusAktif: true
+        statusAktif: true,
+        kantor: {
+          statusAktif: true
+        }
       },
       include: {
         kantor: true,
@@ -393,8 +396,7 @@ exports.downloadBuktiApproval = async (req, res) => {
     if (!user) return res.status(401).send("Unauthorized");
 
     const anggotaAktif = req.session.anggotaAktif || null;
-    const isKetuaSession = !!(anggotaAktif && Number(anggotaAktif.urutan) === 1);
-    if (!isKetuaSession) return res.status(403).send("Akses ditolak");
+    if (!anggotaAktif) return res.status(403).send("Akses ditolak");
 
     const kantorId = req.query?.kantorId;
     const periodeId = req.query?.periodeId;
@@ -412,11 +414,15 @@ exports.downloadBuktiApproval = async (req, res) => {
     }
 
     const anggotaAktifDb = (pengguna.anggotaTim || []).find(
-      (a) => a.statusAktif && Number(a.id) === Number(anggotaAktif?.id) && Number(a.urutan) === 1
+      (a) => a.statusAktif && Number(a.id) === Number(anggotaAktif?.id)
     );
     if (!anggotaAktifDb) {
       return res.status(403).send("Akses ditolak");
     }
+
+    const ketuaTim = (pengguna.anggotaTim || [])
+      .filter((a) => a.statusAktif && Number(a.urutan) === 1)
+      .sort((a, b) => a.id - b.id)[0] || null;
 
     const penugasan = await prisma.penugasanKantorAkun.findFirst({
       where: {
@@ -536,14 +542,14 @@ exports.downloadBuktiApproval = async (req, res) => {
     doc.text(`Periode: ${periodeNama}`);
     doc.text(`Kantor: ${kantorNama}`);
     doc.text(`Tim: ${String(pengguna.timKode)}`);
-    doc.text(`Ketua Tim: ${anggotaAktifDb.nama}`);
+    doc.text(`Ketua Tim: ${ketuaTim?.nama || '-'}`);
     doc.text(`Tanggal Approve: ${formatTanggal(approvedAt)}`);
     doc.moveDown(1);
 
     doc.fontSize(11).fillColor('#374151');
     doc.text('Catatan:', { underline: true });
     doc.moveDown(0.25);
-    doc.text('- Unduhan ini hanya tersedia untuk Ketua Tim (urutan 1).');
+    doc.text('- Dokumen dapat diunduh oleh seluruh anggota tim penilai aktif.');
     doc.text('- Data approve valid jika seluruh anggota tim berstatus APPROVED.');
 
     doc.end();
