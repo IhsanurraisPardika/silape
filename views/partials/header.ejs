@@ -17,10 +17,17 @@
 
     <div class="flex items-center gap-2 md:gap-4">
 
-        <div class="hidden md:flex gap-4">
+        <div class="hidden md:flex gap-4 items-center">
             <a href="/tentang" class="text-sm text-gray-600 hover:text-red-600 transition-colors">Tentang</a>
             <a href="/kriteriapenilaian" class="text-sm text-gray-600 hover:text-red-600 transition-colors">Kriteria
                 Penilaian 5P</a>
+
+            <% if (!user) { %>
+                <a href="/login"
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-all hover:shadow-md">
+                    Login
+                </a>
+                <% } %>
         </div>
 
         <div class="relative">
@@ -54,6 +61,10 @@
                     <a href="/tentang" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tentang</a>
                     <a href="/kriteriapenilaian"
                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Kriteria Penilaian</a>
+                    <% if (!user) { %>
+                        <a href="/login"
+                            class="block px-4 py-2 text-sm font-bold text-red-600 hover:bg-gray-100">Login</a>
+                        <% } %>
                 </div>
 
                 <a href="/pilih-anggota"
