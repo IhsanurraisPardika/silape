@@ -129,17 +129,7 @@ exports.detail = async (req, res) => {
     try {
         const { kantorId } = req.params;
 
-        // Logika periode sama dengan index? 
-        // Idealnya detail foto juga harusnya base on periode yang dipilih.
-        // Tapi sementara kita asumsikan admin melihat detail dari link di index 
-        // yang secara implisit adalah periode yang sedang dipilih admin.
-        // NAMUN, link detail di index: /admin/kelola-foto/:kantorId
-        // TIDAK membawa info periode.
-        // Jadi kita harus menentukan periode apa yang dimaksud.
-        // Opsi A: Ambil periode aktif. (Limitasi: kalau filter periode lama, pas klik detail malah buka yang aktif)
-        // Opsi B: Tambahkan query param ?periodeId=... di link detail.
-
-        // Mari kita cek query param.
+        // cek query param.
         let periodeId = req.query.periodeId ? parseInt(req.query.periodeId) : null;
 
         // Jika tidak ada di query, cari yang aktif
@@ -308,9 +298,6 @@ exports.downloadPdf = async (req, res) => {
             p.detail.forEach(d => {
                 if (d.foto && d.foto.length > 0) {
                     d.foto.forEach(f => {
-                        // Pastikan file exist secara fisik jika ingin di-embed ke PDF
-                        // Path public/uploads/...
-                        // urlFile biasanya "/uploads/penilaian/..."
                         const relativePath = String(f.urlFile || "");
                         const safeRelativePath = relativePath.replace(/^[/\\]+/, "");
                         const fullPath = path.join(process.cwd(), "public", safeRelativePath);

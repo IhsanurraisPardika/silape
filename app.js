@@ -8,6 +8,7 @@ const port = process.env.PORT || 3000;
 
 // ===== ROUTES =====
 const loginRoutes = require("./routes/login");
+const landingRoutes = require("./routes/landing");
 const adminRoutes = require("./routes/admin");
 const formPenilaianRoutes = require("./routes/formPenilaian");
 const penilaianRoutes = require("./routes/penilaian");
@@ -60,6 +61,7 @@ app.use((req, res, next) => {
 });
 
 // ===== ROUTES =====
+app.use("/", landingRoutes);
 app.use("/", loginRoutes);
 app.use("/", formPenilaianRoutes);
 
