@@ -90,7 +90,7 @@
                                       </div>
                                       <button
                                         class="text-red-600 btn-delete hover:text-red-800 p-1 rounded hover:bg-red-50 transition ml-2"
-                                        data-nama="<%= k.nama %>" title="Hapus">
+                                        data-id="<%= k.id %>" data-nama="<%= k.nama %>" title="Hapus">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                           fill="currentColor">
                                           <path fill-rule="evenodd"
@@ -320,8 +320,9 @@
               btn.onclick = () => {
                 // Card kantor yang dirender server/dynamic sama-sama direct child dari .list-kantor
                 targetElement = btn.closest('.list-kantor > div');
+                const kantorId = btn.dataset.id;
                 const namaKantor = btn.dataset.nama;
-                if (!namaKantor) return;
+                if (!kantorId && !namaKantor) return;
 
                 Swal.fire({
                   title: 'Konfirmasi Hapus',
@@ -338,7 +339,7 @@
                     const res = await fetch('/kelolaKantor/hapus', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ namaKantor })
+                      body: JSON.stringify({ kantorId, namaKantor })
                     });
                     const data = await res.json();
 

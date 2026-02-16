@@ -135,42 +135,60 @@ function formatTimName(kode) {
 
 exports.hapusKantor = async (req, res) => {
   try {
-    const { namaKantor } = req.body;
+    const { kantorId, namaKantor } = req.body || {};
 
-    // 1. Cari kantor berdasarkan nama
-    // Note: Idealnya hapus by ID, tapi UI kirim nama for now
-    const kantor = await prisma.kantor.findFirst({
-      where: { nama: namaKantor }
-    });
-
-    if (!kantor) {
-      return res.status(404).json({ message: 'Kantor tidak ditemukan' });
+    // Utamakan hapus berdasarkan ID (lebih aman daripada nama)
+    let kantor = null;
+    if (kantorId !== undefined && kantorId !== null && String(kantorId).trim() !== '') {
+      const id = Number.parseInt(String(kantorId), 10);
+      if (!Number.isFinite(id)) {
+        return res.status(400).json({ success: false, message: 'kantorId tidak valid' });
+      }
+      kantor = await prisma.kantor.findUnique({ where: { id } });
+    } else if (namaKantor) {
+      // Fallback kompatibilitas lama
+      kantor = await prisma.kantor.findFirst({ where: { nama: namaKantor } });
     }
 
-    // 2. Hapus (Soft Delete / Hapus Relasi)
-    // Kita set statusAktif=false dan dihapusPada=now
-    const now = new Date();
-    await prisma.$transaction([
-      prisma.kantor.updateMany({
-        where: { id: kantor.id },
-        data: {
-          statusAktif: false,
-          dihapusPada: now
-        }
-      }),
-      prisma.penugasanKantorAkun.updateMany({
-        where: { kantorId: kantor.id },
-        data: {
-          statusAktif: false,
-          dihapusPada: now
-        }
-      })
-    ]);
+    if (!kantor) {
+      return res.status(404).json({ success: false, message: 'Kantor tidak ditemukan' });
+    }
 
-    res.json({ success: true });
+    // Hard delete (hapus permanen) + hapus dependensi agar tidak kena FK constraint
+    const kantorIdNum = Number(kantor.id);
+
+    const penilaianRows = await prisma.penilaian.findMany({
+      where: { kantorId: kantorIdNum },
+      select: { id: true }
+    });
+    const penilaianIds = penilaianRows.map((p) => p.id);
+
+    const detailRows = penilaianIds.length
+      ? await prisma.detailPenilaian.findMany({
+        where: { penilaianId: { in: penilaianIds } },
+        select: { id: true }
+      })
+      : [];
+    const detailIds = detailRows.map((d) => d.id);
+
+    await prisma.$transaction(async (tx) => {
+      if (detailIds.length) {
+        await tx.fotoDetailPenilaian.deleteMany({ where: { detailId: { in: detailIds } } });
+      }
+
+      if (penilaianIds.length) {
+        await tx.detailPenilaian.deleteMany({ where: { penilaianId: { in: penilaianIds } } });
+        await tx.penilaian.deleteMany({ where: { id: { in: penilaianIds } } });
+      }
+
+      await tx.penugasanKantorAkun.deleteMany({ where: { kantorId: kantorIdNum } });
+      await tx.kantor.delete({ where: { id: kantorIdNum } });
+    });
+
+    return res.json({ success: true });
 
   } catch (error) {
     console.error('ERROR hapusKantor:', error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
