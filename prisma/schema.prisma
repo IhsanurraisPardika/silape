@@ -46,12 +46,16 @@ model Pengguna {
   kataSandiHash String @db.VarChar(191)
 
   peran   PeranPengguna
-  timKode TimKode? @unique // hanya untuk akun tim penilai (peran=TIMPENILAI)
+  timKode TimKode? // HAPUS @unique di sini, ganti jadi composite di bawah
 
   statusAktif Boolean  @default(true)
   dibuatPada  DateTime @default(now())
   diubahPada  DateTime @updatedAt
   dihapusPada DateTime?
+
+  // RELASI BARU: Tim terikat periode
+  periodeId Int?
+  periode   PeriodePenilaian? @relation("PenggunaPeriode", fields: [periodeId], references: [id])
 
   // anggota tim (maks 5, ketua = urutan 1)
   anggotaTim AnggotaTim[]
@@ -62,6 +66,11 @@ model Pengguna {
 
   konfigurasiBobotDibuat KonfigurasiBobot[] @relation("KonfigurasiDibuatOleh")
   periodeDibuat          PeriodePenilaian[] @relation("PeriodeDibuatOleh")
+
+  // KONSTRAIN BARU:
+  // TimKode hanya unik DALAM SATU PERIODE.
+  // Jadi TIM1 bisa ada di Periode A, dan ada lagi di Periode B (akun berbeda).
+  @@unique([timKode, periodeId])
 
   @@index([peran])
   @@index([statusAktif])
@@ -107,6 +116,9 @@ model PeriodePenilaian {
   @@unique([tahun, semester])
   @@index([statusAktif])
   @@map("periode_penilaian")
+
+  // Relasi balik ke pengguna (tim penilai yg terdaftar di periode ini)
+  pengguna Pengguna[] @relation("PenggunaPeriode")
 }
 
 model Kantor {
