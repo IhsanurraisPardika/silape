@@ -32,16 +32,36 @@ exports.index = async (req, res) => {
     if (roleFilter === "ADMIN") dbRole = "ADMIN";
     // Jika ada role lain, tambahkan di sini
 
+    // 0. Ambil Periode Aktif
+    const activePeriode = await prisma.periodePenilaian.findFirst({
+      where: { statusAktif: true },
+    });
+
+    const whereClause = {
+      dihapusPada: null,
+      peran: dbRole,
+    };
+
+    // Jika filter TIM_PENILAI, hanya ambil yang periodeId-nya AKTIF
+    if (dbRole === "TIMPENILAI") {
+      if (activePeriode) {
+        whereClause.periodeId = activePeriode.id;
+      } else {
+        // Jika tidak ada periode aktif, kosongkan list (force id yang tidak mungkin)
+        whereClause.periodeId = -1;
+      }
+    }
+
     const users = await prisma.pengguna.findMany({
-      where: {
-        dihapusPada: null,
-        peran: dbRole,
-      },
+      where: whereClause,
       include: {
         anggotaTim: {
+          where: { statusAktif: true },
           orderBy: { urutan: "asc" },
         },
+        periode: true,
       },
+      // Sort by CreatedAt DESC (since only 1 period shown)
       orderBy: { dibuatPada: "desc" },
     });
 
@@ -69,14 +89,16 @@ exports.index = async (req, res) => {
         statusAktif: u.statusAktif,
         peran: u.peran,
         anggota: u.anggotaTim, // array obj
+        periode: u.periode // info periode
       };
     });
 
     return res.render("admin/kelola-tim-penilai", {
       users: mapped,
-      timList: TIM_LIST, // Kirim list static ke view
+      timList: TIM_LIST,
       title: "Kelola Tim Penilai",
-      currentRole: roleFilter, // Kirim state filter ke view
+      currentRole: roleFilter,
+      activePeriode: activePeriode, // Kirim info periode aktif ke view
       error: req.query.error || null,
       success: req.query.success || null,
     });
@@ -132,20 +154,31 @@ exports.tambahPengguna = async (req, res) => {
 
     // Logika validasi role pakai string UI (peran) atau dbRole?
     // Konsistenkan logic:
+    // 0. Cek Periode Aktif (Wajib untuk TIM_PENILAI)
+    let periodeIdVal = null;
     if (dbRole === "TIMPENILAI") {
+      const activePeriode = await prisma.periodePenilaian.findFirst({
+        where: { statusAktif: true },
+      });
+      if (!activePeriode) {
+        return go(res, "error", "Tidak ada Periode Penilaian yang aktif. Aktifkan periode dulu.");
+      }
+      periodeIdVal = activePeriode.id;
+
       if (!timId) return go(res, "error", "Pilih Tim untuk Tim Penilai");
       timKodeVal = timId;
 
-      // VALIDASI: Cek apakah Tim sudah diambil user lain yang aktif
+      // VALIDASI: Cek apakah Tim sudah diambil user lain DI PERIODE INI
       const existingTim = await prisma.pengguna.findFirst({
         where: {
           timKode: timKodeVal,
+          periodeId: periodeIdVal, // Cek scoope periode
           dihapusPada: null
         }
       });
 
       if (existingTim) {
-        return go(res, "error", `Tim ${timId} sudah memiliki akun aktif.`);
+        return go(res, "error", `Tim ${timId} sudah digunakan di periode aktif ini.`);
       }
 
       // Validasi anggota 1 wajib (sebagai ketua)
@@ -161,6 +194,7 @@ exports.tambahPengguna = async (req, res) => {
           kataSandiHash: hash,
           peran: dbRole, // pakai normalized role
           timKode: timKodeVal,
+          periodeId: periodeIdVal, // Assign periode
           statusAktif: true,
           // dibuatOlehUsername: pembuat.username, // REMOVED: Not in schema or optional
         }
@@ -239,6 +273,30 @@ exports.editPengguna = async (req, res) => {
 
         for (const item of inputs) {
           if (!item.nama) {
+            // DELETE LOGIC (Existing but Empty Input)
+            const existing = await tx.anggotaTim.findUnique({
+              where: { akunUsername_urutan: { akunUsername: username, urutan: item.urutan } }
+            });
+
+            if (existing) {
+              // Cek dependencies (Penilaian)
+              const hasPenilaian = await tx.penilaian.findFirst({
+                where: { anggotaId: existing.id }
+              });
+
+              if (hasPenilaian) {
+                // Soft Delete
+                await tx.anggotaTim.update({
+                  where: { id: existing.id },
+                  data: { statusAktif: false }
+                });
+              } else {
+                // Hard Delete
+                await tx.anggotaTim.delete({
+                  where: { id: existing.id }
+                });
+              }
+            }
             continue;
           }
 
@@ -252,7 +310,13 @@ exports.editPengguna = async (req, res) => {
             if (existing.nama !== item.nama) {
               await tx.anggotaTim.update({
                 where: { id: existing.id },
-                data: { nama: item.nama }
+                data: { nama: item.nama, statusAktif: true } // Ensure active if re-using slot
+              });
+            } else if (!existing.statusAktif) {
+              // Activate if was soft deleted
+              await tx.anggotaTim.update({
+                where: { id: existing.id },
+                data: { statusAktif: true }
               });
             }
           } else {
@@ -288,14 +352,27 @@ exports.hapusPengguna = async (req, res) => {
     const pengguna = await prisma.pengguna.findUnique({ where: { username } });
     if (!pengguna) return go(res, "error", "Pengguna tidak ditemukan");
 
-    // Soft delete
-    await prisma.pengguna.update({
-      where: { username },
-      data: {
-        statusAktif: false,
-        dihapusPada: new Date(),
-      },
-    });
+    // CEK DEPENDENCY untuk User/Tim
+    const hasPenilaian = await prisma.penilaian.findFirst({ where: { akunUsername: username } });
+    const hasPenugasan = await prisma.penugasanKantorAkun.findFirst({ where: { akunUsername: username } });
+
+    if (hasPenilaian || hasPenugasan) {
+      // Soft delete
+      await prisma.pengguna.update({
+        where: { username },
+        data: {
+          statusAktif: false,
+          dihapusPada: new Date(),
+        },
+      });
+    } else {
+      // Hard delete
+      // Note: Cascade delete on schema handles relations, but be careful.
+      // Schema says: AnggotaTim onDelete Cascade.
+      await prisma.pengguna.delete({
+        where: { username }
+      });
+    }
 
     return go(res, "success", "Pengguna berhasil dihapus");
   } catch (err) {

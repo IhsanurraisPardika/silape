@@ -50,6 +50,7 @@ exports.postlogin = async (req, res) => {
       where: { username },
       include: {
         anggotaTim: true, // aman; untuk admin/superadmin akan kosong
+        periode: true,    // Include status periode
       },
     });
 
@@ -99,6 +100,17 @@ exports.postlogin = async (req, res) => {
     // - harus punya timKode
     // - harus punya minimal Anggota 1 (urutan=1) aktif
     if (pengguna.peran === "TIMPENILAI") {
+
+      if (pengguna.periode && !pengguna.periode.statusAktif) {
+        return res.status(403).render("login", {
+          title: "Login - SILAPE",
+          appName: "SILAPE",
+          message: "",
+          error: `Akun ini terdaftar di periode "${pengguna.periode.namaPeriode}" yang sudah tidak aktif.`,
+          username,
+        });
+      }
+
       if (!pengguna.timKode) {
         return res.status(403).render("login", {
           title: "Login - SILAPE",
