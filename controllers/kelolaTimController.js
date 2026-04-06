@@ -357,14 +357,8 @@ exports.hapusPengguna = async (req, res) => {
     const hasPenugasan = await prisma.penugasanKantorAkun.findFirst({ where: { akunUsername: username } });
 
     if (hasPenilaian || hasPenugasan) {
-      // Soft delete
-      await prisma.pengguna.update({
-        where: { username },
-        data: {
-          statusAktif: false,
-          dihapusPada: new Date(),
-        },
-      });
+      // Jangan hapus, tampilkan alert error
+      return go(res, "error", "Pengguna tidak bisa dihapus karena sudah memiliki aktivitas penilaian");
     } else {
       // Hard delete
       // Note: Cascade delete on schema handles relations, but be careful.
