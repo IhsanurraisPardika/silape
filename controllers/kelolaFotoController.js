@@ -324,10 +324,57 @@ exports.downloadPdf = async (req, res) => {
 
         doc.pipe(res);
 
-        // Header
-        doc.fontSize(20).text(`Laporan Foto Penilaian`, { align: 'center' });
-        doc.fontSize(14).text(`Kantor: ${kantor.nama}`, { align: 'center' });
-        doc.fontSize(12).text(`Periode: ${periodeAktif.namaPeriode}`, { align: 'center' });
+        // === Kop Surat dengan Logo ===
+        const logoSP = path.join(process.cwd(), "public", "images", "sp_full.png");
+        const logoSIG = path.join(process.cwd(), "public", "images", "SIG.jpg");
+        const pageMarginLeft = doc.page.margins.left;
+        const pageMarginRight = doc.page.margins.right;
+        const headerContentWidth = doc.page.width - pageMarginLeft - pageMarginRight;
+
+        const logoHeight = 60;
+        const logoTopY = doc.page.margins.top;
+
+        // Logo Semen Padang (kiri)
+        if (fs.existsSync(logoSP)) {
+            doc.image(logoSP, pageMarginLeft, logoTopY, { height: logoHeight });
+        }
+
+        // Logo SIG (kanan)
+        if (fs.existsSync(logoSIG)) {
+            const sigLogoWidth = 80; // approximate width for the SIG logo
+            doc.image(logoSIG, doc.page.width - pageMarginRight - sigLogoWidth, logoTopY, { height: logoHeight });
+        }
+
+        // Teks header di tengah (antara kedua logo)
+        const textStartY = logoTopY + 8;
+        doc.fontSize(16).font('Helvetica-Bold').text('PT SEMEN PADANG', pageMarginLeft, textStartY, {
+            width: headerContentWidth,
+            align: 'center'
+        });
+        doc.fontSize(11).font('Helvetica').text('Anggota dari Semen Indonesia Group (SIG)', {
+            width: headerContentWidth,
+            align: 'center'
+        });
+        doc.moveDown(0.3);
+        doc.fontSize(10).text('Jl. Raya Indarung, Padang 25237, Sumatera Barat', {
+            width: headerContentWidth,
+            align: 'center'
+        });
+
+        // Garis pemisah di bawah kop surat
+        const lineY = logoTopY + logoHeight + 10;
+        doc.moveTo(pageMarginLeft, lineY)
+           .lineTo(doc.page.width - pageMarginRight, lineY)
+           .lineWidth(2)
+           .stroke();
+
+        // Reset posisi cursor
+        doc.y = lineY + 15;
+
+        // Judul Laporan
+        doc.fontSize(18).font('Helvetica-Bold').text('Laporan Foto Penilaian', { align: 'center' });
+        doc.fontSize(13).font('Helvetica').text(`Kantor: ${kantor.nama}`, { align: 'center' });
+        doc.fontSize(11).text(`Periode: ${periodeAktif.namaPeriode}`, { align: 'center' });
         doc.moveDown(2);
 
         // Photos
