@@ -744,32 +744,59 @@ exports.downloadRekapKantor = async (req, res) => {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Rekap Kantor');
 
+        const headers = ['Kriteria', '', ...headerColumns, 'Rata-rata', 'Bobot'];
+        const lastColLetter = worksheet.getColumn(headers.length).letter;
+
         // Header Info
-        worksheet.addRow(['Rekap Penilaian 5P']);
-        worksheet.addRow(['Kantor:', selectedKantor.nama]);
-        worksheet.addRow([]);
+        worksheet.mergeCells(`A1:${lastColLetter}1`);
+        const titleCell = worksheet.getCell('A1');
+        titleCell.value = 'REKAPITULASI PENILAIAN PER KANTOR (5P)';
+        titleCell.font = { size: 16, bold: true };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        worksheet.mergeCells(`A2:${lastColLetter}2`);
+        const periodCell = worksheet.getCell('A2');
+        periodCell.value = `Kantor: ${selectedKantor.nama}`;
+        periodCell.font = { size: 12, bold: true };
+        periodCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        worksheet.addRow([]); // Spacer
 
         // Table Header
-        const headers = ['Kriteria', '', ...headerColumns, 'Rata-rata', 'Bobot'];
         const headerRow = worksheet.addRow(headers);
         headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        
+        const thinBorder = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+
         headerRow.eachCell(cell => {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC8102E' } };
-            cell.alignment = { horizontal: 'center' };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = thinBorder;
         });
+
+        // Set Widths
+        const columns = [ { width: 12 }, { width: 12 } ];
+        headerColumns.forEach(() => columns.push({ width: 35 }));
+        columns.push({ width: 15 }); // Rata-rata
+        columns.push({ width: 15 }); // Bobot
+        worksheet.columns = columns;
 
         // Rows
         Object.keys(rekapData.groupedData).forEach(pKey => {
             // Section Header (e.g., Penilaian P1)
             const sectionRow = worksheet.addRow([`Penilaian ${pKey}`]);
-            sectionRow.font = { bold: true };
+            sectionRow.font = { bold: true, size: 12 };
+            worksheet.mergeCells(`A${sectionRow.number}:${lastColLetter}${sectionRow.number}`);
+            sectionRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+            sectionRow.getCell(1).border = thinBorder;
+            sectionRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
 
             const rows = rekapData.groupedData[pKey];
             rows.forEach(row => {
                 const rowCells = [
                     row.kunci,
                     'Nilai',
-                    ...headerColumns.map(nama => row.nilaiPerPenilai[nama] || 0),
+                    ...headerColumns.map(nama => parseFloat(row.nilaiPerPenilai[nama] || 0)),
                     parseFloat(row.rataRata),
                     parseFloat(row.bobot)
                 ];
@@ -783,24 +810,39 @@ exports.downloadRekapKantor = async (req, res) => {
                     ''
                 ];
                 const noteRow = worksheet.addRow(noteCells);
-                noteRow.font = { italic: true, size: 9, color: { argb: 'FF666666' } };
+                noteRow.font = { italic: true, size: 9, color: { argb: 'FF333333' } };
+
+                scoreRow.eachCell({ includeEmpty: true }, (cell, colNumber) => { 
+                    cell.border = thinBorder; 
+                    cell.alignment = { vertical: 'middle' };
+                    if (colNumber === 1 || colNumber >= headers.length - 1) {
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    }
+                });
+                
+                noteRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                    cell.border = thinBorder;
+                    cell.alignment = { vertical: 'top', wrapText: true };
+                });
 
                 // Merge Kriteria column cells for Row 1 and Row 2
                 const colLetter = 'A';
                 worksheet.mergeCells(`${colLetter}${scoreRow.number}:${colLetter}${noteRow.number}`);
-                // Also merge Rata-rata and Bobot columns if needed, but per-P footer handles them mostly.
-                // However, for consistency with web view:
-                const lastCol = String.fromCharCode(65 + headers.length - 1);
-                const secondLastCol = String.fromCharCode(64 + headers.length - 1);
+                const secondLastCol = worksheet.getColumn(headers.length - 1).letter;
+                const lastCol = worksheet.getColumn(headers.length).letter;
                 worksheet.mergeCells(`${secondLastCol}${scoreRow.number}:${secondLastCol}${noteRow.number}`);
                 worksheet.mergeCells(`${lastCol}${scoreRow.number}:${lastCol}${noteRow.number}`);
             });
 
             // Footer per P
-            const footerRowData = [`Rata-rata ${pKey}`, '', ...headerColumns.map(() => ''), rekapData.pAverages[pKey], rekapData.pTotalBobot[pKey]];
+            const footerRowData = [`Rata-rata ${pKey}`, '', ...headerColumns.map(() => ''), parseFloat(rekapData.pAverages[pKey]), parseFloat(rekapData.pTotalBobot[pKey])];
             const footerRow = worksheet.addRow(footerRowData);
-            footerRow.font = { bold: true, italic: true };
-            // Adjusted index for Bobot column because of the new label column
+            footerRow.font = { bold: true };
+            worksheet.mergeCells(`A${footerRow.number}:B${footerRow.number}`);
+            
+            footerRow.eachCell({ includeEmpty: true }, cell => { cell.border = thinBorder; cell.alignment = { vertical: 'middle', horizontal: 'center' }; });
+            footerRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
+
             footerRow.getCell(headers.length).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF90EE90' } }; // Light Green for Bobot
             footerRow.getCell(headers.length - 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFFFF' } }; // Light Cyan for Rata-rata
 
@@ -808,10 +850,20 @@ exports.downloadRekapKantor = async (req, res) => {
         });
 
         // Grand Total
-        worksheet.addRow([]);
-        const totalRow = worksheet.addRow(['Nilai Akhir (Total Bobot)', '', '', '', '', '', rekapData.totalSkorAkhir]);
+        const totalRowData = new Array(headers.length).fill('');
+        totalRowData[0] = 'Nilai Akhir (Total Bobot)';
+        totalRowData[headers.length - 1] = parseFloat(rekapData.totalSkorAkhir);
+        
+        const totalRow = worksheet.addRow(totalRowData);
         totalRow.font = { size: 14, bold: true };
-        totalRow.getCell(1).alignment = { horizontal: 'right' };
+        
+        const endMergeColLetter = worksheet.getColumn(headers.length - 1).letter;
+        worksheet.mergeCells(`A${totalRow.number}:${endMergeColLetter}${totalRow.number}`);
+        totalRow.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+        totalRow.getCell(headers.length).alignment = { horizontal: 'center', vertical: 'middle' };
+        
+        totalRow.eachCell({ includeEmpty: true }, cell => { cell.border = thinBorder; });
+        totalRow.getCell(headers.length).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } }; // Gold
 
         // Response
         const filename = `Rekap_Kantor_${selectedKantor.nama.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
@@ -898,18 +950,40 @@ exports.downloadRekapKriteria = async (req, res) => {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Rekap Kriteria');
 
-        worksheet.addRow(['Rekap Kriteria Penilaian 5P']);
-        worksheet.addRow(['Periode:', periodeTarget.namaPeriode]);
+        const headersCount = 3 + criteriaList.length;
+        const lastColLetter = worksheet.getColumn(headersCount).letter;
+
+        worksheet.mergeCells(`A1:${lastColLetter}1`);
+        const titleCell = worksheet.getCell('A1');
+        titleCell.value = 'REKAPITULASI KRITERIA PENILAIAN 5P';
+        titleCell.font = { size: 16, bold: true };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        worksheet.mergeCells(`A2:${lastColLetter}2`);
+        const periodCell = worksheet.getCell('A2');
+        periodCell.value = `Periode: ${periodeTarget.namaPeriode}`;
+        periodCell.font = { size: 12, bold: false };
+        periodCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         worksheet.addRow([]);
 
         // Header
         const headers = ['No', 'Nama Unit', 'Tim', ...criteriaList.map(c => c.kunciKriteria)];
         const headerRow = worksheet.addRow(headers);
         headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        
+        const thinBorder = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+        
         headerRow.eachCell(cell => {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC8102E' } };
-            cell.alignment = { horizontal: 'center' };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = thinBorder;
         });
+
+        // Widths
+        const columns = [ { width: 5 }, { width: 35 }, { width: 20 } ];
+        criteriaList.forEach(() => { columns.push({ width: 12 }); });
+        worksheet.columns = columns;
 
         // Body
         rekapList.forEach((row, idx) => {
@@ -919,8 +993,21 @@ exports.downloadRekapKriteria = async (req, res) => {
                 row.timNama,
                 ...criteriaList.map(c => parseFloat(row.values[c.kunciKriteria]))
             ];
-            worksheet.addRow(rowValues);
+            const newRow = worksheet.addRow(rowValues);
+            
+            newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                cell.border = thinBorder;
+                cell.alignment = { vertical: 'middle' };
+                if (colNumber === 1 || colNumber >= 4) {
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                }
+            });
         });
+
+        worksheet.autoFilter = {
+            from: 'A3',
+            to: `${lastColLetter}${rekapList.length + 3}`
+        };
 
         const filename = `Rekap_Kriteria_${periodeTarget.namaPeriode.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -1049,31 +1136,45 @@ exports.downloadRekapPenilaian = async (req, res) => {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Rekap Penilaian');
 
-        worksheet.addRow(['Rekap Penilaian 5P']);
-        worksheet.addRow(['Periode:', periodeTarget.namaPeriode]);
+        worksheet.mergeCells('A1:K1');
+        const titleCell = worksheet.getCell('A1');
+        titleCell.value = 'REKAPITULASI PENILAIAN 5P';
+        titleCell.font = { size: 16, bold: true };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        worksheet.mergeCells('A2:K2');
+        const periodCell = worksheet.getCell('A2');
+        periodCell.value = `Periode: ${periodeTarget.namaPeriode}`;
+        periodCell.font = { size: 12, bold: false };
+        periodCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         worksheet.addRow([]);
 
         const headers = ['Waktu', 'Nama Unit', 'Tim', 'P1', 'P2', 'P3', 'P4', 'P5', 'Nilai Akhir', 'Predikat', 'Catatan Rekomendasi'];
         const headerRow = worksheet.addRow(headers);
         headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        
+        const thinBorder = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+
         headerRow.eachCell(cell => {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC8102E' } };
-            cell.alignment = { horizontal: 'center' };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = thinBorder;
         });
 
         // Set Column Widths
         worksheet.columns = [
-            { width: 20 }, // Waktu
-            { width: 30 }, // Nama Unit
-            { width: 10 }, // Tim
+            { width: 22 }, // Waktu
+            { width: 35 }, // Nama Unit
+            { width: 15 }, // Tim
             { width: 10 }, // P1
             { width: 10 }, // P2
             { width: 10 }, // P3
             { width: 10 }, // P4
             { width: 10 }, // P5
             { width: 15 }, // Nilai Akhir
-            { width: 20 }, // Predikat
-            { width: 50 }, // Catatan Rekomendasi
+            { width: 22 }, // Predikat
+            { width: 60 }, // Catatan Rekomendasi
         ];
 
         // Style Mapping for Predikat
@@ -1100,6 +1201,12 @@ exports.downloadRekapPenilaian = async (req, res) => {
                 row.rekomendasi
             ]);
 
+            newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                cell.border = thinBorder;
+                cell.alignment = { vertical: 'middle' };
+                if (colNumber >= 4 && colNumber <= 9) cell.alignment = { horizontal: 'center', vertical: 'middle' }; // Numbers
+            });
+
             // Styling Predikat Cell (Index 10)
             const predCell = newRow.getCell(10);
             const style = colorMap[row.predikat];
@@ -1107,12 +1214,17 @@ exports.downloadRekapPenilaian = async (req, res) => {
                 predCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: style.bg } };
                 predCell.font = { color: { argb: style.fg }, bold: true };
             }
-            predCell.alignment = { horizontal: 'center' };
+            predCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
             // Styling Rekomendasi Cell (Index 11)
             const recCell = newRow.getCell(11);
             recCell.alignment = { wrapText: true, vertical: 'top' };
         });
+
+        worksheet.autoFilter = {
+            from: 'A3',
+            to: `K${rekapList.length + 3}`
+        };
 
         let teamSuffix = "";
         if (timUsername && timUsername !== 'all' && rekapList.length > 0) {
