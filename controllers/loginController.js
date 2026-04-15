@@ -1,4 +1,4 @@
-// controllers/authController.js
+ // controllers/authController.js
 const bcrypt = require("bcrypt");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
